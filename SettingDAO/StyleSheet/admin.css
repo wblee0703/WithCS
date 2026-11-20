@@ -938,6 +938,9 @@ body.role-admin .tag-remove {
     color: #ffffff;
 }
 
+/* [요청] 현재 수량은 숫자만 표시 */
+.stock-qty-text { color: #3fb950; font-size: 13px; font-weight: bold; }
+
 .stock-qty-input {
     width: 28px;
     height: 24px;
@@ -1152,9 +1155,9 @@ body.role-admin .tag-remove {
 }
 
 .item-stock-table .col-action {
-    width: 56px; /* [수정] 개별 관리(+) 버튼 추가로 폭 확대 */
-    min-width: 56px;
-    max-width: 56px;
+    width: 30px;
+    min-width: 30px;
+    max-width: 30px;
     text-align: center;
     padding: 6px 1px;
     white-space: nowrap;
@@ -1250,27 +1253,7 @@ body.role-admin .tag-remove {
     100% { background-color: transparent; }
 }
 
-/* [추가] 개별 관리 물품: 기능 열 +/− 버튼, 리스트 표시, 상세 모달 */
-.btn-unit-manage {
-    width: 22px;
-    height: 22px;
-    margin-right: 4px;
-    padding: 0;
-    border-radius: 4px;
-    border: 1px solid rgba(63, 185, 80, 0.5);
-    background: #21262d;
-    color: #3fb950;
-    font-size: 14px;
-    font-weight: bold;
-    line-height: 1;
-    cursor: pointer;
-    vertical-align: middle;
-}
-.btn-unit-manage:hover { background: rgba(63, 185, 80, 0.15); }
-.btn-unit-manage.on {
-    border-color: rgba(139, 148, 158, 0.5);
-    color: #8b949e;
-}
+/* [수정] 물품 상세: 리스트 행 클릭으로 열기, S/N 상세 관리 표시, 상세 모달 */
 .item-stock-table tr.stock-row-unit-managed { cursor: pointer; }
 .unit-managed-badge {
     display: inline-block;
@@ -1299,7 +1282,41 @@ body.role-admin .tag-remove {
     color: #8b949e;
 }
 .stock-unit-summary strong { color: #e6edf3; }
-.stock-unit-summary .btn-stock-outline { margin-left: auto; height: 30px; }
+.stock-unit-summary .btn-stock-outline { height: 30px; }
+.stock-unit-summary .stock-unit-mode-btn { margin-left: auto; } /* [요청] S/N 상세 켜기/끄기 */
+.stock-unit-mode-btn.on { background: rgba(210, 168, 255, 0.18); }
+.stock-unit-table .su-input:disabled,
+.usage-pick-list input:disabled { opacity: 0.7; cursor: not-allowed; } /* [요청] 사용 이력 반영분 수정 불가 */
+/* [요청] 물품 상세: 입고 추가 입력 줄 + 보기 전용 리스트 */
+.stock-unit-add {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    font-size: 12px;
+    color: #8b949e;
+}
+.stock-unit-add label { display: flex; align-items: center; gap: 6px; }
+.stock-unit-add .input-dark { height: 30px; padding: 0 6px; box-sizing: border-box; }
+#stock-unit-add-qty { width: 70px; text-align: center; }
+#stock-unit-add-serial { width: 160px; }
+.stock-unit-add .btn-stock-outline { height: 30px; }
+.stock-unit-table td { color: #c9d1d9; }
+.stock-unit-table th,
+.stock-unit-table td { text-align: center; } /* [요청] 물품 상세 리스트 가운데 정렬 */
+.stock-unit-table .su-mid { text-align: center; }
+.stock-unit-table .su-equip-text { max-width: 280px; overflow: hidden; text-overflow: ellipsis; font-size: 15px; } /* [요청] 사업장·장비명 글자 확대 */
+#stock-unit-meta { font-size: 14px; color: #c9d1d9; } /* [요청] 사업장 구분·사업장 글자 확대 */
+.stock-unit-table .su-empty { color: #484f58; }
+.su-kind {
+    display: inline-block;
+    padding: 0 6px;
+    border-radius: 8px;
+    font-size: 11px;
+    border: 1px solid;
+}
+.su-kind.kind-regular { color: #58a6ff; border-color: rgba(88, 166, 255, 0.5); }
+.su-kind.kind-irregular { color: #d29922; border-color: rgba(210, 153, 34, 0.5); }
 .stock-unit-hint { margin: 0; font-size: 12px; color: #8b949e; }
 .stock-unit-scroll {
     max-height: calc(90vh - 170px);
@@ -1331,6 +1348,37 @@ body.role-admin .tag-remove {
 }
 .usage-pick-summary { font-size: 12px; color: #e6edf3; font-weight: bold; }
 .usage-pick-list { display: flex; flex-direction: column; gap: 8px; }
+/* [요청] 공통 사용 정보(맨 위) + 물품별 한 줄 선택 */
+.usage-pick-common {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    padding: 8px 10px;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    background: #161b22;
+    font-size: 12px;
+    color: #e6edf3;
+}
+.usage-pick-common .up-common-label { color: #8b949e; margin-right: 6px; }
+/* [요청] 모바일: 공통 정보 1줄에 2개씩 */
+@media (max-width: 950px) {
+    .usage-pick-common {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px 12px;
+    }
+    .usage-pick-common > div { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+.usage-pick-list .up-group { display: flex; align-items: center; gap: 10px; }
+.usage-pick-list .up-group .up-title { flex: 1; min-width: 0; margin-bottom: 0; }
+.usage-pick-list .up-group .up-unit { flex: 0 0 260px; max-width: 60%; height: 32px; font-size: 12px; }
+/* [요청] 현재 수량 → 반영 후 수량 */
+.up-qty { display: block; margin-top: 3px; font-size: 11px; color: #8b949e; }
+.up-qty b { color: #e6edf3; }
+.up-qty b.zero { color: #f85149; }
+.up-qty .up-mode { color: #3fb950; margin-right: 8px; }
+.up-qty-none { color: #d29922; }
 .up-group {
     padding: 10px 12px;
     background: #161b22;
@@ -1369,8 +1417,18 @@ body.role-admin .tag-remove {
     display: flex;
     flex-direction: column;
 }
+/* [요청] 재고 관리 검색창 */
+.stock-manage-search {
+    width: 100%;
+    height: 32px;
+    margin-bottom: 8px;
+    padding: 0 10px;
+    box-sizing: border-box;
+    font-size: 13px;
+    flex-shrink: 0;
+}
 .stock-manage-scroll {
-    max-height: calc(90vh - 140px);
+    max-height: calc(90vh - 180px);
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch;
 }
@@ -1456,6 +1514,7 @@ body.role-admin .tag-remove {
 .btn-stock-outline.outline-red    { --btn-c: #f85149; --btn-c-rgb: 248, 81, 73; }    /* 전체 삭제 */
 
 /* [추가] 사용 이력 모달 */
+/* [요청] 사용 이력 창 글자 크기 확대 (+2px) */
 .usage-work-list {
     display: flex;
     flex-direction: column;
@@ -1465,7 +1524,7 @@ body.role-admin .tag-remove {
     padding: 30px 10px;
     text-align: center;
     color: #8b949e;
-    font-size: 13px;
+    font-size: 15px;
 }
 .usage-work-row {
     display: flex;
@@ -1505,7 +1564,7 @@ body.role-admin .tag-remove {
     flex-wrap: wrap;
     align-items: center;
     gap: 6px 10px;
-    font-size: 12px;
+    font-size: 14px;
     color: #8b949e;
 }
 .usage-work-head .usage-date { color: #e6edf3; font-weight: bold; }
@@ -1518,7 +1577,7 @@ body.role-admin .tag-remove {
     background: rgba(56, 139, 253, 0.15);
     border: 1px solid rgba(56, 139, 253, 0.4);
     color: #58a6ff;
-    font-size: 11px;
+    font-size: 13px;
 }
 .usage-work-sub .usage-worker {
     color: #c9d1d9;
@@ -1529,7 +1588,7 @@ body.role-admin .tag-remove {
     flex-wrap: wrap;
     gap: 6px 10px;
     margin-top: 3px;
-    font-size: 12px;
+    font-size: 14px;
     color: #8b949e;
 }
 .usage-items {
@@ -1539,12 +1598,12 @@ body.role-admin .tag-remove {
     display: flex;
     flex-direction: column;
     gap: 3px;
-    font-size: 12px;
+    font-size: 14px;
     color: #c9d1d9;
 }
 .usage-items strong { color: #58a6ff; }
 .usage-items .usage-spec { color: #8b949e; }
-.usage-items .usage-stock { margin-left: 6px; color: #8b949e; font-size: 11px; }
+.usage-items .usage-stock { margin-left: 6px; color: #8b949e; font-size: 13px; }
 .usage-items .usage-stock-none { color: #d29922; }
 /* [요청] 비용처리 표시 / 무상(중고) 반영 제외 */
 .usage-items .usage-cost { color: #d2a8ff; }
@@ -1555,7 +1614,7 @@ body.role-admin .tag-remove {
 .btn-usage-apply {
     height: 32px;
     padding: 0 14px;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: bold;
     border-radius: 6px;
     border: 1px solid rgba(240, 246, 252, 0.1);

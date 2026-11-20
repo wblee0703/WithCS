@@ -4,7 +4,7 @@
 {% block title %}Item - WITH ON{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/admin.css') }}?v=62">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/admin.css') }}?v=73">
 {% endblock %}
 
 {% block content %}
@@ -129,7 +129,7 @@
 
         <!-- 3-1-1. [추가] 사용 이력 모달 (최근 일주일 작업 + 재고 반영) -->
         <div id="item-usage-modal" class="modal-overlay" style="display: none;">
-            <div class="modal-window" style="max-width: 900px; width: 95%; height: auto; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-window" style="max-width: 560px; width: 95%; height: auto; max-height: 90vh; display: flex; flex-direction: column;">
                 <div class="modal-header">
                     <h4>사용 이력 (<span id="usage-modal-group-label" style="color: #58a6ff;">-</span>) <span id="usage-modal-range" style="font-size: 12px; color: #8b949e; font-weight: normal;"></span></h4>
                     <span class="close-btn" id="btn-close-usage-modal">&times;</span>
@@ -140,7 +140,7 @@
             </div>
         </div>
 
-        <!-- 3-1-1-1. [요청] 사용 이력 반영 시 상세 관리 물품 선택 창 -->
+        <!-- 3-1-1-1. [요청] 사용 이력 반영 시 S/N 상세 관리 물품 선택 창 -->
         <div id="usage-pick-modal" class="modal-overlay" style="display: none;">
             <div class="modal-window" style="max-width: 760px; width: 95%; height: auto; max-height: 90vh; display: flex; flex-direction: column;">
                 <div class="modal-header">
@@ -148,8 +148,8 @@
                     <span class="close-btn" id="btn-close-usage-pick">&times;</span>
                 </div>
                 <div class="modal-body usage-pick-modal-body">
-                    <div id="usage-pick-summary" class="usage-pick-summary"></div>
-                    <p class="stock-unit-hint">상세 관리 물품은 실제로 사용한 물품을 골라 주세요. 고른 물품에 사용일·사용 장비·정기/비정기가 기록되고 재고에서 빠집니다.</p>
+                    <!-- [요청] 모든 물품에 공통: 사용일, 작업 구분, 사업장, 장비 -->
+                    <div id="usage-pick-common" class="usage-pick-common"></div>
                     <div id="usage-pick-body" class="usage-pick-list"></div>
                     <div class="usage-pick-actions">
                         <button type="button" id="btn-cancel-usage-pick" class="btn-stock-outline outline-blue">취소</button>
@@ -167,6 +167,8 @@
                     <span class="close-btn" id="btn-close-stock-manage-modal">&times;</span>
                 </div>
                 <div class="modal-body" style="padding: 12px; overflow-y: auto; max-height: calc(90vh - 60px);">
+                    <!-- [요청] 재고 관리 검색 -->
+                    <input type="text" id="stock-manage-search" class="input-dark stock-manage-search" placeholder="코드명, 물품명, 규격, 품번 검색" autocomplete="off">
                     <!-- [요청] 리스트 안에서 스크롤 (제목 줄 고정) -->
                     <div class="item-stock-table-wrapper stock-manage-scroll" style="flex: none;">
                         <table class="item-stock-table stock-manage-table">
@@ -187,7 +189,7 @@
             </div>
         </div>
 
-        <!-- 3-1-3. [추가] 상세 관리 물품 상세 모달 (입고일, S/N, 사용일, 사용 장비, 정기/비정기) -->
+        <!-- 3-1-3. [수정] 물품 상세 모달 (입고 기록: 입고일, 수량 또는 S/N, 사용일, 사용 장비, 정기/비정기) -->
         <div id="stock-unit-modal" class="modal-overlay" style="display: none;">
             <div class="modal-window" style="max-width: 900px; width: 95%; height: auto; max-height: 90vh; display: flex; flex-direction: column;">
                 <div class="modal-header">
@@ -198,27 +200,25 @@
                     <div class="stock-unit-summary">
                         <span id="stock-unit-meta"></span>
                         <span>재고 <strong id="stock-unit-instock">0</strong>개 · 사용 <strong id="stock-unit-used">0</strong>개</span>
-                        <button type="button" id="btn-add-stock-unit" class="btn-stock-outline outline-green">+ 물품 추가</button>
+                        <button type="button" id="btn-toggle-stock-unit-serial" class="btn-stock-outline outline-purple stock-unit-mode-btn">수량 모드</button>
                     </div>
-                    <p class="stock-unit-hint">사용일을 입력하면 재고에서 빠집니다. 입력하면 바로 저장됩니다.</p>
+                    <!-- [요청] 입고 추가 입력 줄 (아래 리스트는 보기 전용) -->
+                    <div class="stock-unit-add">
+                        <label>입고일 <input type="date" id="stock-unit-add-date" class="input-dark"></label>
+                        <label><span id="stock-unit-add-label">수량</span>
+                            <input type="number" id="stock-unit-add-qty" class="input-dark" min="1" value="1">
+                            <input type="text" id="stock-unit-add-serial" class="input-dark" maxlength="100" placeholder="S/N" style="display: none;">
+                        </label>
+                        <button type="button" id="btn-add-stock-unit" class="btn-stock-outline outline-green">+ 입고 추가</button>
+                    </div>
+                    <p class="stock-unit-hint" id="stock-unit-hint"></p>
                     <div class="item-stock-table-wrapper stock-unit-scroll" style="flex: none;">
                         <table class="item-stock-table stock-unit-table">
-                            <thead>
-                                <tr>
-                                    <th>No.</th>
-                                    <th>입고일</th>
-                                    <th>S/N</th>
-                                    <th>사용일</th>
-                                    <th>사용 장비</th>
-                                    <th>정기/비정기</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
+                            <thead id="stock-unit-thead"></thead>
                             <tbody id="stock-unit-tbody"></tbody>
                         </table>
-                        <div id="stock-unit-empty" class="usage-empty" style="display: none;">등록된 물품이 없습니다. [+ 물품 추가]로 등록하세요.</div>
+                        <div id="stock-unit-empty" class="usage-empty" style="display: none;">입고 기록이 없습니다. 위에서 입고일과 수량을 적고 [+ 입고 추가]를 누르세요.</div>
                     </div>
-                    <datalist id="stock-unit-equip-list"></datalist>
                 </div>
             </div>
         </div>
@@ -289,5 +289,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('SettingDAO', filename='JavaScript/item.js') }}?v=24"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/item.js') }}?v=38"></script>
 {% endblock %}

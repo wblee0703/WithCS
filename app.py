@@ -463,7 +463,7 @@ class ItemStock(db.Model):
     quantity = db.Column(db.Integer, default=0)                        # 보유/현재 수량
     safety_quantity = db.Column(db.Integer, default=0)                 # [추가] 안전 재고 수량
     memo = db.Column(db.String(255), default='')                       # 비고
-    unit_managed = db.Column(db.Boolean, default=False)                # [추가] 상세 관리(입고일·S/N 등) 여부
+    unit_managed = db.Column(db.Boolean, default=False)                # [수정] S/N 상세 관리 여부 (끄면 입고 기록을 수량 단위로 관리)
     updated_at = db.Column(db.DateTime, default=get_utc_now, onupdate=get_utc_now)
 
     def to_dict(self):
@@ -485,22 +485,27 @@ class ItemStock(db.Model):
             'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else ''
         }
 
-# [추가] 상세 관리 물품 상세 (물품 1개당 1행: 입고일, S/N, 사용일, 사용 장비, 정기/비정기)
+# [수정] 물품 상세 (입고 기록: 입고일, 수량, S/N, 사용일, 사용 장비, 정기/비정기)
+#  - 기본: 한 줄에 수량 여러 개 / S/N 상세 관리: 물품 1개당 1줄(수량 1)
 class ItemStockUnit(db.Model):
     __tablename__ = 'item_stock_unit'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     stock_id = db.Column(db.Integer, nullable=False, index=True)  # ItemStock.id
     in_date = db.Column(db.String(10), default='')     # 입고일 YYYY-MM-DD
+    qty = db.Column(db.Integer, default=1)             # [추가] 수량
     serial = db.Column(db.String(100), default='')     # S/N
     used_date = db.Column(db.String(10), default='')   # 사용일 (비어 있으면 재고)
     used_equip = db.Column(db.String(200), default='') # 사용 장비
     work_kind = db.Column(db.String(10), default='')   # 정기 / 비정기
+    usage_log_uid = db.Column(db.Integer, nullable=True)  # [추가] 사용 이력 반영으로 기록된 경우 작업 ID (사용일·사용 장비 수정 불가)
     updated_at = db.Column(db.DateTime, default=get_utc_now, onupdate=get_utc_now)
 
     def to_dict(self):
         return {'id': self.id, 'stock_id': self.stock_id, 'in_date': self.in_date or '',
+                'qty': self.qty if self.qty is not None else 1,
                 'serial': self.serial or '', 'used_date': self.used_date or '',
-                'used_equip': self.used_equip or '', 'work_kind': self.work_kind or ''}
+                'used_equip': self.used_equip or '', 'work_kind': self.work_kind or '',
+                'from_usage': bool(self.usage_log_uid)}
 
 # [추가] 작업 사용 물품 재고 반영 이력 (같은 작업이 두 번 차감되지 않도록 기록)
 class ItemUsageApply(db.Model):
@@ -766,8 +771,49 @@ def ensure_item_stock_table():
             db.session.commit()
         except Exception:
             db.session.rollback()
+        # [추가] 물품 상세 수량 컬럼
+        try:
+            db.session.execute(text('ALTER TABLE item_stock_unit ADD COLUMN qty INTEGER DEFAULT 1'))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+        try:
+            db.session.execute(text('ALTER TABLE item_stock_unit ADD COLUMN usage_log_uid INTEGER'))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+        try:
+            db.session.execute(text('UPDATE item_stock_unit SET qty=1 WHERE qty IS NULL OR qty < 1'))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+        _unit_migrate_existing_stock()
     except Exception as e:
         app.logger.error(f"Error creating/ensuring item_stock table: {e}")
+
+
+def _unit_migrate_existing_stock():
+    """[추가] 모든 물품이 입고 기록으로 수량을 관리하도록, 기록보다 많은 기존 수량은 '입고일 없음' 기록 1줄로 추가"""
+    try:
+        rows = db.session.execute(text(
+            "SELECT stock_id, COALESCE(SUM(qty), 0) FROM item_stock_unit "
+            "WHERE COALESCE(used_date, '') = '' GROUP BY stock_id")).fetchall()
+        in_stock = {int(r[0]): int(r[1] or 0) for r in rows}
+        changed = False
+        for st in ItemStock.query.all():
+            have = in_stock.get(st.id, 0)
+            qty = st.quantity or 0
+            if qty > have and not st.unit_managed:
+                db.session.add(ItemStockUnit(stock_id=st.id, in_date='', qty=qty - have))
+                changed = True
+            elif qty != have:
+                st.quantity = have  # 기록 기준으로 맞춤
+                changed = True
+        if changed:
+            db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error migrating item stock units: {e}")
 
 def ensure_admin_parameter_table():
     try:
@@ -2620,6 +2666,10 @@ def apply_item_usage():
         if not isinstance(unit_picks, dict):
             unit_picks = {}
         picked_ids = set()
+        # [추가] 기본(수량) 관리 물품 사용 기록용: 사용 장비·정기/비정기 기본값
+        wtype = (log.type or '').strip()
+        use_kind = _unit_work_kind_of(wtype)
+        equip_core = ' '.join(p for p in [w['equip_name'], f"({w['equip_serial']})" if w['equip_serial'] else ''] if p)
         # [요청] 코드명 기준 차감: 같은 코드명이 물품 상세만 달리 여러 번 있으면 그 횟수만큼 같은 코드명 재고에서 차감
         #  (차감할 때마다 재고를 다시 찾아, 한 등급 재고가 0이 되면 수량이 남은 다른 등급에서 차감)
         for idx, it in enumerate(w['items']):
@@ -2640,15 +2690,17 @@ def apply_item_usage():
                          and not (unit.used_date or '') and unit.id not in picked_ids
                          and (ustock.code == it['code'] or (ustock.item_id and ustock.item_id == str(it.get('admin_id')))))
                 if not valid:
-                    details.append({'code': it['code'], 'spec': it['spec'], 'stock_id': st.id, 'deducted': 0,
-                                    'reason': '상세 선택 안 함'})
-                    continue
+                    # [요청] S/N 모드 물품은 사용한 물품을 모두 지정해야 반영
+                    db.session.rollback()
+                    return jsonify({'status': 'fail',
+                                    'message': f"[{it['code']}] 사용한 물품(S/N)을 지정해야 반영할 수 있습니다."}), 400
                 picked_ids.add(unit.id)
                 before = ustock.quantity or 0
-                unit.used_date = _unit_clip(pick.get('used_date') or w['date'], 10)
-                unit.used_equip = _unit_clip(pick.get('used_equip'), 200)
-                wk = _unit_clip(pick.get('work_kind'), 10)
-                unit.work_kind = wk if wk in UNIT_WORK_KINDS else ''
+                # [요청] 사용일·사용 장비는 작업 정보로 자동 입력 (사용자가 바꿀 수 없음)
+                unit.used_date = _unit_clip(w['date'], 10)
+                unit.used_equip = _unit_clip(_unit_default_equip(ustock, equip_core), 200)
+                unit.usage_log_uid = log_uid
+                unit.work_kind = use_kind  # [요청] 작업 구분으로 자동 (정기 / 그 외 비정기)
                 db.session.flush()
                 _unit_recount(ustock)
                 details.append({'code': it['code'], 'spec': it['spec'], 'stock_id': ustock.id, 'unit_id': unit.id,
@@ -2657,12 +2709,14 @@ def apply_item_usage():
                 if ustock not in updated:
                     updated.append(ustock)
                 continue
+            # [수정] 기본(수량) 관리 물품: 오래된 입고분부터 사용 처리하고 사용일·사용 장비·정기/비정기 기록
             before = st.quantity or 0
-            after = max(0, before - it['qty'])
-            st.quantity = after
+            _unit_consume(st, it['qty'], w['date'], _unit_default_equip(st, equip_core), use_kind, log_uid)
+            after = st.quantity or 0
             details.append({'code': it['code'], 'spec': it['spec'], 'stock_id': st.id,
                             'before': before, 'after': after, 'deducted': before - after})
-            updated.append(st)
+            if st not in updated:
+                updated.append(st)
 
         me = db.session.get(User, session.get('user_id'))
         db.session.add(ItemUsageApply(
@@ -2682,7 +2736,9 @@ def apply_item_usage():
 @app.route('/api/item/usage/units', methods=['GET'])
 @admin_required
 def get_item_usage_units():
-    """[요청] 사용 이력 반영 전: 작업의 상세 관리 물품별로 고를 수 있는 미사용 물품 목록 + 기본값(사용일·장비·정기/비정기)"""
+    """[요청] 사용 이력 반영 전: 작업의 사용 물품 전체 목록
+    - S/N 모드: 고를 수 있는 미사용 물품 / 수량 모드: 차감 수량
+    - 모두 현재 수량과 반영 후 수량을 함께 표시"""
     try:
         log_uid = int(request.args.get('log_uid'))
     except (TypeError, ValueError):
@@ -2697,12 +2753,27 @@ def get_item_usage_units():
         return jsonify({'status': 'fail', 'message': '본인 사업장의 물품만 수정할 수 있습니다.'}), 403
 
     wtype = (log.type or '').strip()
-    default_kind = wtype if wtype in ('정기', '비정기') else ''
+    default_kind = _unit_work_kind_of(wtype)
     equip_core = ' '.join(p for p in [w['equip_name'], f"({w['equip_serial']})" if w['equip_serial'] else ''] if p)
 
     groups = []
+    sim_qty = {}   # [추가] 수량 모드: 재고별 반영 후 수량 (같은 재고에서 여러 번 빠지는 경우 누적)
+    sim_sn = {}    # [추가] S/N 모드: 코드명별 이미 고른 개수
     for idx, it in enumerate(w['items']):
-        if it.get('excluded') or not it.get('stock_managed'):
+        if it.get('excluded'):
+            continue
+        base_info = {'index': idx, 'code': it['code'], 'detail': it.get('detail') or '', 'cost': it.get('cost') or '',
+                     'use_qty': it.get('qty') or 1}
+        if not it.get('stock_managed'):
+            # [요청] 수량 모드 물품도 목록에 표시 (자동 차감, 현재 → 반영 후 수량)
+            st = _usage_find_stock(w['site_group'], w['site_name'], it) if w['site_group'] else None
+            if not st:
+                groups.append(dict(base_info, mode='none', current=0, after=0))
+                continue
+            cur = sim_qty.get(st.id, st.quantity or 0)
+            after = max(0, cur - (it.get('qty') or 1))
+            sim_qty[st.id] = after
+            groups.append(dict(base_info, mode='qty', current=cur, after=after))
             continue
         # 같은 코드명의 상세 관리 재고(등급별) 전체에서 미사용 물품 후보 수집
         q = ItemStock.query.filter(ItemStock.site_group == w['site_group'], ItemStock.unit_managed == True)  # noqa: E712
@@ -2720,11 +2791,17 @@ def get_item_usage_units():
                 if o not in equip_opts:
                     equip_opts.append(o)
         # 기본 사용 장비: 장비 목록 표기와 같은 형식이 있으면 그것으로
-        default_equip = next((o for o in equip_opts if o.endswith(equip_core)), equip_core) if equip_core else ''
-        groups.append({'index': idx, 'code': it['code'], 'detail': it.get('detail') or '', 'cost': it.get('cost') or '',
-                       'units': units, 'equip_options': equip_opts, 'default_equip': default_equip})
+        default_equip = _unit_pick_equip(equip_opts, equip_core)
+        key = it['code']
+        cur = max(0, len(units) - sim_sn.get(key, 0))
+        sim_sn[key] = sim_sn.get(key, 0) + (1 if cur > 0 else 0)
+        groups.append(dict(base_info, mode='sn', use_qty=1, current=cur, after=max(0, cur - 1),
+                           units=units, equip_options=equip_opts, default_equip=default_equip))
 
-    return jsonify({'status': 'success', 'date': w['date'], 'default_kind': default_kind, 'groups': groups})
+    # [요청] 사용일·사용 장비·정기/비정기는 모든 물품에 같으므로 창 맨 위에 한 번만 표시
+    # [요청] 사업장은 따로 표시하므로 장비는 장비명(S/N)만
+    return jsonify({'status': 'success', 'date': w['date'], 'default_kind': default_kind,
+                    'site': w['site_name'] or '', 'equip': equip_core, 'groups': groups})
 
 
 # ------------------------------------------------------------------------------
@@ -2734,15 +2811,116 @@ def get_item_usage_units():
 UNIT_WORK_KINDS = ('', '정기', '비정기')
 
 
+def _unit_work_kind_of(work_type):
+    """[요청] 작업 구분이 '정기'면 정기, 그 외(비정기·고객대응·온라인점검 등)는 비정기"""
+    return '정기' if (work_type or '').strip() == '정기' else '비정기'
+
+
 def _unit_clip(v, n):
     return str(v or '').strip()[:n]
 
 
 def _unit_recount(stock):
-    stock.quantity = ItemStockUnit.query.filter(
+    """현재 수량 = 사용일이 비어 있는 입고 기록의 수량 합계"""
+    db.session.flush()
+    stock.quantity = int(db.session.query(db.func.coalesce(db.func.sum(ItemStockUnit.qty), 0)).filter(
         ItemStockUnit.stock_id == stock.id,
         db.func.coalesce(ItemStockUnit.used_date, '') == ''
-    ).count()
+    ).scalar() or 0)
+
+
+def _unit_kst_today():
+    return (datetime.now(timezone.utc) + timedelta(hours=9)).strftime('%Y-%m-%d')
+
+
+def _unit_unused_rows(stock, newest_first=False):
+    q = ItemStockUnit.query.filter(ItemStockUnit.stock_id == stock.id,
+                                   db.func.coalesce(ItemStockUnit.used_date, '') == '')
+    if newest_first:
+        return q.order_by(ItemStockUnit.in_date.desc(), ItemStockUnit.id.desc()).all()
+    return q.order_by(ItemStockUnit.in_date, ItemStockUnit.id).all()
+
+
+def _unit_set_quantity(stock, target, in_date=None):
+    """[추가] 수량을 직접 바꾼 경우(물품 등록 등) 입고 기록을 맞춤: 늘면 입고 1줄 추가, 줄면 최근 입고분부터 줄임"""
+    try:
+        target = max(0, int(target))
+    except (ValueError, TypeError):
+        return
+    _unit_recount(stock)
+    diff = target - (stock.quantity or 0)
+    if diff > 0:
+        db.session.add(ItemStockUnit(stock_id=stock.id, qty=diff,
+                                     in_date=_unit_kst_today() if in_date is None else in_date))
+    elif diff < 0:
+        need = -diff
+        for r in _unit_unused_rows(stock, newest_first=True):
+            take = min(need, r.qty or 1)
+            r.qty = (r.qty or 1) - take
+            if r.qty <= 0:
+                db.session.delete(r)
+            need -= take
+            if need <= 0:
+                break
+    _unit_recount(stock)
+
+
+def _unit_consume(stock, n, used_date, used_equip, work_kind, log_uid=None):
+    """[추가] 오래된 입고분부터 n개 사용 처리 (일부만 쓰면 줄을 나눔)"""
+    try:
+        n = max(0, int(n))
+    except (ValueError, TypeError):
+        n = 0
+    for r in _unit_unused_rows(stock):
+        if n <= 0:
+            break
+        rq = r.qty or 1
+        take = min(n, rq)
+        fields = dict(used_date=_unit_clip(used_date, 10), used_equip=_unit_clip(used_equip, 200),
+                      work_kind=work_kind if work_kind in UNIT_WORK_KINDS else '', usage_log_uid=log_uid)
+        if take < rq:
+            r.qty = rq - take
+            db.session.add(ItemStockUnit(stock_id=stock.id, in_date=r.in_date, serial=r.serial, qty=take, **fields))
+        else:
+            for k, v in fields.items():
+                setattr(r, k, v)
+        n -= take
+    _unit_recount(stock)
+
+
+def _unit_pick_equip(opts, equip_core):
+    if not equip_core:
+        return ''
+    return next((o for o in opts if o.endswith(equip_core)), equip_core)
+
+
+def _unit_default_equip(stock, equip_core):
+    return _unit_pick_equip(_unit_equip_options(stock), equip_core) if equip_core else ''
+
+
+def _unit_split_to_singles(stock):
+    """[추가] S/N 관리로 바꿀 때: 수량 2개 이상인 줄을 1개씩 나눔"""
+    for r in ItemStockUnit.query.filter_by(stock_id=stock.id).all():
+        rq = r.qty or 1
+        for _ in range(rq - 1):
+            db.session.add(ItemStockUnit(stock_id=stock.id, in_date=r.in_date, serial='', qty=1,
+                                         used_date=r.used_date, used_equip=r.used_equip, work_kind=r.work_kind,
+                                         usage_log_uid=r.usage_log_uid))
+        r.qty = 1
+
+
+def _unit_merge_rows(stock):
+    """[추가] S/N 관리를 끌 때: S/N이 없고 입고일·사용 정보가 같은 줄을 수량으로 합침"""
+    keep = {}
+    for r in ItemStockUnit.query.filter_by(stock_id=stock.id).order_by(ItemStockUnit.id).all():
+        if (r.serial or ''):
+            continue
+        key = (r.in_date or '', r.used_date or '', r.used_equip or '', r.work_kind or '', r.usage_log_uid or 0)
+        if key in keep:
+            keep[key].qty = (keep[key].qty or 1) + (r.qty or 1)
+            db.session.delete(r)
+        else:
+            keep[key] = r
 
 
 def _unit_equip_options(stock):
@@ -2771,21 +2949,28 @@ def _unit_get_stock(stock_id):
     return stock, None
 
 
+def _unit_list(stock):
+    """미사용 줄(입고일 순) 먼저, [요청] 사용한 줄은 맨 아래(사용일 순)"""
+    units = ItemStockUnit.query.filter_by(stock_id=stock.id).all()
+    units.sort(key=lambda u: (1, u.used_date or '', u.in_date or '', u.id) if (u.used_date or '')
+               else (0, '', u.in_date or '', u.id))
+    return [u.to_dict() for u in units]
+
+
 @app.route('/api/item/units', methods=['GET'])
 @admin_required
 def get_item_units():
     stock, err = _unit_get_stock(request.args.get('stock_id'))
     if err:
         return err
-    units = ItemStockUnit.query.filter_by(stock_id=stock.id).order_by(ItemStockUnit.in_date, ItemStockUnit.id).all()
     return jsonify({'status': 'success', 'stock': stock.to_dict(),
-                    'units': [u.to_dict() for u in units], 'equip_options': _unit_equip_options(stock)})
+                    'units': _unit_list(stock), 'equip_options': _unit_equip_options(stock)})
 
 
 @app.route('/api/item/units/managed', methods=['POST'])
 @admin_required
 def set_item_unit_managed():
-    """상세 관리 켜기/끄기. 켜면 현재 수량을 상세 개수로 다시 계산"""
+    """[수정] S/N 상세 관리 켜기/끄기. 켜면 수량 줄을 1개씩 나누고, 끄면 S/N 없는 같은 줄을 합침"""
     data = request.json or {}
     stock, err = _unit_get_stock(data.get('stock_id'))
     if err:
@@ -2793,9 +2978,12 @@ def set_item_unit_managed():
     try:
         stock.unit_managed = bool(data.get('managed'))
         if stock.unit_managed:
-            _unit_recount(stock)
+            _unit_split_to_singles(stock)
+        else:
+            _unit_merge_rows(stock)
+        _unit_recount(stock)
         db.session.commit()
-        return jsonify({'status': 'success', 'stock': stock.to_dict()})
+        return jsonify({'status': 'success', 'stock': stock.to_dict(), 'units': _unit_list(stock)})
     except Exception as e:
         db.session.rollback()
         app.logger.error(f"Error toggling unit_managed: {e}")
@@ -2805,39 +2993,44 @@ def set_item_unit_managed():
 @app.route('/api/item/units/save', methods=['POST'])
 @admin_required
 def save_item_unit():
-    """상세 1건 추가(CREATE) / 수정(UPDATE) / 삭제(DELETE) 후 현재 수량 재계산"""
+    """[수정] 물품 상세 (리스트는 보기 전용)
+    - CREATE: 입고 추가 (수량 모드: 입고일·수량 / S/N 모드: 입고일·S/N, 1개)
+    - DELETE: 아직 쓰지 않은 줄만 삭제 (잘못 입력한 입고 정정용)
+    - 사용일·사용 장비·정기/비정기는 사용 이력 반영으로만 기록"""
     data = request.json or {}
     action = data.get('action')
     p = data.get('payload') or {}
     stock, err = _unit_get_stock(data.get('stock_id'))
     if err:
         return err
-    if not stock.unit_managed:
-        return jsonify({'status': 'fail', 'message': '상세 관리(+)로 지정된 물품만 상세를 등록할 수 있습니다.'}), 400
     try:
+        unit = None
         if action == 'CREATE':
-            unit = ItemStockUnit(stock_id=stock.id)
+            qty = 1
+            if not stock.unit_managed:
+                try:
+                    qty = int(p.get('qty'))
+                except (ValueError, TypeError):
+                    qty = 0
+                if qty < 1 or qty > 100000:
+                    return jsonify({'status': 'fail', 'message': '수량은 1개 이상이어야 합니다.'}), 400
+            unit = ItemStockUnit(stock_id=stock.id, qty=qty, in_date=_unit_clip(p.get('in_date'), 10),
+                                 serial=_unit_clip(p.get('serial'), 100) if stock.unit_managed else '')
             db.session.add(unit)
-        else:
+        elif action == 'DELETE':
             unit = db.session.get(ItemStockUnit, p.get('id'))
             if not unit or unit.stock_id != stock.id:
                 return jsonify({'status': 'fail', 'message': '상세 항목을 찾을 수 없습니다.'}), 404
-            if action == 'DELETE':
-                db.session.delete(unit)
-                unit = None
-            elif action != 'UPDATE':
-                return jsonify({'status': 'fail', 'message': '알 수 없는 요청입니다.'}), 400
-        if unit is not None:
-            for key, n in (('in_date', 10), ('serial', 100), ('used_date', 10), ('used_equip', 200)):
-                if key in p:
-                    setattr(unit, key, _unit_clip(p.get(key), n))
-            if 'work_kind' in p:
-                wk = _unit_clip(p.get('work_kind'), 10)
-                unit.work_kind = wk if wk in UNIT_WORK_KINDS else ''
-        db.session.flush()
+            if (unit.used_date or ''):
+                return jsonify({'status': 'fail', 'message': '사용한 기록은 수정·삭제할 수 없습니다.'}), 400
+            db.session.delete(unit)
+            unit = None
+        else:  # [요청] 등록된 항목은 수정 불가 (UPDATE 없음)
+            return jsonify({'status': 'fail', 'message': '알 수 없는 요청입니다.'}), 400
         _unit_recount(stock)
         db.session.commit()
-        return jsonify({'status': 'success', 'unit': unit.to_dict() if unit else None, 'stock': stock.to_dict()})
+        return jsonify({'status': 'success', 'unit': unit.to_dict() if unit else None,
+                        'stock': stock.to_dict(), 'units': _unit_list(stock)})
     except Exception as e:
         db.session.rollback()
         app.logger.error(f"Error saving item unit: {e}")
@@ -3958,8 +4151,8 @@ def admin_crud():
 
                 if existing:
                     # 기존 물품 및 동일 등급이 이미 있으면 수량 누적 및 안전재고 갱신
-                    if not existing.unit_managed:  # [추가] 상세 관리 물품 수량은 상세 개수로만 계산
-                        existing.quantity = (existing.quantity or 0) + quantity
+                    if not existing.unit_managed and quantity > 0:  # [수정] 늘어난 수량은 오늘 입고 기록으로 추가
+                        _unit_set_quantity(existing, (existing.quantity or 0) + quantity)
                     if 'safety_quantity' in payload:
                         existing.safety_quantity = safety_quantity
                     if memo: existing.memo = memo
@@ -3985,6 +4178,8 @@ def admin_crud():
                     db.session.add(new_stock)
                     db.session.flush()
                     stock_id = new_stock.id
+                    if quantity > 0:  # [추가] 처음 수량은 오늘 입고 기록으로
+                        db.session.add(ItemStockUnit(stock_id=stock_id, in_date=_unit_kst_today(), qty=quantity))
 
                 db.session.commit()
                 return jsonify({"status": "success", "id": stock_id})
@@ -3999,10 +4194,7 @@ def admin_crud():
 
                 # [추가] 상세 관리 물품은 현재 수량을 직접 바꾸지 않음 (상세 등록 개수로 자동 계산)
                 if 'quantity' in payload and not stock.unit_managed:
-                    try:
-                        stock.quantity = int(payload['quantity'])
-                    except (ValueError, TypeError):
-                        pass
+                    _unit_set_quantity(stock, payload['quantity'])  # [수정] 입고 기록도 함께 맞춤
                 if 'safety_quantity' in payload:
                     try:
                         stock.safety_quantity = int(payload['safety_quantity'])
@@ -4042,10 +4234,7 @@ def admin_crud():
                     s = db.session.get(ItemStock, s_id) if s_id else None
                     if s:
                         if 'quantity' in u and not s.unit_managed:
-                            try:
-                                s.quantity = int(u['quantity'])
-                            except (ValueError, TypeError):
-                                pass
+                            _unit_set_quantity(s, u['quantity'])  # [수정] 입고 기록도 함께 맞춤
                         if 'safety_quantity' in u:
                             try:
                                 s.safety_quantity = int(u['safety_quantity'])
