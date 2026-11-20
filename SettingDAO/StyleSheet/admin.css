@@ -1076,17 +1076,6 @@ body.role-admin .tag-remove {
     color: #7ee787;
 }
 
-.item-stock-table .col-detail-type {
-    width: 60px;
-    min-width: 60px;
-    max-width: 60px;
-    padding: 8px 4px;
-    word-break: break-all;
-}
-.item-stock-table td.col-detail-type {
-    color: #8b949e;
-}
-
 .item-stock-table .col-partno {
     width: 60px;
     min-width: 60px;
@@ -1163,11 +1152,12 @@ body.role-admin .tag-remove {
 }
 
 .item-stock-table .col-action {
-    width: 30px;
-    min-width: 30px;
-    max-width: 30px;
+    width: 56px; /* [수정] 개별 관리(+) 버튼 추가로 폭 확대 */
+    min-width: 56px;
+    max-width: 56px;
     text-align: center;
     padding: 6px 1px;
+    white-space: nowrap;
 }
 
 /* 상태 및 등급 텍스트 스타일 (테두리 및 배경 채우기 제거) */
@@ -1216,15 +1206,19 @@ body.role-admin .tag-remove {
 }
 
 /* 목록 삭제 버튼 */
+/* [요청] 삭제 버튼도 상세 관리(+) 버튼처럼 테두리 있는 22px 정사각 버튼 */
 .item-stock-table .btn-del-stock {
-    background: transparent;
-    border: none;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    background: #21262d;
+    border: 1px solid rgba(248, 81, 73, 0.5);
     color: #f85149;
     cursor: pointer;
-    font-size: 13px;
-    padding: 2px 2px;
+    font-size: 12px;
     border-radius: 4px;
     line-height: 1;
+    vertical-align: middle;
     transition: background-color 0.15s;
 }
 .item-stock-table .btn-del-stock:hover {
@@ -1256,6 +1250,351 @@ body.role-admin .tag-remove {
     100% { background-color: transparent; }
 }
 
+/* [추가] 개별 관리 물품: 기능 열 +/− 버튼, 리스트 표시, 상세 모달 */
+.btn-unit-manage {
+    width: 22px;
+    height: 22px;
+    margin-right: 4px;
+    padding: 0;
+    border-radius: 4px;
+    border: 1px solid rgba(63, 185, 80, 0.5);
+    background: #21262d;
+    color: #3fb950;
+    font-size: 14px;
+    font-weight: bold;
+    line-height: 1;
+    cursor: pointer;
+    vertical-align: middle;
+}
+.btn-unit-manage:hover { background: rgba(63, 185, 80, 0.15); }
+.btn-unit-manage.on {
+    border-color: rgba(139, 148, 158, 0.5);
+    color: #8b949e;
+}
+.item-stock-table tr.stock-row-unit-managed { cursor: pointer; }
+.unit-managed-badge {
+    display: inline-block;
+    margin-right: 2px;
+    padding: 0 5px;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: normal;
+    color: #3fb950;
+    border: 1px solid rgba(63, 185, 80, 0.5);
+    vertical-align: middle;
+}
+#stock-unit-modal .stock-unit-body {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+}
+.stock-unit-summary {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    font-size: 12px;
+    color: #8b949e;
+}
+.stock-unit-summary strong { color: #e6edf3; }
+.stock-unit-summary .btn-stock-outline { margin-left: auto; height: 30px; }
+.stock-unit-hint { margin: 0; font-size: 12px; color: #8b949e; }
+.stock-unit-scroll {
+    max-height: calc(90vh - 170px);
+    overflow: auto !important;
+}
+.stock-unit-table th,
+.stock-unit-table td { padding: 6px 4px; white-space: nowrap; }
+.stock-unit-table .su-no { text-align: center; color: #8b949e; width: 1%; }
+.stock-unit-table .su-input {
+    height: 30px;
+    font-size: 12px;
+    padding: 2px 6px;
+    width: 100%;
+    min-width: 110px;
+    box-sizing: border-box;
+}
+.stock-unit-table .su-equip { min-width: 170px; }
+.stock-unit-table tr.unit-used td { opacity: 0.6; }
+.stock-unit-table tr.unit-used td:last-child { opacity: 1; }
+
+/* [요청] 사용 이력 반영 시 상세 관리 물품 선택 창 */
+.usage-pick-modal-body {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-y: auto;
+    max-height: calc(90vh - 60px);
+}
+.usage-pick-summary { font-size: 12px; color: #e6edf3; font-weight: bold; }
+.usage-pick-list { display: flex; flex-direction: column; gap: 8px; }
+.up-group {
+    padding: 10px 12px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+}
+.up-title { font-size: 13px; margin-bottom: 8px; }
+.up-title strong { color: #58a6ff; }
+.up-title .usage-cost { color: #d2a8ff; }
+.up-title .usage-spec { color: #8b949e; }
+.up-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr)); /* [요청] 한 줄에 2개씩 (PC·모바일 공통) */
+    gap: 8px 10px;
+}
+.up-fields label {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-size: 11px;
+    color: #8b949e;
+}
+.up-fields .input-dark { height: 32px; font-size: 12px; padding: 2px 6px; width: 100%; box-sizing: border-box; }
+.up-none { font-size: 12px; color: #d29922; }
+.usage-pick-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding-top: 10px;
+    border-top: 1px solid #30363d;
+}
+
+/* [요청] 재고 관리 모달: 리스트 영역만 스크롤 (팝업 제목·안내문은 고정) */
+#stock-manage-modal .modal-body {
+    overflow: hidden !important;
+    display: flex;
+    flex-direction: column;
+}
+.stock-manage-scroll {
+    max-height: calc(90vh - 140px);
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* [요청] 재고 관리 모달 테이블 */
+.stock-manage-table th,
+.stock-manage-table td {
+    padding: 8px 6px;
+}
+.stock-manage-table .sm-code { color: #58a6ff; font-weight: bold; word-break: break-all; }
+.stock-manage-table th.sm-code { color: inherit; }
+.stock-manage-table .sm-site { font-size: 11px; color: #7ee787; font-weight: normal; margin-top: 2px; }
+.stock-manage-table .sm-spec { color: #8b949e; word-break: break-all; }
+.stock-manage-table .sm-qty,
+.stock-manage-table .sm-safety,
+.stock-manage-table .sm-status { text-align: center; white-space: nowrap; width: 1%; }
+@media (max-width: 950px) {
+    .stock-manage-table th,
+    .stock-manage-table td { padding: 6px 4px; font-size: 12px; }
+}
+
+/* [요청] 제목 줄(좌우 여백 0)과 아래 내용(툴바·리스트)의 좌우 끝선 맞춤 */
+#section-item-stock-mgmt > .card-body {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+/* [요청] PC: 사업장 구분 카드를 '물품 관리 현황' 제목 오른쪽에 배치 (item.js가 이동) */
+@media (min-width: 951px) {
+    #section-item-stock-mgmt > .card-header {
+        height: auto;
+        min-height: 40px;
+        padding-top: 6px;
+        padding-bottom: 6px;
+    }
+    #section-item-stock-mgmt > .card-header > div {
+        gap: 12px; /* 사업장 구분 카드와 CSV 내보내기 사이 간격 */
+    }
+    .item-stock-title-wrap {
+        flex: 1;
+        min-width: 0;
+        gap: 14px !important;
+    }
+    .item-stock-title-wrap h3 {
+        white-space: nowrap;
+    }
+    .item-stock-title-wrap .item-stock-group-header {
+        flex: 1;
+        min-width: 0;
+        padding: 5px 10px !important;
+    }
+}
+
+/* [요청] 물품 관리 현황 버튼 공통 디자인 (어두운 바탕 + 색 테두리·글자, 높이 통일) */
+.btn-stock-outline {
+    --btn-c: #58a6ff;
+    --btn-c-rgb: 56, 139, 253;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: 34px;
+    padding: 0 12px;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+    box-sizing: border-box;
+    border-radius: 6px;
+    border: 1px solid rgba(var(--btn-c-rgb), 0.5);
+    background: #21262d;
+    color: var(--btn-c);
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+.btn-stock-outline:hover {
+    background: rgba(var(--btn-c-rgb), 0.15);
+}
+.btn-stock-outline.outline-blue   { --btn-c: #58a6ff; --btn-c-rgb: 56, 139, 253; }   /* 사용 이력 */
+.btn-stock-outline.outline-yellow { --btn-c: #d29922; --btn-c-rgb: 210, 153, 34; }   /* 재고 관리 */
+.btn-stock-outline.outline-green  { --btn-c: #3fb950; --btn-c-rgb: 63, 185, 80; }    /* 물품 등록 */
+.btn-stock-outline.outline-purple { --btn-c: #d2a8ff; --btn-c-rgb: 210, 168, 255; }  /* 물품 불러오기 */
+.btn-stock-outline.outline-red    { --btn-c: #f85149; --btn-c-rgb: 248, 81, 73; }    /* 전체 삭제 */
+
+/* [추가] 사용 이력 모달 */
+.usage-work-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.usage-empty {
+    padding: 30px 10px;
+    text-align: center;
+    color: #8b949e;
+    font-size: 13px;
+}
+.usage-work-row {
+    display: flex;
+    flex-direction: column; /* [요청] 날짜·사업장·장비명 줄은 카드 전체 너비 */
+    gap: 2px;
+    padding: 10px 12px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+}
+.usage-work-body {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.usage-work-row .usage-work-head {
+    flex-wrap: nowrap;
+    min-width: 0;
+}
+.usage-work-head .usage-date,
+.usage-work-head .usage-group {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+.usage-work-head .usage-equip {
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* 카드 너비보다 길면 줄바꿈 대신 말줄임 */
+}
+.usage-work-info {
+    flex: 1;
+    min-width: 0;
+}
+.usage-work-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
+    font-size: 12px;
+    color: #8b949e;
+}
+.usage-work-head .usage-date { color: #e6edf3; font-weight: bold; }
+.usage-work-head .usage-group { color: #7ee787; font-weight: bold; }
+.usage-work-head .usage-equip { color: #e6edf3; }
+/* [요청] 작업 구분은 작업자와 색 구분 (배지) */
+.usage-work-sub .usage-type {
+    padding: 1px 7px;
+    border-radius: 10px;
+    background: rgba(56, 139, 253, 0.15);
+    border: 1px solid rgba(56, 139, 253, 0.4);
+    color: #58a6ff;
+    font-size: 11px;
+}
+.usage-work-sub .usage-worker {
+    color: #c9d1d9;
+}
+/* [요청] 작업 구분·작업자는 다음 줄 */
+.usage-work-sub {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    margin-top: 3px;
+    font-size: 12px;
+    color: #8b949e;
+}
+.usage-items {
+    list-style: none;
+    margin: 6px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-size: 12px;
+    color: #c9d1d9;
+}
+.usage-items strong { color: #58a6ff; }
+.usage-items .usage-spec { color: #8b949e; }
+.usage-items .usage-stock { margin-left: 6px; color: #8b949e; font-size: 11px; }
+.usage-items .usage-stock-none { color: #d29922; }
+/* [요청] 비용처리 표시 / 무상(중고) 반영 제외 */
+.usage-items .usage-cost { color: #d2a8ff; }
+.usage-items .usage-item-excluded { opacity: 0.55; }
+.usage-items .usage-item-excluded strong { text-decoration: line-through; }
+.usage-items .usage-stock-excluded { color: #8b949e; }
+.usage-work-action { flex-shrink: 0; }
+.btn-usage-apply {
+    height: 32px;
+    padding: 0 14px;
+    font-size: 12px;
+    font-weight: bold;
+    border-radius: 6px;
+    border: 1px solid rgba(240, 246, 252, 0.1);
+    background: #238636;
+    color: #fff;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.btn-usage-apply:disabled {
+    background: #21262d;
+    color: #6e7681;
+    border-color: #30363d;
+    cursor: not-allowed;
+}
+.btn-usage-apply.applied {
+    color: #7ee787;
+}
+
+/* [추가] 모바일 축소/확장 버튼 (PC에서는 숨김) */
+.btn-stock-compact-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    height: 34px;
+    padding: 0 10px;
+    font-size: 12px;
+    white-space: nowrap;
+    border-radius: 6px;
+    border: 1px solid #30363d;
+    background: #21262d;
+    color: #e6edf3;
+    cursor: pointer;
+}
+.item-stock-compact .btn-stock-compact-toggle {
+    border-color: rgba(56, 139, 253, 0.5);
+    color: #58a6ff;
+}
+
 @media (max-width: 950px) {
     .item-stock-tabs-container {
         display: none !important;
@@ -1264,9 +1603,138 @@ body.role-admin .tag-remove {
         display: block !important;
         flex: 1;
     }
+    /* [요청] 모바일에서 물품 관리 현황이 화면 너비를 최대한 사용하도록 여백 축소 */
+    .item-page-wrapper {
+        padding: 4px 0 !important;
+    }
+    .item-page-wrapper #section-item-stock-mgmt {
+        border-left: none !important;
+        border-right: none !important;
+        border-radius: 0 !important;
+    }
+    .item-page-wrapper #section-item-stock-mgmt .card-body {
+        padding: 8px 4px !important;
+        gap: 8px !important;
+    }
+    .item-page-wrapper .item-stock-group-header {
+        padding: 6px 8px !important;
+    }
+    .item-page-wrapper .item-stock-table-wrapper {
+        border-radius: 4px;
+    }
+    /* [요청] 물품 등록 팝업의 마스터 물품 리스트: 코드명·등록 현황만 표시 (상세는 '선택된 물품 정보'에서 확인) */
+    #modal-stock-master-list-wrap .modal-master-col-header,
+    #modal-stock-master-list,
+    #modal-stock-master-list li {
+        min-width: 0 !important;
+    }
+    #modal-stock-master-list-wrap .mcol-partno,
+    #modal-stock-master-list-wrap .mcol-part,
+    #modal-stock-master-list-wrap .mcol-spec {
+        display: none !important;
+    }
+    #modal-stock-master-list-wrap .mcol-code {
+        flex: 1 !important;
+        width: auto !important;
+        min-width: 0 !important;
+    }
+    /* [요청] 물품 등록 팝업의 '선택된 물품 정보'는 항목마다 1줄 */
+    .modal-selected-item-grid {
+        grid-template-columns: 1fr !important;
+        gap: 5px !important;
+    }
+    /* [요청] 카드 제목 줄로 옮긴 물품 불러오기·전체 삭제 버튼: CSV 내보내기와 같은 크기 */
+    .item-stock-header-actions {
+        gap: 6px !important;
+    }
+    /* [요청] 모바일: 제목 줄·사업장 구분 줄의 버튼 높이 통일 (30px, CSV 내보내기 포함) */
+    .item-stock-header-actions .btn-stock-outline,
+    .item-stock-header-actions #btn-export-stock-csv,
+    .item-stock-group-header .item-stock-actions .btn-stock-outline {
+        height: 30px !important;
+        padding: 0 10px !important;
+        font-size: 12px !important;
+        border-radius: 6px !important;
+        display: inline-flex;
+        align-items: center;
+        box-sizing: border-box;
+    }
+    /* [요청] 축소/확장 버튼은 모바일에서만 표시 */
+    .btn-stock-compact-toggle {
+        display: inline-flex !important;
+    }
+    /* [요청] 축소 상태: 안전 재고/상태/등급/기능 열 숨김 */
+    .item-stock-compact .item-stock-table .col-safety,
+    .item-stock-compact .item-stock-table .col-status,
+    .item-stock-compact .item-stock-table .col-grade,
+    .item-stock-compact .item-stock-table .col-action {
+        display: none !important;
+    }
+    /* [요청] 모바일 리스트는 사업장/코드명/현재수량/안전재고/상태/등급/기능만 표시 */
+    .item-stock-table .col-no,
+    .item-stock-table .col-partno,
+    .item-stock-table .col-part,
+    .item-stock-table .col-spec {
+        display: none !important;
+    }
+    /* [요청] 모바일 사업장 열: 고정 너비, '기타사업장'(5글자)이 줄바꿈 없이 들어가는 폭 */
+    .item-stock-table .col-site {
+        width: 78px !important;
+        min-width: 78px !important;
+        max-width: 78px !important;
+        white-space: nowrap !important;
+        word-break: keep-all !important;
+        overflow: hidden;
+        text-overflow: ellipsis; /* 더 긴 이름은 말줄임 표시 */
+        display: none !important; /* [요청] 기본은 숨김 */
+    }
+    /* [요청] 사업장 구분이 '전체'일 때만 사업장 열 표시 */
+    .item-stock-all-group .item-stock-table .col-site {
+        display: table-cell !important;
+    }
+    /* [요청] 축소 상태에서는 코드명 오른쪽에 세부 규격 표시 (물품명은 숨김이라 바로 옆에 붙음) */
+    .item-stock-compact .item-stock-table .col-spec {
+        display: table-cell !important;
+    }
+    /* [요청] 미확보/부족 건수와 검색 입력창을 한 줄에 배치 */
     .item-stock-toolbar {
-        flex-direction: column;
-        align-items: stretch;
+        flex-wrap: nowrap !important;
+        gap: 8px !important;
+    }
+    .item-stock-toolbar .item-stock-summary-badges {
+        flex-shrink: 0;
+        gap: 6px !important;
+    }
+    .item-stock-toolbar .stock-summary-badge {
+        padding: 5px 8px !important;
+    }
+    .item-stock-toolbar .item-stock-search-wrap {
+        min-width: 0 !important;
+        flex: 1;
+    }
+    /* [요청] 사업장 구분 선택과 물품 등록/불러오기 버튼을 한 줄에 배치 */
+    .item-stock-group-header {
+        flex-wrap: nowrap !important;
+        gap: 8px !important;
+    }
+    .item-stock-group-header > div:first-child {
+        min-width: 0;
+    }
+    .item-stock-group-header > div:first-child > div {
+        flex-wrap: nowrap !important;
+        min-width: 0;
+        flex: 1;
+    }
+    .item-stock-group-select-wrap {
+        min-width: 0;
+    }
+    .item-stock-group-select-wrap select {
+        width: 100%;
+    }
+    .item-stock-group-header .item-stock-actions {
+        flex-wrap: nowrap !important;
+        flex-shrink: 0;
+        gap: 6px !important;
     }
 }
 /* 모달 마스터 물품 리스트 행 스타일 */

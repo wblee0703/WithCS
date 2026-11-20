@@ -143,6 +143,31 @@ function setupItemStockMgmt() {
         btnImport.addEventListener('click', importMasterItemsToCurrentGroup);
     }
 
+    // 6-1. [요청] 모바일: 물품 등록/불러오기 버튼을 사업장 구분 줄 오른쪽으로 이동
+    setupStockActionsPlacement();
+
+    // 6-6. [요청] 재고 관리 모달 (미확보·부족 물품 수량 변경)
+    setupStockManageModal();
+
+    // 6-7. [추가] 상세 관리 물품 상세 모달
+    setupStockUnitModal();
+
+    // 6-8. [요청] 사용 이력 반영 시 상세 관리 물품 선택 창
+    setupUsagePickModal();
+
+    // 6-5. [추가] 물품 전체 삭제 버튼
+    const btnDeleteAll = document.getElementById('btn-delete-all-stock');
+    if (btnDeleteAll) btnDeleteAll.addEventListener('click', deleteAllItemStocks);
+
+    // 6-4. [요청] 모바일: 리스트를 화면 높이에 맞추고 내부 스크롤
+    setupStockTableFit();
+
+    // 6-3. [요청] 사용 이력 모달 (최근 일주일 작업 → 재고 반영)
+    setupUsageModal();
+
+    // 6-2. [요청] 모바일: 축소/확장 버튼 (축소 시 안전 재고·상태·등급·기능 열 숨김)
+    setupStockCompactToggle();
+
     // 7. CSV 내보내기 버튼
     const btnExportCsv = document.getElementById('btn-export-stock-csv');
     if (btnExportCsv) {
@@ -165,6 +190,667 @@ function setupItemStockMgmt() {
             }
             renderItemStockTable();
         });
+    }
+}
+
+// [추가] 모바일(950px 이하)에서는 물품 등록/불러오기 버튼을 사업장 구분 줄 오른쪽에, PC에서는 툴바에 배치
+function setupStockActionsPlacement() {
+    const actions = document.querySelector('.item-stock-actions');
+    const groupHeader = document.querySelector('.item-stock-group-header');
+    const toolbar = document.querySelector('.item-stock-toolbar');
+    if (!actions || !groupHeader || !toolbar) return;
+
+    // [요청] 모바일: 물품 불러오기·전체 삭제 버튼은 카드 제목 줄의 CSV 내보내기 왼쪽으로
+    const csvBtn = document.getElementById('btn-export-stock-csv');
+    const headerActions = csvBtn ? csvBtn.parentElement : null;
+    if (headerActions) headerActions.classList.add('item-stock-header-actions');
+    const headerMovable = ['btn-import-master-items', 'btn-delete-all-stock']
+        .map(id => document.getElementById(id)).filter(Boolean);
+
+    // [요청] PC: 사업장 구분 카드를 '물품 관리 현황' 제목 오른쪽으로 (모바일은 기존 위치 유지)
+    const titleEl = document.querySelector('#section-item-stock-mgmt .card-header h3');
+    const titleWrap = titleEl ? titleEl.parentElement : null;
+    const cardBody = groupHeader.parentElement;
+    if (titleWrap) titleWrap.classList.add('item-stock-title-wrap');
+
+    const mq = window.matchMedia('(max-width: 950px)');
+    const place = () => {
+        if (titleWrap && cardBody) {
+            if (mq.matches) {
+                if (groupHeader.parentElement !== cardBody) cardBody.insertBefore(groupHeader, cardBody.firstChild);
+            } else if (groupHeader.parentElement !== titleWrap) {
+                titleWrap.appendChild(groupHeader);
+            }
+        }
+        const target = mq.matches ? groupHeader : toolbar;
+        if (actions.parentElement !== target) target.appendChild(actions);
+        headerMovable.forEach(b => {
+            if (mq.matches && headerActions) {
+                if (b.parentElement !== headerActions) headerActions.insertBefore(b, csvBtn);
+            } else if (b.parentElement !== actions) {
+                actions.appendChild(b); // PC: 원래 순서(사용 이력, 물품 등록, 물품 불러오기, 전체 삭제)로 복귀
+            }
+        });
+    };
+    place();
+    if (mq.addEventListener) mq.addEventListener('change', place);
+    else mq.addListener(place); // 구형 브라우저 대응
+}
+
+// [요청] 모바일: 물품 리스트를 화면 아래 끝까지만 표시하고 나머지는 리스트 안에서 스크롤
+function fitStockTableToViewport() {
+    const wrap = document.querySelector('.item-stock-table-wrapper');
+    if (!wrap) return;
+    if (!window.matchMedia('(max-width: 950px)').matches) {
+        wrap.style.height = '';
+        wrap.style.flex = '';
+        return;
+    }
+    const top = wrap.getBoundingClientRect().top + window.scrollY; // 페이지 맨 위 기준 위치
+    const h = Math.max(200, window.innerHeight - top - 8);          // 아래 여백 8px, 최소 200px
+    wrap.style.flex = 'none';
+    wrap.style.height = `${h}px`;
+}
+
+function setupStockTableFit() {
+    let timer = null;
+    const refit = () => {
+        clearTimeout(timer);
+        timer = setTimeout(fitStockTableToViewport, 100);
+    };
+    window.addEventListener('resize', refit);
+    window.addEventListener('orientationchange', refit);
+    fitStockTableToViewport();
+}
+
+// [추가] 모바일 축소/확장 토글 (마지막 상태 기억). 숨김 처리는 admin.css의 모바일 규칙에서만 적용됨
+function setupStockCompactToggle() {
+    const btn = document.getElementById('btn-stock-compact-toggle');
+    const section = document.getElementById('section-item-stock-mgmt');
+    if (!btn || !section) return;
+
+    const apply = (compact) => {
+        section.classList.toggle('item-stock-compact', compact);
+        btn.textContent = compact ? '확장' : '축소';
+        btn.title = compact ? '안전 재고·상태·등급·기능 열 보이기' : '안전 재고·상태·등급·기능 열 숨기기';
+    };
+    // [요청] 페이지를 열 때는 항상 축소 상태로 시작 (축소 표시는 모바일 CSS에서만 적용)
+    apply(true);
+    btn.addEventListener('click', () => apply(!section.classList.contains('item-stock-compact')));
+}
+
+/* ==========================================================================
+   [추가] 사용 이력: 최근 일주일 작업의 사용 물품을 재고에 반영
+   - 목록: GET /api/item/usage?group=  /  반영: POST /api/item/usage/apply
+   ========================================================================== */
+function setupUsageModal() {
+    const btnOpen = document.getElementById('btn-open-usage-modal');
+    const modal = document.getElementById('item-usage-modal');
+    const btnClose = document.getElementById('btn-close-usage-modal');
+    if (!btnOpen || !modal) return;
+
+    const close = () => { modal.style.display = 'none'; };
+    btnOpen.addEventListener('click', openUsageModal);
+    if (btnClose) btnClose.addEventListener('click', close);
+    modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+
+    // 반영 버튼 (이벤트 위임)
+    const list = document.getElementById('usage-work-list');
+    if (list) {
+        list.addEventListener('click', (e) => {
+            const b = e.target.closest('.btn-usage-apply');
+            if (b && !b.disabled) applyUsageWork(b.dataset.logUid, b);
+        });
+    }
+}
+
+async function openUsageModal() {
+    if (denyStockEdit(currentStockSiteGroup, '사용 이력 확인')) return;
+    const modal = document.getElementById('item-usage-modal');
+    const list = document.getElementById('usage-work-list');
+    const groupLabel = document.getElementById('usage-modal-group-label');
+    const rangeLabel = document.getElementById('usage-modal-range');
+    if (!modal || !list) return;
+
+    const group = (currentStockSiteGroup && currentStockSiteGroup !== 'ALL') ? currentStockSiteGroup : '전체';
+    if (groupLabel) groupLabel.textContent = group;
+    if (rangeLabel) rangeLabel.textContent = '';
+    list.innerHTML = '<div class="usage-empty">불러오는 중...</div>';
+    modal.style.display = 'flex';
+
+    try {
+        const res = await fetch(`/api/item/usage?group=${encodeURIComponent(group)}`);
+        const data = await res.json();
+        if (!res.ok || data.status !== 'success') throw new Error(data.message || '불러오기 실패');
+        if (rangeLabel) rangeLabel.textContent = `${data.start} ~ ${data.end}`;
+        renderUsageWorkList(data.works || []);
+    } catch (e) {
+        console.error(e);
+        list.innerHTML = `<div class="usage-empty">사용 이력을 불러오지 못했습니다. (${escapeHtml(e.message || '')})</div>`;
+    }
+}
+
+let usageWorksByUid = {}; // [추가] 반영 시 작업 정보 조회용
+
+function renderUsageWorkList(works) {
+    usageWorksByUid = {};
+    (works || []).forEach(w => { usageWorksByUid[String(w.log_uid)] = w; });
+    // [요청] 사업장 구분은 '전체' 탭에서 열었을 때만 날짜 옆에 표시
+    const showGroup = !currentStockSiteGroup || currentStockSiteGroup === '전체' || currentStockSiteGroup === 'ALL';
+    const list = document.getElementById('usage-work-list');
+    if (!list) return;
+    if (!works.length) {
+        list.innerHTML = '<div class="usage-empty">최근 일주일간 사용 물품이 있는 작업이 없습니다.</div>';
+        return;
+    }
+    list.innerHTML = works.map(w => {
+        const equip = [w.site_name, w.equip_name, w.equip_serial ? `(${w.equip_serial})` : ''].filter(Boolean).join(' ');
+        // [요청] 코드명만 표시, 작업에 물품 상세가 있으면 [상세] 표시, 교체 수량 표시는 생략
+        // [요청] 코드명 앞에 비용처리 표시, 무상(중고)는 반영 제외 표시
+        const items = (w.items || []).map(it => {
+            let stock;
+            if (it.excluded) stock = '<span class="usage-stock usage-stock-excluded">반영 제외</span>';
+            else if (it.stock_managed) stock = `<span class="usage-stock usage-stock-excluded" title="반영할 때 사용한 물품(S/N)을 골라 사용일·사용 장비·정기/비정기를 기록합니다.">상세 관리 · 재고 ${it.stock_qty}개 (반영 시 물품 선택)</span>`;
+            else if (it.stock_id) stock = `<span class="usage-stock">현재 재고 ${it.stock_qty}개</span>`;
+            else stock = '<span class="usage-stock usage-stock-none">재고 없음</span>';
+            const cost = it.cost ? `<span class="usage-cost${it.excluded ? ' excluded' : ''}">[${escapeHtml(it.cost)}]</span> ` : '';
+            return `<li class="${it.excluded ? 'usage-item-excluded' : ''}">${cost}<strong>${escapeHtml(it.code)}</strong>${it.detail ? ` <span class="usage-spec">[${escapeHtml(it.detail)}]</span>` : ''} ${stock}</li>`;
+        }).join('');
+        const hasDeductible = (w.items || []).some(it => !it.excluded);
+
+        let action;
+        if (!w.applied && !hasDeductible) {
+            action = '<button type="button" class="btn-usage-apply" disabled title="무상(중고) 물품만 있어 차감할 물품이 없습니다.">반영 제외</button>';
+        } else if (w.applied) {
+            action = `<button type="button" class="btn-usage-apply applied" disabled title="${escapeHtml(w.applied_at)} ${escapeHtml(w.applied_by)}">반영됨</button>`;
+        } else if (!w.can_apply) {
+            action = '<button type="button" class="btn-usage-apply" disabled title="본인 사업장 작업만 반영할 수 있습니다.">반영</button>';
+        } else {
+            action = `<button type="button" class="btn-usage-apply" data-log-uid="${w.log_uid}">반영</button>`;
+        }
+
+        return `
+            <div class="usage-work-row">
+                <!-- [요청] 날짜·사업장·장비명 줄은 카드 전체 너비 사용 (반영 버튼은 아래 줄 오른쪽) -->
+                <div class="usage-work-head">
+                    <span class="usage-date">${escapeHtml(w.date)}</span>
+                    ${showGroup ? `<span class="usage-group">${escapeHtml(w.site_group || '-')}</span>` : ''}
+                    <span class="usage-equip" title="${escapeHtml(equip) || ''}">${escapeHtml(equip)}</span>
+                </div>
+                <div class="usage-work-body">
+                <div class="usage-work-info">
+                    ${(w.type || w.worker) ? `
+                    <div class="usage-work-sub">
+                        ${w.type ? `<span class="usage-type">${escapeHtml(w.type)}</span>` : ''}
+                        ${w.worker ? `<span class="usage-worker">${escapeHtml(w.worker)}</span>` : ''}
+                    </div>` : ''}
+                    <ul class="usage-items">${items}</ul>
+                </div>
+                <div class="usage-work-action">${action}</div>
+                </div>
+            </div>`;
+    }).join('');
+}
+
+async function applyUsageWork(logUid, btn) {
+    const row = btn.closest('.usage-work-row');
+    const head = row ? row.querySelector('.usage-work-head') : null;
+    const summary = head ? head.textContent.replace(/\s+/g, ' ').trim() : '';
+
+    // [요청] 상세 관리 물품이 있으면 어떤 물품을 썼는지 고르는 창을 먼저 띄움
+    const work = usageWorksByUid[String(logUid)];
+    if (work && (work.items || []).some(it => !it.excluded && it.stock_managed)) {
+        openUsagePickModal(logUid, summary, (picks) => submitUsageApply(logUid, btn, picks));
+        return;
+    }
+    if (!confirm(`이 작업의 사용 물품을 현재 수량에서 차감할까요?\n${summary}\n\n한 번 반영하면 되돌릴 수 없습니다.`)) return;
+    submitUsageApply(logUid, btn, {});
+}
+
+async function submitUsageApply(logUid, btn, unitPicks) {
+    btn.disabled = true;
+    btn.textContent = '반영 중...';
+    try {
+        const res = await fetch('/api/item/usage/apply', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
+            body: JSON.stringify({ log_uid: Number(logUid), unit_picks: unitPicks || {} })
+        });
+        const data = await res.json();
+        if (!res.ok || data.status !== 'success') throw new Error(data.message || '반영 실패');
+
+        // 변경된 재고를 화면 목록에 반영
+        (data.stocks || []).forEach(s => {
+            const idx = adminItemStocks.findIndex(x => String(x.id) === String(s.id));
+            if (idx >= 0) adminItemStocks[idx] = s;
+        });
+        saveItemStocksLocally();
+        renderItemStockTable();
+
+        const missing = (data.details || []).filter(d => d.reason === '재고 없음').map(d => d.code);
+        const skipped = (data.details || []).filter(d => d.reason === '상세 선택 안 함').map(d => d.code);
+        const notes = [];
+        if (missing.length) notes.push(`재고가 등록되지 않아 차감하지 못한 물품: ${missing.join(', ')}`);
+        if (skipped.length) notes.push(`상세 물품을 고르지 않아 차감하지 않은 물품: ${skipped.join(', ')}`);
+        if (notes.length) alert(notes.join('\n'));
+
+        // 목록 새로고침 (재고 수량·반영 상태 갱신)
+        openUsageModal();
+    } catch (e) {
+        console.error(e);
+        alert(`재고 반영 실패: ${e.message || ''}`);
+        btn.disabled = false;
+        btn.textContent = '반영';
+    }
+}
+
+// [요청] 상세 관리 물품 선택 창: 물품별로 사용한 미사용 물품(S/N)을 고르고 사용일·사용 장비·정기/비정기 기록
+let usagePickOnConfirm = null;
+let usagePickGroups = [];
+
+function setupUsagePickModal() {
+    const modal = document.getElementById('usage-pick-modal');
+    if (!modal) return;
+    const close = () => { modal.style.display = 'none'; usagePickOnConfirm = null; };
+    ['btn-close-usage-pick', 'btn-cancel-usage-pick'].forEach(id => {
+        const b = document.getElementById(id);
+        if (b) b.addEventListener('click', close);
+    });
+    modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+
+    const body = document.getElementById('usage-pick-body');
+    // 같은 물품을 두 번 고르지 못하게: 다른 칸에서 고른 물품은 비활성화
+    if (body) body.addEventListener('change', (e) => {
+        if (e.target.classList.contains('up-unit')) refreshUsagePickDisabled();
+    });
+
+    const btnOk = document.getElementById('btn-confirm-usage-pick');
+    if (btnOk) btnOk.addEventListener('click', () => {
+        const picks = {};
+        let missingCount = 0;
+        document.querySelectorAll('#usage-pick-body .up-group').forEach(g => {
+            const unitId = g.querySelector('.up-unit') ? g.querySelector('.up-unit').value : '';
+            if (!unitId) { missingCount++; return; }
+            picks[g.dataset.index] = {
+                unit_id: Number(unitId),
+                used_date: g.querySelector('.up-date').value,
+                used_equip: g.querySelector('.up-equip').value.trim(),
+                work_kind: g.querySelector('.up-kind').value
+            };
+        });
+        if (missingCount && !confirm(`물품을 고르지 않은 항목 ${missingCount}건은 차감하지 않고 반영합니다. 계속할까요?\n한 번 반영하면 되돌릴 수 없습니다.`)) return;
+        if (!missingCount && !confirm('선택한 물품에 사용 기록을 남기고 반영할까요?\n한 번 반영하면 되돌릴 수 없습니다.')) return;
+        const cb = usagePickOnConfirm;
+        close();
+        if (cb) cb(picks);
+    });
+}
+
+function refreshUsagePickDisabled() {
+    const selects = Array.from(document.querySelectorAll('#usage-pick-body .up-unit'));
+    const chosen = selects.map(s => s.value).filter(Boolean);
+    selects.forEach(s => {
+        Array.from(s.options).forEach(o => {
+            if (!o.value) return;
+            o.disabled = o.value !== s.value && chosen.includes(o.value);
+        });
+    });
+}
+
+async function openUsagePickModal(logUid, summary, onConfirm) {
+    const modal = document.getElementById('usage-pick-modal');
+    const body = document.getElementById('usage-pick-body');
+    if (!modal || !body) return;
+    try {
+        const res = await fetch(`/api/item/usage/units?log_uid=${encodeURIComponent(logUid)}`);
+        const data = await res.json();
+        if (!res.ok || data.status !== 'success') throw new Error(data.message || '불러오기 실패');
+        usagePickGroups = data.groups || [];
+        usagePickOnConfirm = onConfirm;
+        document.getElementById('usage-pick-summary').textContent = summary;
+
+        const kindOpt = (v, label) => `<option value="${v}"${data.default_kind === v ? ' selected' : ''}>${label}</option>`;
+        body.innerHTML = usagePickGroups.map((g, gi) => {
+            const listId = `up-equip-list-${gi}`;
+            const unitOpts = (g.units || []).map(u => {
+                const label = [u.serial ? `S/N ${u.serial}` : 'S/N 없음', u.in_date ? `입고 ${u.in_date}` : ''].filter(Boolean).join(' · ');
+                return `<option value="${u.id}">${escapeHtml(label)}</option>`;
+            }).join('');
+            return `
+                <div class="up-group" data-index="${g.index}">
+                    <div class="up-title">
+                        ${g.cost ? `<span class="usage-cost">[${escapeHtml(g.cost)}]</span>` : ''}
+                        <strong>${escapeHtml(g.code)}</strong>${g.detail ? ` <span class="usage-spec">[${escapeHtml(g.detail)}]</span>` : ''}
+                    </div>
+                    ${(g.units || []).length ? `
+                    <div class="up-fields">
+                        <label>사용한 물품
+                            <select class="input-dark up-unit">
+                                <option value="">선택 안 함 (차감 안 함)</option>${unitOpts}
+                            </select>
+                        </label>
+                        <label>사용일 <input type="date" class="input-dark up-date" value="${escapeHtml(data.date) || ''}"></label>
+                        <label>사용 장비 <input type="text" class="input-dark up-equip" list="${listId}" maxlength="200" value="${escapeHtml(g.default_equip) || ''}"></label>
+                        <label>정기/비정기
+                            <select class="input-dark up-kind">${kindOpt('', '-')}${kindOpt('정기', '정기')}${kindOpt('비정기', '비정기')}</select>
+                        </label>
+                        <datalist id="${listId}">${(g.equip_options || []).map(o => `<option value="${escapeHtml(o)}"></option>`).join('')}</datalist>
+                    </div>` : `<div class="up-none">등록된 미사용 물품이 없어 차감하지 않습니다. (물품 상세에서 먼저 등록하세요)</div>`}
+                </div>`;
+        }).join('');
+
+        // 각 항목에 아직 고르지 않은 첫 물품(입고일 빠른 순)을 미리 선택 (바꿀 수 있음)
+        body.querySelectorAll('.up-unit').forEach((s, i) => {
+            const g = usagePickGroups[i];
+            if (g && g.units && g.units.length >= 1) {
+                const free = Array.from(s.options).find(o => o.value && !o.disabled &&
+                    !Array.from(body.querySelectorAll('.up-unit')).some(other => other !== s && other.value === o.value));
+                if (free) s.value = free.value;
+            }
+        });
+        refreshUsagePickDisabled();
+        modal.style.display = 'flex';
+    } catch (e) {
+        console.error(e);
+        alert(`상세 물품을 불러오지 못했습니다: ${e.message || ''}`);
+    }
+}
+
+/* ==========================================================================
+   [요청] 재고 관리: 현재 사업장 구분의 미확보(수량 0)·부족(안전 재고 미만) 물품 수량 바로 변경
+   ========================================================================== */
+function setupStockManageModal() {
+    const btnOpen = document.getElementById('btn-open-stock-manage-modal');
+    const modal = document.getElementById('stock-manage-modal');
+    const btnClose = document.getElementById('btn-close-stock-manage-modal');
+    if (!btnOpen || !modal) return;
+
+    const close = () => {
+        modal.style.display = 'none';
+        renderItemStockTable(); // 변경된 수량·상태를 메인 리스트에 반영
+    };
+    btnOpen.addEventListener('click', openStockManageModal);
+    if (btnClose) btnClose.addEventListener('click', close);
+    modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+}
+
+function openStockManageModal() {
+    if (denyStockEdit(currentStockSiteGroup, '재고 관리')) return;
+    const modal = document.getElementById('stock-manage-modal');
+    const tbody = document.getElementById('stock-manage-tbody');
+    const emptyEl = document.getElementById('stock-manage-empty');
+    const groupLabel = document.getElementById('stock-manage-group-label');
+    const countLabel = document.getElementById('stock-manage-count');
+    if (!modal || !tbody) return;
+
+    const isAll = !currentStockSiteGroup || currentStockSiteGroup === '전체' || currentStockSiteGroup === 'ALL';
+    if (groupLabel) groupLabel.textContent = isAll ? '전체' : currentStockSiteGroup;
+
+    // 미확보 먼저, 그다음 부족 (각각 코드명 순)
+    const rank = (it) => ((parseInt(it.quantity) || 0) === 0 ? 0 : 1);
+    const targets = (adminItemStocks || [])
+        .filter(it => isAll || (it.site_group || '').trim() === currentStockSiteGroup.trim())
+        .filter(it => {
+            const q = parseInt(it.quantity) || 0;
+            const s = parseInt(it.safety_quantity) || 0;
+            return q === 0 || q < s;
+        })
+        .sort((a, b) => rank(a) - rank(b) || (a.code || '').localeCompare(b.code || '', 'ko', { numeric: true }));
+
+    if (countLabel) countLabel.textContent = `${targets.length}건`;
+    tbody.innerHTML = '';
+    if (emptyEl) emptyEl.style.display = targets.length ? 'none' : 'block';
+
+    targets.forEach(it => {
+        const tr = document.createElement('tr');
+        const qty = parseInt(it.quantity) || 0;
+        const safety = parseInt(it.safety_quantity) || 0;
+        tr.innerHTML = `
+            <td class="sm-code">${escapeHtml(it.code || '-')}${isAll && it.site_group ? `<div class="sm-site">${escapeHtml(it.site_group)}</div>` : ''}</td>
+            <td class="sm-spec">${escapeHtml(it.spec || '-')}</td>
+            <td class="sm-qty">
+                ${it.unit_managed
+                    ? `<button type="button" class="btn-stock-outline outline-green sm-unit-open" title="물품 상세 등록">${qty}개 · 상세</button>`
+                    : `<div class="stock-qty-control">
+                    <button type="button" class="stock-qty-btn sm-minus" title="1 감소">-</button>
+                    <input type="number" class="stock-qty-input" min="0" value="${qty}">
+                    <button type="button" class="stock-qty-btn sm-plus" title="1 증가">+</button>
+                </div>`}
+            </td>
+            <td class="sm-safety">${safety}</td>
+            <td class="sm-status stock-status-cell">${getItemStockStatusBadgeHtml(qty, safety)}</td>`;
+
+        // [추가] 상세 관리 물품은 상세 등록으로 수량 관리
+        if (it.unit_managed) {
+            tr.querySelector('.sm-unit-open').addEventListener('click', () => openStockUnitModal(it.id));
+            tbody.appendChild(tr);
+            return;
+        }
+
+        const input = tr.querySelector('.stock-qty-input');
+        const save = (val) => {
+            val = Math.max(0, parseInt(val) || 0);
+            input.value = val;
+            updateStockQuantity(it.id, val, tr); // 저장 + 상태 배지·요약 건수 갱신
+        };
+        tr.querySelector('.sm-minus').addEventListener('click', () => {
+            const v = parseInt(input.value) || 0;
+            if (v > 0) save(v - 1);
+        });
+        tr.querySelector('.sm-plus').addEventListener('click', () => save((parseInt(input.value) || 0) + 1));
+        input.addEventListener('change', () => save(input.value));
+        input.addEventListener('keydown', (e) => { if (e.key === 'Enter') input.blur(); });
+
+        tbody.appendChild(tr);
+    });
+
+    modal.style.display = 'flex';
+}
+
+/* ==========================================================================
+   [추가] 상세 관리 물품 상세 (입고일, S/N, 사용일, 사용 장비, 정기/비정기)
+   - 기능 열 [+]로 지정한 물품만 관리, 현재 수량 = 사용일이 비어 있는 상세 개수
+   ========================================================================== */
+let currentUnitStockId = null;
+let currentUnits = [];
+
+function applyStockFromServer(stock) {
+    if (!stock) return;
+    const idx = adminItemStocks.findIndex(x => String(x.id) === String(stock.id));
+    if (idx >= 0) adminItemStocks[idx] = stock;
+    saveItemStocksLocally();
+}
+
+async function postJson(url, body) {
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
+        body: JSON.stringify(body)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data.status !== 'success') throw new Error(data.message || '요청 실패');
+    return data;
+}
+
+async function toggleUnitManaged(item) {
+    if (denyStockEdit(item.site_group, '상세 관리 설정')) return;
+    const turnOn = !item.unit_managed;
+    const name = item.code || item.part || '';
+    const msg = turnOn
+        ? `[${name}]을(를) 상세 관리로 바꿀까요?\n\n물품마다 입고일·S/N·사용일·사용 장비·정기/비정기를 등록하고,\n현재 수량(${parseInt(item.quantity) || 0}개)은 등록된 물품 중 사용하지 않은 개수로 자동 계산됩니다.\n(처음에는 등록된 물품이 없으면 0개가 됩니다)`
+        : `[${name}]의 상세 관리를 해제할까요?\n\n등록한 상세 내역은 지워지지 않고 남아 있으며, 현재 수량을 다시 직접 수정할 수 있습니다.`;
+    if (!confirm(msg)) return;
+    try {
+        const data = await postJson('/api/item/units/managed', { stock_id: item.id, managed: turnOn });
+        applyStockFromServer(data.stock);
+        renderItemStockTable();
+        if (turnOn) openStockUnitModal(item.id);
+    } catch (e) {
+        alert(`변경 실패: ${e.message || ''}`);
+    }
+}
+
+function setupStockUnitModal() {
+    const modal = document.getElementById('stock-unit-modal');
+    if (!modal) return;
+    const close = () => {
+        modal.style.display = 'none';
+        currentUnitStockId = null;
+        renderItemStockTable();
+        const sm = document.getElementById('stock-manage-modal');
+        if (sm && sm.style.display !== 'none') openStockManageModal(); // 재고 관리 창에서 열었으면 갱신
+    };
+    const btnClose = document.getElementById('btn-close-stock-unit-modal');
+    if (btnClose) btnClose.addEventListener('click', close);
+    modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+
+    const btnAdd = document.getElementById('btn-add-stock-unit');
+    if (btnAdd) btnAdd.addEventListener('click', async () => {
+        if (!currentUnitStockId) return;
+        const today = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10); // KST 오늘
+        try {
+            const data = await postJson('/api/item/units/save', {
+                stock_id: currentUnitStockId, action: 'CREATE', payload: { in_date: today }
+            });
+            currentUnits.push(data.unit);
+            applyStockFromServer(data.stock);
+            renderStockUnits();
+            const wrap = document.querySelector('.stock-unit-scroll');
+            if (wrap) wrap.scrollTop = wrap.scrollHeight;
+        } catch (e) {
+            alert(`추가 실패: ${e.message || ''}`);
+        }
+    });
+}
+
+async function openStockUnitModal(stockId) {
+    const modal = document.getElementById('stock-unit-modal');
+    if (!modal) return;
+    try {
+        const res = await fetch(`/api/item/units?stock_id=${encodeURIComponent(stockId)}`);
+        const data = await res.json();
+        if (!res.ok || data.status !== 'success') throw new Error(data.message || '불러오기 실패');
+
+        currentUnitStockId = data.stock.id;
+        currentUnits = data.units || [];
+        applyStockFromServer(data.stock);
+
+        const s = data.stock;
+        document.getElementById('stock-unit-title').textContent = s.code || s.part || '';
+        document.getElementById('stock-unit-meta').textContent =
+            [s.site_group, s.site_name, s.spec].filter(Boolean).join(' · ');
+        const dl = document.getElementById('stock-unit-equip-list');
+        if (dl) dl.innerHTML = (data.equip_options || []).map(o => `<option value="${escapeHtml(o)}"></option>`).join('');
+
+        renderStockUnits();
+        modal.style.display = 'flex';
+    } catch (e) {
+        alert(`물품 상세를 불러오지 못했습니다: ${e.message || ''}`);
+    }
+}
+
+function renderStockUnits() {
+    const tbody = document.getElementById('stock-unit-tbody');
+    const emptyEl = document.getElementById('stock-unit-empty');
+    if (!tbody) return;
+
+    const used = currentUnits.filter(u => u.used_date).length;
+    document.getElementById('stock-unit-instock').textContent = currentUnits.length - used;
+    document.getElementById('stock-unit-used').textContent = used;
+    if (emptyEl) emptyEl.style.display = currentUnits.length ? 'none' : 'block';
+
+    tbody.innerHTML = '';
+    currentUnits.forEach((u, i) => {
+        const tr = document.createElement('tr');
+        if (u.used_date) tr.classList.add('unit-used');
+        const kindOpt = (v, label) => `<option value="${v}"${u.work_kind === v ? ' selected' : ''}>${label}</option>`;
+        tr.innerHTML = `
+            <td class="su-no">${i + 1}</td>
+            <td><input type="date" class="input-dark su-input" data-key="in_date" value="${escapeHtml(u.in_date) || ''}"></td>
+            <td><input type="text" class="input-dark su-input" data-key="serial" maxlength="100" placeholder="S/N" value="${escapeHtml(u.serial) || ''}"></td>
+            <td><input type="date" class="input-dark su-input" data-key="used_date" value="${escapeHtml(u.used_date) || ''}"></td>
+            <td><input type="text" class="input-dark su-input su-equip" data-key="used_equip" maxlength="200" list="stock-unit-equip-list" placeholder="장비 선택/입력" value="${escapeHtml(u.used_equip) || ''}"></td>
+            <td>
+                <select class="input-dark su-input" data-key="work_kind">
+                    ${kindOpt('', '-')}${kindOpt('정기', '정기')}${kindOpt('비정기', '비정기')}
+                </select>
+            </td>
+            <td><button type="button" class="btn-del-stock su-del" title="이 물품 삭제">✕</button></td>`;
+
+        tr.querySelectorAll('.su-input').forEach(inp => {
+            inp.addEventListener('change', () => saveStockUnitField(u, inp.dataset.key, inp.value, tr));
+            if (inp.tagName === 'INPUT') inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') inp.blur(); });
+        });
+        tr.querySelector('.su-del').addEventListener('click', () => deleteStockUnit(u));
+        tbody.appendChild(tr);
+    });
+}
+
+async function saveStockUnitField(unit, key, value, tr) {
+    try {
+        const data = await postJson('/api/item/units/save', {
+            stock_id: currentUnitStockId, action: 'UPDATE', payload: { id: unit.id, [key]: value }
+        });
+        Object.assign(unit, data.unit);
+        applyStockFromServer(data.stock);
+        if (key === 'used_date') {
+            renderStockUnits(); // 재고/사용 개수·행 표시 갱신
+        } else if (tr) {
+            tr.classList.remove('stock-saved-flash');
+            void tr.offsetWidth;
+            tr.classList.add('stock-saved-flash');
+        }
+    } catch (e) {
+        alert(`저장 실패: ${e.message || ''}`);
+        renderStockUnits();
+    }
+}
+
+async function deleteStockUnit(unit) {
+    const label = [unit.serial ? `S/N ${unit.serial}` : '', unit.in_date ? `입고 ${unit.in_date}` : ''].filter(Boolean).join(', ');
+    if (!confirm(`이 물품을 삭제할까요?${label ? `\n(${label})` : ''}`)) return;
+    try {
+        const data = await postJson('/api/item/units/save', {
+            stock_id: currentUnitStockId, action: 'DELETE', payload: { id: unit.id }
+        });
+        currentUnits = currentUnits.filter(u => u.id !== unit.id);
+        applyStockFromServer(data.stock);
+        renderStockUnits();
+    } catch (e) {
+        alert(`삭제 실패: ${e.message || ''}`);
+    }
+}
+
+// [추가] 선택한 사업장 구분의 물품 전체 삭제 (검색어와 관계없이 해당 구분 전체, '전체' 탭은 최종관리자만)
+async function deleteAllItemStocks() {
+    const isAll = !currentStockSiteGroup || currentStockSiteGroup === '전체' || currentStockSiteGroup === 'ALL';
+    if (!isStockSuperAdmin()) return alert('전체 삭제는 최종관리자만 할 수 있습니다.');
+
+    const label = isAll ? '모든 사업장 구분' : currentStockSiteGroup;
+    const targets = isAll ? adminItemStocks : adminItemStocks.filter(s => (s.site_group || '') === currentStockSiteGroup);
+    if (!targets.length) return alert('삭제할 물품이 없습니다.');
+
+    if (!confirm(`[${label}]의 물품 ${targets.length}건을 모두 삭제할까요?\n삭제하면 되돌릴 수 없습니다.`)) return;
+    const typed = prompt(`정말 삭제하려면 "삭제"를 입력하세요.`);
+    if ((typed || '').trim() !== '삭제') return alert('입력이 일치하지 않아 취소했습니다.');
+
+    try {
+        const res = await fetch('/api/admin/crud', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
+            body: JSON.stringify({ domain: 'item_stock', action: 'DELETE_ALL', payload: { site_group: isAll ? '전체' : currentStockSiteGroup } })
+        });
+        const data = await res.json();
+        if (!res.ok || data.status !== 'success') throw new Error(data.message || '삭제 실패');
+
+        adminItemStocks = isAll ? [] : adminItemStocks.filter(s => (s.site_group || '') !== currentStockSiteGroup);
+        saveItemStocksLocally();
+        renderItemStockTable();
+        alert(`${data.deleted ?? targets.length}건을 삭제했습니다.`);
+    } catch (e) {
+        console.error(e);
+        alert(`전체 삭제 실패: ${e.message || ''}`);
+        syncItemStocksFromServer(true);
     }
 }
 
@@ -366,15 +1052,27 @@ function renderItemStockTable() {
 
     // 다른 사업장 탭에서는 물품 등록 / 마스터 물품 불러오기 버튼 숨김
     const isAllTab = !currentStockSiteGroup || currentStockSiteGroup === '전체' || currentStockSiteGroup === 'ALL';
-    const canAddHere = isAllTab
-        ? (isUserAdminRole() && (isStockSuperAdmin() || !!getUserStockSiteGroup()))
-        : canEditStockGroup(currentStockSiteGroup);
-    ['btn-open-add-stock-modal', 'btn-import-master-items'].forEach(id => {
+    // [요청] 모바일: 사업장 열은 '전체' 구분일 때만 표시 (admin.css에서 클래스로 처리)
+    const stockSection = document.getElementById('section-item-stock-mgmt');
+    if (stockSection) stockSection.classList.toggle('item-stock-all-group', isAllTab);
+    // [요청] 본인 사업장 구분이 아니면 검색(조회)만 가능: 등록/불러오기/사용 이력/CSV 버튼 숨김
+    //  - 최종관리자: 모든 탭에서 사용 가능
+    //  - 관리자: 본인 사업장 구분 탭에서만 ('전체' 탭은 다른 사업장이 섞여 있어 숨김)
+    //  - CSV 내보내기: 최종관리자 또는 본인 사업장 구분 탭 (일반 계정 포함)
+    const canEditHere = canEditStockGroup(currentStockSiteGroup);
+    const mySiteGroup = getUserStockSiteGroup();
+    const canExportHere = isStockSuperAdmin() || (!!mySiteGroup && !isAllTab && currentStockSiteGroup === mySiteGroup);
+    const toggleBtn = (id, show) => {
         const b = document.getElementById(id);
         if (!b) return;
         if (b.dataset.origDisplay === undefined) b.dataset.origDisplay = b.style.display || '';
-        b.style.display = canAddHere ? b.dataset.origDisplay : 'none';
-    });
+        b.style.display = show ? b.dataset.origDisplay : 'none';
+    };
+    ['btn-open-usage-modal', 'btn-open-stock-manage-modal', 'btn-open-add-stock-modal', 'btn-import-master-items'].forEach(id => toggleBtn(id, canEditHere));
+    toggleBtn('btn-delete-all-stock', isStockSuperAdmin()); // [요청] 전체 삭제는 최종관리자만
+    toggleBtn('btn-export-stock-csv', canExportHere);
+    // 버튼 표시가 바뀌면 리스트 위치가 달라질 수 있어 모바일 높이 재계산
+    requestAnimationFrame(fitStockTableToViewport);
 
     const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
 
@@ -393,12 +1091,11 @@ function renderItemStockTable() {
         const part = (item.part || '').toLowerCase();
         const spec = (item.spec || '').toLowerCase();
         const partno = (item.partno || '').toLowerCase();
-        const detailType = (item.detail_type || '').toLowerCase();
         const siteName = (item.site_name || '').toLowerCase();
         const siteGroup = (item.site_group || '').toLowerCase();
         const memo = (item.memo || '').toLowerCase();
         return code.includes(query) || part.includes(query) || spec.includes(query) ||
-            partno.includes(query) || detailType.includes(query) || siteName.includes(query) ||
+            partno.includes(query) || siteName.includes(query) ||
             siteGroup.includes(query) || memo.includes(query);
     });
 
@@ -413,9 +1110,6 @@ function renderItemStockTable() {
                     diff = sA.localeCompare(sB, 'ko');
                     break;
                 }
-                case 'detail_type':
-                    diff = (a.detail_type || '').localeCompare(b.detail_type || '', 'ko');
-                    break;
                 case 'partno':
                     diff = (a.partno || '').localeCompare(b.partno || '', 'ko', { numeric: true });
                     break;
@@ -488,7 +1182,6 @@ function renderItemStockTable() {
         tr.innerHTML = `
             <td class="col-no">${index + 1}</td>
             <td class="col-site">${displaySite}</td>
-            <td class="col-detail-type">${item.detail_type || '-'}</td>
             <td class="col-partno">${item.partno || '-'}</td>
             <td class="col-code">${item.code || '-'}</td>
             <td class="col-part">${item.part || '-'}</td>
@@ -510,9 +1203,18 @@ function renderItemStockTable() {
             <td class="col-status stock-status-cell">${statusBadge}</td>
             <td class="col-grade stock-grade-cell">${gradeBadge}</td>
             <td class="col-action">
+                <button type="button" class="btn-unit-manage${item.unit_managed ? ' on' : ''}"
+                    title="${item.unit_managed ? '상세 관리 해제' : '상세 관리 (입고일·S/N·사용일 등 물품별 등록)'}">${item.unit_managed ? '−' : '+'}</button>
                 <button type="button" class="btn-del-stock" title="목록에서 삭제" data-id="${item.id}">✕</button>
             </td>
         `;
+        // [추가] 상세 관리 물품: 행 클릭 시 상세 등록, 현재 수량은 상세 개수로 자동 계산(직접 수정 불가)
+        if (item.unit_managed) {
+            tr.classList.add('stock-row-unit-managed');
+            tr.title = '클릭하여 물품 상세 등록';
+            const codeCell = tr.querySelector('.col-code');
+            if (codeCell) codeCell.insertAdjacentHTML('afterbegin', '<span class="unit-managed-badge">상세</span> '); // [요청] 코드명 앞에 표시
+        }
 
         // 1. 현재 수량 컨트롤
         const btnMinus = tr.querySelector('.btn-qty-minus');
@@ -524,12 +1226,33 @@ function renderItemStockTable() {
             if (inputQty) inputQty.readOnly = true;
             const inputSafetyTemp = tr.querySelector('.stock-safety-input');
             if (inputSafetyTemp) inputSafetyTemp.readOnly = true;
-            tr.querySelectorAll('.stock-qty-btn, .btn-del-stock').forEach(b => { b.style.display = 'none'; });
+            tr.querySelectorAll('.stock-qty-btn, .btn-del-stock, .btn-unit-manage').forEach(b => { b.style.display = 'none'; });
             const gradeBadgeEl = tr.querySelector('.stock-grade-cell .stock-badge');
             if (gradeBadgeEl) {
                 gradeBadgeEl.classList.remove('clickable-grade');
                 gradeBadgeEl.title = '';
             }
+            if (item.unit_managed) tr.title = '';
+        } else if (item.unit_managed) {
+            // 상세 관리 물품의 현재 수량은 상세 개수로만 바뀜
+            if (inputQty) inputQty.readOnly = true;
+            tr.querySelectorAll('.btn-qty-minus, .btn-qty-plus').forEach(b => { b.style.display = 'none'; });
+        }
+
+        // [추가] 상세 관리 +/− 버튼
+        const btnUnit = tr.querySelector('.btn-unit-manage');
+        if (btnUnit && rowEditable) {
+            btnUnit.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleUnitManaged(item);
+            });
+        }
+        // [추가] 상세 관리 물품 행 클릭 → 상세 등록 (입력칸·버튼 클릭은 제외)
+        if (item.unit_managed && rowEditable) {
+            tr.addEventListener('click', (e) => {
+                if (e.target.closest('button, input, select, .stock-grade-cell')) return;
+                openStockUnitModal(item.id);
+            });
         }
 
         if (btnMinus && inputQty) {
@@ -1010,11 +1733,11 @@ function renderModalMasterItemList(filterText) {
         const partnoVal = item.partno || '-';
 
         li.innerHTML = `
-            <div style="width: 85px; flex-shrink: 0; text-align: center; color: #8b949e; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 6px;" title="${partnoVal}">${partnoVal}</div>
-            <div style="width: 200px; flex-shrink: 0; color: #58a6ff; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 6px;" title="${codeVal}">${codeVal}</div>
-            <div style="width: 200px; flex-shrink: 0; color: #e6edf3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 6px;" title="${partVal}">${partVal}</div>
-            <div style="flex: 1; min-width: 160px; color: #8b949e; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 6px;" title="${specVal}">${specVal}</div>
-            <div style="width: 95px; flex-shrink: 0; text-align: center;">${badgeHtml}</div>
+            <div class="mcol-partno" style="width: 85px; flex-shrink: 0; text-align: center; color: #8b949e; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 6px;" title="${partnoVal}">${partnoVal}</div>
+            <div class="mcol-code" style="width: 200px; flex-shrink: 0; color: #58a6ff; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 6px;" title="${codeVal}">${codeVal}</div>
+            <div class="mcol-part" style="width: 200px; flex-shrink: 0; color: #e6edf3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 6px;" title="${partVal}">${partVal}</div>
+            <div class="mcol-spec" style="flex: 1; min-width: 160px; color: #8b949e; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 6px;" title="${specVal}">${specVal}</div>
+            <div class="mcol-status" style="width: 95px; flex-shrink: 0; text-align: center;">${badgeHtml}</div>
         `;
 
         // 규칙 9 준수: 모바일 터치 스크롤 시 자동 선택 방지 (터치 이동 거리 6px 초과 시 스킵)
@@ -1258,6 +1981,11 @@ async function importMasterItemsToCurrentGroup() {
 
 // 물품 관리 현황 CSV 내보내기 (사업장 및 안전 재고 수량 포함)
 function exportStockCsv() {
+    // [요청] 본인 사업장 구분(최종관리자는 전체)만 내보내기 가능
+    const mySiteGroup = getUserStockSiteGroup();
+    if (!isStockSuperAdmin() && !(mySiteGroup && currentStockSiteGroup === mySiteGroup)) {
+        return alert('본인 사업장의 물품만 내보낼 수 있습니다.');
+    }
     let groupItems = adminItemStocks;
     if (currentStockSiteGroup && currentStockSiteGroup !== '전체' && currentStockSiteGroup !== 'ALL') {
         groupItems = adminItemStocks.filter(it => (it.site_group || '').trim() === currentStockSiteGroup.trim());
@@ -1267,7 +1995,7 @@ function exportStockCsv() {
         return alert(`내보낼 물품 데이터가 없습니다.`);
     }
 
-    const headers = ['No', '사업장구분', '사업장명', '상세구분', '품번', '코드명', '물품명', '세부규격', '현재수량', '안전재고수량', '상태', '등급'];
+    const headers = ['No', '사업장구분', '사업장명', '품번', '코드명', '물품명', '세부규격', '현재수량', '안전재고수량', '상태', '등급'];
     const rows = groupItems.map((item, idx) => {
         const qty = parseInt(item.quantity) || 0;
         const safetyQty = parseInt(item.safety_quantity) || 0;
@@ -1278,7 +2006,6 @@ function exportStockCsv() {
             idx + 1,
             `"${(item.site_group || '').replace(/"/g, '""')}"`,
             `"${(item.site_name || '').replace(/"/g, '""')}"`,
-            `"${(item.detail_type || '').replace(/"/g, '""')}"`,
             `"${(item.partno || '').replace(/"/g, '""')}"`,
             `"${(item.code || '').replace(/"/g, '""')}"`,
             `"${(item.part || '').replace(/"/g, '""')}"`,

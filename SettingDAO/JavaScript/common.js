@@ -2148,6 +2148,8 @@ function setupResizers() {
 function setupCollapsibleCards() {
     // [요청] 관리자(admin) 페이지에서는 접기 기능 비활성화
     if (window.location.pathname.indexOf('admin') !== -1) return;
+    // [요청] 물품 관리 현황(Item) 페이지에서도 접기 기능 비활성화
+    if (document.getElementById('section-item-stock-mgmt')) return;
 
     const cards = document.querySelectorAll('.card, .setup-card');
     cards.forEach(card => {

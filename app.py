@@ -463,11 +463,13 @@ class ItemStock(db.Model):
     quantity = db.Column(db.Integer, default=0)                        # 보유/현재 수량
     safety_quantity = db.Column(db.Integer, default=0)                 # [추가] 안전 재고 수량
     memo = db.Column(db.String(255), default='')                       # 비고
+    unit_managed = db.Column(db.Boolean, default=False)                # [추가] 상세 관리(입고일·S/N 등) 여부
     updated_at = db.Column(db.DateTime, default=get_utc_now, onupdate=get_utc_now)
 
     def to_dict(self):
         return {
             'id': self.id,
+            'unit_managed': bool(self.unit_managed),
             'site_group': self.site_group or '',
             'site_name': self.site_name or '',
             'item_id': self.item_id or '',
@@ -482,6 +484,33 @@ class ItemStock(db.Model):
             'memo': self.memo or '',
             'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else ''
         }
+
+# [추가] 상세 관리 물품 상세 (물품 1개당 1행: 입고일, S/N, 사용일, 사용 장비, 정기/비정기)
+class ItemStockUnit(db.Model):
+    __tablename__ = 'item_stock_unit'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    stock_id = db.Column(db.Integer, nullable=False, index=True)  # ItemStock.id
+    in_date = db.Column(db.String(10), default='')     # 입고일 YYYY-MM-DD
+    serial = db.Column(db.String(100), default='')     # S/N
+    used_date = db.Column(db.String(10), default='')   # 사용일 (비어 있으면 재고)
+    used_equip = db.Column(db.String(200), default='') # 사용 장비
+    work_kind = db.Column(db.String(10), default='')   # 정기 / 비정기
+    updated_at = db.Column(db.DateTime, default=get_utc_now, onupdate=get_utc_now)
+
+    def to_dict(self):
+        return {'id': self.id, 'stock_id': self.stock_id, 'in_date': self.in_date or '',
+                'serial': self.serial or '', 'used_date': self.used_date or '',
+                'used_equip': self.used_equip or '', 'work_kind': self.work_kind or ''}
+
+# [추가] 작업 사용 물품 재고 반영 이력 (같은 작업이 두 번 차감되지 않도록 기록)
+class ItemUsageApply(db.Model):
+    __tablename__ = 'item_usage_apply'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    log_uid = db.Column(db.Integer, unique=True, nullable=False, index=True)  # maint_log._unique_id
+    log_id = db.Column(db.String(50), default='')
+    applied_by = db.Column(db.String(100), default='')
+    applied_at = db.Column(db.String(30), default='')  # KST, YYYY-MM-DD HH:MM
+    details = db.Column(db.Text, default='[]')  # 차감 내역 JSON
 
 # [추가] 장비 모델 마스터 데이터 테이블 (EquipmentModel)
 class EquipmentModel(db.Model):
@@ -723,7 +752,8 @@ def ensure_item_stock_table():
         stock_cols = [
             ('site_name', 'VARCHAR(100) DEFAULT ""'),
             ('safety_quantity', 'INTEGER DEFAULT 0'),
-            ('grade', 'VARCHAR(20) DEFAULT "A"')
+            ('grade', 'VARCHAR(20) DEFAULT "A"'),
+            ('unit_managed', 'BOOLEAN DEFAULT 0')  # [추가] 상세 관리 여부
         ]
         for col, typ in stock_cols:
             try:
@@ -2418,6 +2448,401 @@ def tracking():
 def item_page():
     return render_template('item.html', active_page='item')
 
+
+# [추가] 사용 이력: 최근 일주일 작업(유지보수 기록)의 사용 물품을 재고에 반영
+USAGE_INVALID_KWS = {'내용 없음', '장비 점검', 'PM 점검', 'BM 점검', '파트 이상 교체', '파트 이상 수리', '용액 용자 이상',
+                     '파츠 이상 교체', '파츠 이상 수리', '물품 이상 교체', '물품 이상 수리', '단순 조치', '현장 이슈',
+                     'PC 이상', '작업자 실수', '통신 이상', '프로그램 이상', '기타'}
+
+
+def _usage_normalize_date(d):
+    d = str(d or '').split('T')[0].replace('.', '-').replace('/', '-').strip()
+    p = d.split('-')
+    if len(p) == 3 and all(x.isdigit() for x in p):
+        return f"{p[0].zfill(4)}-{p[1].zfill(2)}-{p[2].zfill(2)}"
+    return d
+
+
+def _usage_parse_items(content):
+    """작업 내용에서 마스터 물품(AdminItem)과 일치하는 사용 물품 목록 추출 (물품당 1개)"""
+    items = []
+    if not content or content == '내용 없음':
+        return items
+    for sp in split_safety_content(content):
+        parsed = parse_part_item_string(sp)
+        if not parsed:
+            continue
+        name = parsed['clean_name']
+        if not name or name in USAGE_INVALID_KWS:
+            continue
+        admin = AdminItem.query.filter((AdminItem.code == name) | (db.func.trim(AdminItem.code) == name)).first()
+        if not admin:
+            admin = AdminItem.query.filter((AdminItem.part == name) | (db.func.trim(AdminItem.part) == name)).first()
+        if not admin:
+            continue
+        cost = (parsed.get('cost_tag') or '유상').strip()
+        items.append({'admin_id': admin.id, 'code': admin.code or name, 'part': admin.part or '',
+                      'spec': admin.spec or '', 'detail': parsed.get('part_detail') or '', 'qty': 1,
+                      'cost': cost,
+                      # [요청] 비용처리가 무상(중고)인 물품은 재고 반영(차감)에서 제외
+                      'excluded': cost.replace(' ', '') == '무상(중고)'})
+    return items
+
+
+def _usage_find_stock(site_group, site_name, item):
+    """차감할 재고 행 찾기: 같은 사업장 > 사업장 구분 공통, 수량 있는 행 우선, 등급 A > B > C"""
+    q = ItemStock.query.filter(ItemStock.site_group == site_group)
+    by_id = q.filter(ItemStock.item_id == str(item['admin_id'])).all() if item.get('admin_id') else []
+    cands = by_id or q.filter(ItemStock.code == item['code']).all()
+    if not cands and item.get('part'):
+        cands = q.filter(ItemStock.part == item['part']).all()
+    if not cands:
+        return None
+    cands.sort(key=lambda s: (
+        0 if (s.site_name or '') == (site_name or '') else (1 if not s.site_name else 2),
+        0 if (s.quantity or 0) > 0 else 1,
+        (s.grade or 'A').upper()
+    ))
+    best = cands[0]
+    # 다른 사업장 전용 재고는 차감하지 않음
+    if best.site_name and best.site_name != (site_name or ''):
+        return None
+    return best
+
+
+def _usage_build_work(log, eq_map, site_group_map):
+    eq = eq_map.get(log.equip_id)
+    site_name = eq.site_name if eq else (str(log.equip_id or '').split('::')[0])
+    site_group = site_group_map.get(site_name, '')
+    items = _usage_parse_items(log.content or '')
+    for it in items:
+        st = _usage_find_stock(site_group, site_name, it) if site_group else None
+        it['stock_id'] = st.id if st else None
+        it['stock_qty'] = (st.quantity or 0) if st else None
+        it['stock_grade'] = (st.grade or 'A') if st else ''
+        it['stock_managed'] = bool(st.unit_managed) if st else False  # [추가] 상세 관리 물품은 자동 차감 제외
+    return {
+        'log_uid': log._unique_id,
+        'log_id': log.id or '',
+        'date': _usage_normalize_date(log.date),
+        'site_group': site_group,
+        'site_name': site_name,
+        'equip_name': (eq.name if eq else '') or '',
+        'equip_serial': (eq.serial if eq else '') or '',
+        'type': log.type or '',
+        'worker': log.worker or '',
+        'content': log.content or '',
+        'items': items,
+    }
+
+
+def _usage_group_denied(group):
+    """물품 관리 현황 수정 권한과 동일: 최종관리자는 전체, 관리자는 본인 계정 사업장만"""
+    if session.get('role') == 'superadmin':
+        return False
+    if session.get('role') != 'admin':
+        return True
+    me = db.session.get(User, session.get('user_id'))
+    my_site = ((me.site if me else '') or '').strip()
+    if not my_site or my_site in ('전체', '구분없음', 'None', 'null'):
+        return True
+    return (group or '').strip() != my_site
+
+
+@app.route('/api/item/usage', methods=['GET'])
+@login_required
+def get_item_usage():
+    try:
+        group = (request.args.get('group') or '').strip()
+        if group in ('전체', 'ALL'):
+            group = ''
+        # [요청] 본인 사업장 구분만 조회 가능 (최종관리자는 전체)
+        if _usage_group_denied(group or '전체'):
+            return jsonify({'status': 'fail', 'message': '본인 사업장의 사용 이력만 확인할 수 있습니다.'}), 403
+        today = (datetime.now(timezone.utc) + timedelta(hours=9)).date()
+        start = (today - timedelta(days=6)).strftime('%Y-%m-%d')
+        end = today.strftime('%Y-%m-%d')
+
+        site_group_map = {s.name: (s.group or '') for s in Site.query.all()}
+        eq_map = {e.id: e for e in Equipment.query.all()}
+        applied = {a.log_uid: a for a in ItemUsageApply.query.all()}
+
+        works = []
+        for log in LogItem.query.filter(LogItem.date >= start[:4]).all():
+            d = _usage_normalize_date(log.date)
+            if not (start <= d <= end):
+                continue
+            if (log.status or '조치완료') != '조치완료':
+                continue
+            w = _usage_build_work(log, eq_map, site_group_map)
+            if not w['items']:
+                continue
+            if group and w['site_group'] != group:
+                continue
+            a = applied.get(log._unique_id)
+            w['applied'] = bool(a)
+            w['applied_by'] = a.applied_by if a else ''
+            w['applied_at'] = a.applied_at if a else ''
+            w['can_apply'] = not _usage_group_denied(w['site_group'])
+            works.append(w)
+
+        works.sort(key=lambda w: (w['date'], w['log_uid']), reverse=True)
+        return jsonify({'status': 'success', 'start': start, 'end': end, 'works': works})
+    except Exception as e:
+        app.logger.error(f"Error loading item usage: {e}")
+        return jsonify({'status': 'fail', 'message': '사용 이력을 불러오지 못했습니다.'}), 500
+
+
+@app.route('/api/item/usage/apply', methods=['POST'])
+@admin_required
+def apply_item_usage():
+    try:
+        log_uid = int((request.json or {}).get('log_uid'))
+    except (TypeError, ValueError):
+        return jsonify({'status': 'fail', 'message': '작업 정보가 올바르지 않습니다.'}), 400
+    try:
+        log = db.session.get(LogItem, log_uid)
+        if not log:
+            return jsonify({'status': 'fail', 'message': '작업을 찾을 수 없습니다.'}), 404
+        if ItemUsageApply.query.filter_by(log_uid=log_uid).first():
+            return jsonify({'status': 'fail', 'message': '이미 반영된 작업입니다.'}), 409
+
+        site_group_map = {s.name: (s.group or '') for s in Site.query.all()}
+        eq = db.session.get(Equipment, log.equip_id)
+        w = _usage_build_work(log, {log.equip_id: eq} if eq else {}, site_group_map)
+        if _usage_group_denied(w['site_group']):
+            return jsonify({'status': 'fail', 'message': '본인 사업장의 물품만 수정할 수 있습니다.'}), 403
+        if not any(not it.get('excluded') for it in w['items']):
+            return jsonify({'status': 'fail', 'message': '반영할 사용 물품이 없습니다. (무상(중고) 물품은 제외)'}), 400
+
+        details, updated = [], []
+        unit_picks = (request.json or {}).get('unit_picks') or {}  # {물품 순번: {unit_id, used_date, used_equip, work_kind}}
+        if not isinstance(unit_picks, dict):
+            unit_picks = {}
+        picked_ids = set()
+        # [요청] 코드명 기준 차감: 같은 코드명이 물품 상세만 달리 여러 번 있으면 그 횟수만큼 같은 코드명 재고에서 차감
+        #  (차감할 때마다 재고를 다시 찾아, 한 등급 재고가 0이 되면 수량이 남은 다른 등급에서 차감)
+        for idx, it in enumerate(w['items']):
+            if it.get('excluded'):
+                details.append({'code': it['code'], 'cost': it['cost'], 'deducted': 0, 'reason': '무상(중고) 제외'})
+                continue
+            db.session.flush()
+            st = _usage_find_stock(w['site_group'], w['site_name'], it) if w['site_group'] else None
+            if not st:
+                details.append({'code': it['code'], 'spec': it['spec'], 'deducted': 0, 'reason': '재고 없음'})
+                continue
+            if st.unit_managed:
+                # [요청] 상세 관리 물품: 사용자가 고른 미사용 물품에 사용일·사용 장비·정기/비정기 기록 → 수량 재계산
+                pick = unit_picks.get(str(idx)) or {}
+                unit = db.session.get(ItemStockUnit, pick.get('unit_id')) if pick.get('unit_id') else None
+                ustock = db.session.get(ItemStock, unit.stock_id) if unit else None
+                valid = (unit and ustock and ustock.unit_managed and ustock.site_group == w['site_group']
+                         and not (unit.used_date or '') and unit.id not in picked_ids
+                         and (ustock.code == it['code'] or (ustock.item_id and ustock.item_id == str(it.get('admin_id')))))
+                if not valid:
+                    details.append({'code': it['code'], 'spec': it['spec'], 'stock_id': st.id, 'deducted': 0,
+                                    'reason': '상세 선택 안 함'})
+                    continue
+                picked_ids.add(unit.id)
+                before = ustock.quantity or 0
+                unit.used_date = _unit_clip(pick.get('used_date') or w['date'], 10)
+                unit.used_equip = _unit_clip(pick.get('used_equip'), 200)
+                wk = _unit_clip(pick.get('work_kind'), 10)
+                unit.work_kind = wk if wk in UNIT_WORK_KINDS else ''
+                db.session.flush()
+                _unit_recount(ustock)
+                details.append({'code': it['code'], 'spec': it['spec'], 'stock_id': ustock.id, 'unit_id': unit.id,
+                                'serial': unit.serial or '', 'before': before, 'after': ustock.quantity,
+                                'deducted': before - (ustock.quantity or 0)})
+                if ustock not in updated:
+                    updated.append(ustock)
+                continue
+            before = st.quantity or 0
+            after = max(0, before - it['qty'])
+            st.quantity = after
+            details.append({'code': it['code'], 'spec': it['spec'], 'stock_id': st.id,
+                            'before': before, 'after': after, 'deducted': before - after})
+            updated.append(st)
+
+        me = db.session.get(User, session.get('user_id'))
+        db.session.add(ItemUsageApply(
+            log_uid=log_uid, log_id=log.id or '',
+            applied_by=(getattr(me, 'name', '') or session.get('user_id') or ''),
+            applied_at=(datetime.now(timezone.utc) + timedelta(hours=9)).strftime('%Y-%m-%d %H:%M'),
+            details=json.dumps(details, ensure_ascii=False)
+        ))
+        db.session.commit()
+        return jsonify({'status': 'success', 'details': details, 'stocks': [s.to_dict() for s in updated]})
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error applying item usage: {e}")
+        return jsonify({'status': 'fail', 'message': '재고 반영 중 오류가 발생했습니다.'}), 500
+
+
+@app.route('/api/item/usage/units', methods=['GET'])
+@admin_required
+def get_item_usage_units():
+    """[요청] 사용 이력 반영 전: 작업의 상세 관리 물품별로 고를 수 있는 미사용 물품 목록 + 기본값(사용일·장비·정기/비정기)"""
+    try:
+        log_uid = int(request.args.get('log_uid'))
+    except (TypeError, ValueError):
+        return jsonify({'status': 'fail', 'message': '작업 정보가 올바르지 않습니다.'}), 400
+    log = db.session.get(LogItem, log_uid)
+    if not log:
+        return jsonify({'status': 'fail', 'message': '작업을 찾을 수 없습니다.'}), 404
+    site_group_map = {s.name: (s.group or '') for s in Site.query.all()}
+    eq = db.session.get(Equipment, log.equip_id)
+    w = _usage_build_work(log, {log.equip_id: eq} if eq else {}, site_group_map)
+    if _usage_group_denied(w['site_group']):
+        return jsonify({'status': 'fail', 'message': '본인 사업장의 물품만 수정할 수 있습니다.'}), 403
+
+    wtype = (log.type or '').strip()
+    default_kind = wtype if wtype in ('정기', '비정기') else ''
+    equip_core = ' '.join(p for p in [w['equip_name'], f"({w['equip_serial']})" if w['equip_serial'] else ''] if p)
+
+    groups = []
+    for idx, it in enumerate(w['items']):
+        if it.get('excluded') or not it.get('stock_managed'):
+            continue
+        # 같은 코드명의 상세 관리 재고(등급별) 전체에서 미사용 물품 후보 수집
+        q = ItemStock.query.filter(ItemStock.site_group == w['site_group'], ItemStock.unit_managed == True)  # noqa: E712
+        stocks = [s for s in q.all() if s.code == it['code'] or (s.item_id and s.item_id == str(it.get('admin_id')))]
+        stocks = [s for s in stocks if not s.site_name or s.site_name == w['site_name']]
+        units = []
+        equip_opts = []
+        for s in stocks:
+            for u in ItemStockUnit.query.filter_by(stock_id=s.id).order_by(ItemStockUnit.in_date, ItemStockUnit.id).all():
+                if not (u.used_date or ''):
+                    d = u.to_dict()
+                    d['grade'] = s.grade or 'A'
+                    units.append(d)
+            for o in _unit_equip_options(s):
+                if o not in equip_opts:
+                    equip_opts.append(o)
+        # 기본 사용 장비: 장비 목록 표기와 같은 형식이 있으면 그것으로
+        default_equip = next((o for o in equip_opts if o.endswith(equip_core)), equip_core) if equip_core else ''
+        groups.append({'index': idx, 'code': it['code'], 'detail': it.get('detail') or '', 'cost': it.get('cost') or '',
+                       'units': units, 'equip_options': equip_opts, 'default_equip': default_equip})
+
+    return jsonify({'status': 'success', 'date': w['date'], 'default_kind': default_kind, 'groups': groups})
+
+
+# ------------------------------------------------------------------------------
+# [추가] 상세 관리 물품 상세 (입고일, S/N, 사용일, 사용 장비, 정기/비정기)
+#  - 현재 수량 = 사용일이 비어 있는 상세 개수
+# ------------------------------------------------------------------------------
+UNIT_WORK_KINDS = ('', '정기', '비정기')
+
+
+def _unit_clip(v, n):
+    return str(v or '').strip()[:n]
+
+
+def _unit_recount(stock):
+    stock.quantity = ItemStockUnit.query.filter(
+        ItemStockUnit.stock_id == stock.id,
+        db.func.coalesce(ItemStockUnit.used_date, '') == ''
+    ).count()
+
+
+def _unit_equip_options(stock):
+    """사용 장비 선택지: 해당 사업장(없으면 사업장 구분)의 장비 목록"""
+    sites = [stock.site_name] if stock.site_name else \
+        [s.name for s in Site.query.filter(Site.group == stock.site_group).all()]
+    if not sites:
+        return []
+    opts = []
+    for e in Equipment.query.filter(Equipment.site_name.in_(sites)).order_by(Equipment.site_name, Equipment.name).all():
+        label = ' '.join(p for p in [e.site_name if len(sites) > 1 else '', e.name or '', f"({e.serial})" if e.serial else ''] if p)
+        if label and label not in opts:
+            opts.append(label)
+    return opts
+
+
+def _unit_get_stock(stock_id):
+    try:
+        stock = db.session.get(ItemStock, int(stock_id))
+    except (TypeError, ValueError):
+        stock = None
+    if not stock:
+        return None, (jsonify({'status': 'fail', 'message': '물품을 찾을 수 없습니다.'}), 404)
+    if _usage_group_denied(stock.site_group):
+        return None, (jsonify({'status': 'fail', 'message': '본인 사업장의 물품만 관리할 수 있습니다.'}), 403)
+    return stock, None
+
+
+@app.route('/api/item/units', methods=['GET'])
+@admin_required
+def get_item_units():
+    stock, err = _unit_get_stock(request.args.get('stock_id'))
+    if err:
+        return err
+    units = ItemStockUnit.query.filter_by(stock_id=stock.id).order_by(ItemStockUnit.in_date, ItemStockUnit.id).all()
+    return jsonify({'status': 'success', 'stock': stock.to_dict(),
+                    'units': [u.to_dict() for u in units], 'equip_options': _unit_equip_options(stock)})
+
+
+@app.route('/api/item/units/managed', methods=['POST'])
+@admin_required
+def set_item_unit_managed():
+    """상세 관리 켜기/끄기. 켜면 현재 수량을 상세 개수로 다시 계산"""
+    data = request.json or {}
+    stock, err = _unit_get_stock(data.get('stock_id'))
+    if err:
+        return err
+    try:
+        stock.unit_managed = bool(data.get('managed'))
+        if stock.unit_managed:
+            _unit_recount(stock)
+        db.session.commit()
+        return jsonify({'status': 'success', 'stock': stock.to_dict()})
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error toggling unit_managed: {e}")
+        return jsonify({'status': 'fail', 'message': '변경 중 오류가 발생했습니다.'}), 500
+
+
+@app.route('/api/item/units/save', methods=['POST'])
+@admin_required
+def save_item_unit():
+    """상세 1건 추가(CREATE) / 수정(UPDATE) / 삭제(DELETE) 후 현재 수량 재계산"""
+    data = request.json or {}
+    action = data.get('action')
+    p = data.get('payload') or {}
+    stock, err = _unit_get_stock(data.get('stock_id'))
+    if err:
+        return err
+    if not stock.unit_managed:
+        return jsonify({'status': 'fail', 'message': '상세 관리(+)로 지정된 물품만 상세를 등록할 수 있습니다.'}), 400
+    try:
+        if action == 'CREATE':
+            unit = ItemStockUnit(stock_id=stock.id)
+            db.session.add(unit)
+        else:
+            unit = db.session.get(ItemStockUnit, p.get('id'))
+            if not unit or unit.stock_id != stock.id:
+                return jsonify({'status': 'fail', 'message': '상세 항목을 찾을 수 없습니다.'}), 404
+            if action == 'DELETE':
+                db.session.delete(unit)
+                unit = None
+            elif action != 'UPDATE':
+                return jsonify({'status': 'fail', 'message': '알 수 없는 요청입니다.'}), 400
+        if unit is not None:
+            for key, n in (('in_date', 10), ('serial', 100), ('used_date', 10), ('used_equip', 200)):
+                if key in p:
+                    setattr(unit, key, _unit_clip(p.get(key), n))
+            if 'work_kind' in p:
+                wk = _unit_clip(p.get('work_kind'), 10)
+                unit.work_kind = wk if wk in UNIT_WORK_KINDS else ''
+        db.session.flush()
+        _unit_recount(stock)
+        db.session.commit()
+        return jsonify({'status': 'success', 'unit': unit.to_dict() if unit else None, 'stock': stock.to_dict()})
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error saving item unit: {e}")
+        return jsonify({'status': 'fail', 'message': '저장 중 오류가 발생했습니다.'}), 500
+
 @app.route('/api/tracking/reports', methods=['GET'])
 @login_required
 def get_tracking_reports():
@@ -3533,7 +3958,8 @@ def admin_crud():
 
                 if existing:
                     # 기존 물품 및 동일 등급이 이미 있으면 수량 누적 및 안전재고 갱신
-                    existing.quantity = (existing.quantity or 0) + quantity
+                    if not existing.unit_managed:  # [추가] 상세 관리 물품 수량은 상세 개수로만 계산
+                        existing.quantity = (existing.quantity or 0) + quantity
                     if 'safety_quantity' in payload:
                         existing.safety_quantity = safety_quantity
                     if memo: existing.memo = memo
@@ -3571,7 +3997,8 @@ def admin_crud():
                 if _stock_group_denied(stock.site_group) or ('site_group' in payload and _stock_group_denied(str(payload['site_group']))):
                     return _stock_denied_resp()
 
-                if 'quantity' in payload:
+                # [추가] 상세 관리 물품은 현재 수량을 직접 바꾸지 않음 (상세 등록 개수로 자동 계산)
+                if 'quantity' in payload and not stock.unit_managed:
                     try:
                         stock.quantity = int(payload['quantity'])
                     except (ValueError, TypeError):
@@ -3614,7 +4041,7 @@ def admin_crud():
                     s_id = u.get('id')
                     s = db.session.get(ItemStock, s_id) if s_id else None
                     if s:
-                        if 'quantity' in u:
+                        if 'quantity' in u and not s.unit_managed:
                             try:
                                 s.quantity = int(u['quantity'])
                             except (ValueError, TypeError):
@@ -3629,12 +4056,29 @@ def admin_crud():
                 db.session.commit()
                 return jsonify({"status": "success"})
 
+            elif action == 'DELETE_ALL':
+                # [추가] 선택한 사업장 구분의 물품 전체 삭제 (최종관리자만)
+                if role != 'superadmin':
+                    return jsonify({"status": "fail", "message": "전체 삭제는 최종관리자만 할 수 있습니다."}), 403
+                site_group = str(payload.get('site_group', '')).strip()
+                if site_group in ('', '전체', 'ALL'):
+                    ItemStockUnit.query.delete(synchronize_session=False)
+                    count = ItemStock.query.delete(synchronize_session=False)
+                else:
+                    ids = [s.id for s in ItemStock.query.filter_by(site_group=site_group).all()]
+                    if ids:
+                        ItemStockUnit.query.filter(ItemStockUnit.stock_id.in_(ids)).delete(synchronize_session=False)
+                    count = ItemStock.query.filter_by(site_group=site_group).delete(synchronize_session=False)
+                db.session.commit()
+                return jsonify({"status": "success", "deleted": count})
+
             elif action == 'DELETE':
                 stock_id = payload.get('id')
                 if stock_id:
                     target = db.session.get(ItemStock, stock_id)
                     if target and _stock_group_denied(target.site_group):
                         return _stock_denied_resp()
+                    ItemStockUnit.query.filter_by(stock_id=stock_id).delete(synchronize_session=False)  # [추가] 상세도 함께 삭제
                     ItemStock.query.filter_by(id=stock_id).delete()
                     db.session.commit()
                 return jsonify({"status": "success"})
