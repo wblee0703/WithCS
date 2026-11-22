@@ -1279,10 +1279,9 @@ body.role-admin .tag-remove {
     text-align: center;
     white-space: nowrap;
 }
-.item-stock-table .code-mode-badge { display: none; } /* PC는 구분 열에 표시 */
 @media (max-width: 950px) {
-    .item-stock-table .col-mode { display: none !important; }
-    .item-stock-table .code-mode-badge { display: inline; } /* 모바일은 코드명 앞에 표시 */
+    /* [요청] 모바일도 코드명 앞에 구분 열 표시 (품번 열은 모바일에서 숨김이라 코드명 바로 앞) */
+    .item-stock-table .col-mode { width: 40px; min-width: 40px; padding: 6px 2px; }
 }
 #stock-unit-modal .stock-unit-body {
     padding: 12px;
@@ -1666,6 +1665,14 @@ body.role-admin .tag-remove {
 }
 .btn-usage-apply.applied {
     color: #7ee787;
+}
+/* [요청] 반영됨 버튼: 누르면 반영 수정 */
+.btn-usage-apply.applied:not(:disabled) {
+    background: #21262d;
+    border-color: rgba(63, 185, 80, 0.5);
+}
+.btn-usage-apply.applied:not(:disabled):hover {
+    background: rgba(63, 185, 80, 0.15);
 }
 
 /* [추가] 모바일 축소/확장 버튼 (PC에서는 숨김) */

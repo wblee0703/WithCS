@@ -299,7 +299,7 @@ function setupUsageModal() {
     if (list) {
         list.addEventListener('click', (e) => {
             const b = e.target.closest('.btn-usage-apply');
-            if (b && !b.disabled) applyUsageWork(b.dataset.logUid, b);
+            if (b && !b.disabled) applyUsageWork(b.dataset.logUid, b, b.dataset.edit === '1');
         });
     }
 }
@@ -344,7 +344,10 @@ function renderUsageWorkList(works) {
         return;
     }
     list.innerHTML = works.map(w => {
-        const equip = [w.site_name, w.equip_name, w.equip_serial ? `(${w.equip_serial})` : ''].filter(Boolean).join(' ');
+        // [요청] 사업장 구분은 창 제목(또는 '전체' 탭의 구분 표시)에 이미 나오므로, 사업장명이 사업장 구분과 같으면 장비명 앞에서 생략
+        const groupNow = showGroup ? (w.site_group || '') : currentStockSiteGroup;
+        const siteName = (w.site_name || '').trim() === (groupNow || '').trim() ? '' : w.site_name;
+        const equip = [siteName, w.equip_name, w.equip_serial ? `(${w.equip_serial})` : ''].filter(Boolean).join(' ');
         // [요청] 코드명만 표시, 작업에 물품 상세가 있으면 [상세] 표시, 교체 수량 표시는 생략
         // [요청] 코드명 앞에 비용처리 표시, 무상(중고)는 반영 제외 표시
         const items = (w.items || []).map(it => {
@@ -360,6 +363,9 @@ function renderUsageWorkList(works) {
         let action;
         if (!w.applied && !hasDeductible) {
             action = '<button type="button" class="btn-usage-apply" disabled title="무상(중고) 물품만 있어 차감할 물품이 없습니다.">반영 제외</button>';
+        } else if (w.applied && w.can_apply) {
+            // [요청] 반영됨 버튼을 누르면 반영 내용 수정 (사용 물품 다시 선택 → 이전 반영을 되돌리고 다시 반영)
+            action = `<button type="button" class="btn-usage-apply applied" data-log-uid="${w.log_uid}" data-edit="1" title="${escapeHtml(w.applied_at)} ${escapeHtml(w.applied_by)}\n누르면 반영 내용을 수정합니다.">반영됨</button>`;
         } else if (w.applied) {
             action = `<button type="button" class="btn-usage-apply applied" disabled title="${escapeHtml(w.applied_at)} ${escapeHtml(w.applied_by)}">반영됨</button>`;
         } else if (!w.can_apply) {
@@ -391,29 +397,30 @@ function renderUsageWorkList(works) {
     }).join('');
 }
 
-async function applyUsageWork(logUid, btn) {
+async function applyUsageWork(logUid, btn, isEdit = false) {
     const row = btn.closest('.usage-work-row');
     const head = row ? row.querySelector('.usage-work-head') : null;
     const summary = head ? head.textContent.replace(/\s+/g, ' ').trim() : '';
 
     // [요청] 사용 물품 선택 창을 먼저 띄움 (수량 모드 물품도 현재 → 반영 후 수량 표시)
+    // [요청] 반영 수정도 같은 창: 이전에 고른 물품이 선택된 상태로 열림
     const work = usageWorksByUid[String(logUid)];
-    if (work && (work.items || []).some(it => !it.excluded)) {
-        openUsagePickModal(logUid, summary, (picks) => submitUsageApply(logUid, btn, picks));
+    if (isEdit || (work && (work.items || []).some(it => !it.excluded))) {
+        openUsagePickModal(logUid, summary, (picks) => submitUsageApply(logUid, btn, picks, isEdit), isEdit);
         return;
     }
-    if (!confirm(`이 작업의 사용 물품을 현재 수량에서 차감할까요?\n${summary}\n\n한 번 반영하면 되돌릴 수 없습니다.`)) return;
+    if (!confirm(`이 작업의 사용 물품을 현재 수량에서 차감할까요?\n${summary}`)) return;
     submitUsageApply(logUid, btn, {});
 }
 
-async function submitUsageApply(logUid, btn, unitPicks) {
+async function submitUsageApply(logUid, btn, unitPicks, isEdit = false) {
     btn.disabled = true;
-    btn.textContent = '반영 중...';
+    btn.textContent = isEdit ? '수정 중...' : '반영 중...';
     try {
         const res = await fetch('/api/item/usage/apply', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
-            body: JSON.stringify({ log_uid: Number(logUid), unit_picks: unitPicks || {} })
+            body: JSON.stringify({ log_uid: Number(logUid), unit_picks: unitPicks || {}, edit: !!isEdit })
         });
         const data = await res.json();
         if (!res.ok || data.status !== 'success') throw new Error(data.message || '반영 실패');
@@ -437,15 +444,16 @@ async function submitUsageApply(logUid, btn, unitPicks) {
         openUsageModal();
     } catch (e) {
         console.error(e);
-        alert(`재고 반영 실패: ${e.message || ''}`);
+        alert(`${isEdit ? '반영 수정' : '재고 반영'} 실패: ${e.message || ''}`);
         btn.disabled = false;
-        btn.textContent = '반영';
+        btn.textContent = isEdit ? '반영됨' : '반영';
     }
 }
 
 // [요청] 상세 관리 물품 선택 창: 물품별로 사용한 미사용 물품(S/N)을 고르고 사용일·사용 장비·정기/비정기 기록
 let usagePickOnConfirm = null;
 let usagePickGroups = [];
+let usagePickIsEdit = false; // [요청] 반영 수정 모드
 
 function setupUsagePickModal() {
     const modal = document.getElementById('usage-pick-modal');
@@ -478,7 +486,10 @@ function setupUsagePickModal() {
             alert(`사용한 물품(S/N)을 모두 지정해야 반영할 수 있습니다.\n지정하지 않은 항목: ${missing.join(', ')}`);
             return;
         }
-        if (!confirm('선택한 물품에 사용 기록을 남기고 반영할까요?\n한 번 반영하면 되돌릴 수 없습니다.')) return;
+        const msg = usagePickIsEdit
+            ? '반영 내용을 수정할까요?\n\n이전에 반영한 사용 기록을 되돌리고, 지금 선택한 내용으로 다시 반영합니다.'
+            : '선택한 물품에 사용 기록을 남기고 반영할까요?\n반영한 뒤에도 [반영됨]을 눌러 수정할 수 있습니다.';
+        if (!confirm(msg)) return;
         const cb = usagePickOnConfirm;
         close();
         if (cb) cb(picks);
@@ -496,18 +507,23 @@ function refreshUsagePickDisabled() {
     });
 }
 
-async function openUsagePickModal(logUid, summary, onConfirm) {
+async function openUsagePickModal(logUid, summary, onConfirm, isEdit = false) {
     const modal = document.getElementById('usage-pick-modal');
     const body = document.getElementById('usage-pick-body');
     if (!modal || !body) return;
     try {
-        const res = await fetch(`/api/item/usage/units?log_uid=${encodeURIComponent(logUid)}`);
+        const res = await fetch(`/api/item/usage/units?log_uid=${encodeURIComponent(logUid)}${isEdit ? '&edit=1' : ''}`);
         const data = await res.json();
         if (!res.ok || data.status !== 'success') throw new Error(data.message || '불러오기 실패');
         // [요청] S/N 선택 물품을 맨 위로 (그다음 수량 모드, 재고 없음 순, 같은 종류 안에서는 작업 순서 유지)
         const modeRank = { sn: 0, qty: 1, none: 2 };
         usagePickGroups = (data.groups || []).slice().sort((a, b) => (modeRank[a.mode] ?? 3) - (modeRank[b.mode] ?? 3));
         usagePickOnConfirm = onConfirm;
+        usagePickIsEdit = !!isEdit;
+        const titleEl = document.getElementById('usage-pick-title');
+        if (titleEl) titleEl.textContent = isEdit ? '반영 수정 (사용 물품 다시 선택)' : '사용 물품 선택';
+        const okBtn = document.getElementById('btn-confirm-usage-pick');
+        if (okBtn) okBtn.textContent = isEdit ? '수정 반영' : '반영';
 
         // [요청] 사용일·사용 장비·정기/비정기는 모든 물품에 같으므로 맨 위에 한 번만 표시
         const common = document.getElementById('usage-pick-common');
@@ -538,8 +554,9 @@ async function openUsagePickModal(logUid, summary, onConfirm) {
                 </div>`;
             }
             const unitOpts = (g.units || []).map(u => {
-                const label = [u.serial ? `S/N ${u.serial}` : 'S/N 없음', u.in_date ? `입고 ${u.in_date}` : ''].filter(Boolean).join(' · ');
-                return `<option value="${u.id}">${escapeHtml(label)}</option>`;
+                const label = [u.serial ? `S/N ${u.serial}` : 'S/N 없음', u.in_date ? `입고 ${u.in_date}` : '',
+                    u.picked ? '(이전 선택)' : ''].filter(Boolean).join(' · ');
+                return `<option value="${u.id}"${u.picked ? ' data-picked="1"' : ''}>${escapeHtml(label)}</option>`;
             }).join('');
             return `
                 <div class="up-group" data-index="${g.index}" data-code="${escapeHtml(g.code)}">
@@ -554,12 +571,18 @@ async function openUsagePickModal(logUid, summary, onConfirm) {
                 </div>`;
         }).join('');
 
+        if (!usagePickGroups.length) {
+            body.innerHTML = '<div class="usage-empty">지금 작업 내용에는 차감할 물품이 없습니다. 수정 반영하면 이전 반영이 되돌려집니다.</div>';
+        }
+
         // 각 항목에 아직 고르지 않은 첫 물품(입고일 빠른 순)을 미리 선택 (바꿀 수 있음, 남은 물품이 없으면 비워 둠)
         const pickSelects = Array.from(body.querySelectorAll('.up-unit'));
         pickSelects.forEach(s => { s.value = ''; }); // 먼저 모두 비우고 위에서부터 차례로 채움
         const taken = new Set();
         pickSelects.forEach(s => {
-            const free = Array.from(s.options).find(o => o.value && !taken.has(o.value));
+            // [요청] 반영 수정: 이전에 고른 물품을 먼저 선택
+            const free = Array.from(s.options).find(o => o.value && o.dataset.picked === '1' && !taken.has(o.value))
+                || Array.from(s.options).find(o => o.value && !taken.has(o.value));
             s.value = free ? free.value : '';
             if (free) taken.add(free.value);
         });
@@ -1229,7 +1252,7 @@ function renderItemStockTable() {
         const gradeBadge = getItemGradeBadgeHtml(grade);
         const statusBadge = stockStatusHtmlOf(item);
         const displaySite = item.site_group || item.site_name || '-';
-        // [요청] 구분: S/N 모드 / 수량 모드 (PC는 품번·코드명 사이 열, 모바일은 코드명 앞에 표시)
+        // [요청] 구분: S/N 모드 / 수량 모드 (PC는 품번·코드명 사이 열, 모바일은 코드명 앞 열)
         const modeBadge = item.unit_managed
             ? '<span class="unit-managed-badge">S/N</span>'
             : '<span class="unit-managed-badge unit-qty-badge">수량</span>';
@@ -1239,7 +1262,7 @@ function renderItemStockTable() {
             <td class="col-site">${displaySite}</td>
             <td class="col-partno">${item.partno || '-'}</td>
             <td class="col-mode">${modeBadge}</td>
-            <td class="col-code"><span class="code-mode-badge">${modeBadge} </span>${item.code || '-'}</td>
+            <td class="col-code">${item.code || '-'}</td>
             <td class="col-part">${item.part || '-'}</td>
             <td class="col-spec">${item.spec || '-'}</td>
             <td class="col-qty">
@@ -2003,8 +2026,9 @@ async function importMasterItemsToCurrentGroup() {
     alert(`총 ${successCount}건의 마스터 물품이 ${targetLabel}에 A등급으로 등록되었습니다.`);
 }
 
-// 물품 관리 현황 CSV 내보내기 (사업장 및 안전 재고 수량 포함)
-function exportStockCsv() {
+// 물품 관리 현황 내보내기 (사업장 및 안전 재고 수량 포함)
+// [요청] 엑셀(.xlsx) 2개 시트: 1) 물품 관리 현황 2) 물품 상세(입고 기록) 목록
+async function exportStockCsv() {
     // [요청] 본인 사업장 구분(최종관리자는 전체)만 내보내기 가능
     const mySiteGroup = getUserStockSiteGroup();
     if (!isStockSuperAdmin() && !(mySiteGroup && currentStockSiteGroup === mySiteGroup)) {
@@ -2019,37 +2043,70 @@ function exportStockCsv() {
         return alert(`내보낼 물품 데이터가 없습니다.`);
     }
 
-    const headers = ['No', '사업장구분', '사업장명', '품번', '코드명', '물품명', '세부규격', '현재수량', '안전재고수량', '상태', '등급'];
+    const headers = ['No', '사업장구분', '품번', '구분', '코드명', '물품명', '세부규격', '현재수량', '안전재고수량', '상태', '등급'];
     const rows = groupItems.map((item, idx) => {
         const qty = parseInt(item.quantity) || 0;
         const safetyQty = stockSafetyOf(item);
         const grade = (item.grade || 'A').toUpperCase();
         const statusStr = !isStockSafetyGrade(item) ? '-' : (qty === 0 ? '미확보' : (qty >= safetyQty ? '정상' : '부족'));
-
         return [
-            idx + 1,
-            `"${(item.site_group || '').replace(/"/g, '""')}"`,
-            `"${(item.site_name || '').replace(/"/g, '""')}"`,
-            `"${(item.partno || '').replace(/"/g, '""')}"`,
-            `"${(item.code || '').replace(/"/g, '""')}"`,
-            `"${(item.part || '').replace(/"/g, '""')}"`,
-            `"${(item.spec || '').replace(/"/g, '""')}"`,
-            qty,
-            isStockSafetyGrade(item) ? safetyQty : '-',
-            `"${statusStr}"`,
-            `"${grade}"`
+            idx + 1, item.site_group || '', item.partno || '',
+            item.unit_managed ? 'S/N' : '수량',
+            item.code || '', item.part || '', item.spec || '',
+            qty, isStockSafetyGrade(item) ? safetyQty : '-', statusStr, grade
         ];
     });
 
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
     const fileSuffix = (currentStockSiteGroup && currentStockSiteGroup !== '전체' && currentStockSiteGroup !== 'ALL') ? currentStockSiteGroup : '전체';
-    a.download = `물품관리현황_${fileSuffix}_${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const fileBase = `물품관리현황_${fileSuffix}_${new Date().toISOString().slice(0, 10)}`;
+
+    // 엑셀 라이브러리가 없으면 기존처럼 1번 시트만 CSV로
+    if (typeof XLSX === 'undefined') {
+        const esc = (v) => (typeof v === 'number' ? v : `"${String(v).replace(/"/g, '""')}"`);
+        const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.map(esc).join(','))].join('\r\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${fileBase}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        return alert('엑셀 라이브러리를 불러오지 못해 물품 목록만 CSV로 내보냈습니다.');
+    }
+
+    // [요청] 2번 시트: 해당 사업장 구분의 물품 상세(입고 기록) 목록
+    let units = [];
+    try {
+        const res = await fetch(`/api/item/units/export?site_group=${encodeURIComponent(fileSuffix)}`);
+        const data = await res.json();
+        if (!res.ok || data.status !== 'success') throw new Error(data.message || '불러오기 실패');
+        units = data.units || [];
+    } catch (e) {
+        return alert(`물품 상세 목록을 불러오지 못했습니다: ${e.message || ''}`);
+    }
+    const unitHeaders = ['No', '사업장구분', '사업장명', '품번', '구분', '코드명', '물품명', '세부규격',
+        '입고일', '수량', 'S/N', '상태', '사용일', '사용장비', '정기/비정기'];
+    const unitRows = units.map((u, idx) => [
+        idx + 1, u.site_group, u.site_name, u.partno, u.unit_managed ? 'S/N' : '수량',
+        u.code, u.part, u.spec, u.in_date || '', parseInt(u.qty) || 1, u.serial || '',
+        u.used_date ? '사용' : '재고', u.used_date || '', u.used_equip || '', u.work_kind || ''
+    ]);
+
+    const makeSheet = (hdr, data) => {
+        const ws = XLSX.utils.aoa_to_sheet([hdr, ...data]);
+        ws['!cols'] = hdr.map((h, c) => ({
+            wch: Math.min(40, Math.max(String(h).length * 2 + 2, ...data.map(r => String(r[c] ?? '').length + 2)))
+        }));
+        hdr.forEach((_, c) => {
+            const cell = ws[XLSX.utils.encode_cell({ r: 0, c })];
+            if (cell) cell.s = { font: { bold: true }, fill: { fgColor: { rgb: 'DDEBF7' } }, alignment: { horizontal: 'center' } };
+        });
+        return ws;
+    };
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, makeSheet(headers, rows), '물품 관리 현황');
+    XLSX.utils.book_append_sheet(wb, makeSheet(unitHeaders, unitRows), '물품 상세');
+    XLSX.writeFile(wb, `${fileBase}.xlsx`);
 }

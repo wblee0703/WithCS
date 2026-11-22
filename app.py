@@ -14,6 +14,7 @@ from sqlalchemy import event
 from sqlalchemy import text
 from sqlalchemy import inspect as sa_inspect
 from sqlalchemy import or_
+from sqlalchemy.orm import Session as SAOrmSession
 from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -491,6 +492,11 @@ class ItemStockUnit(db.Model):
     __tablename__ = 'item_stock_unit'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     stock_id = db.Column(db.Integer, nullable=False, index=True)  # ItemStock.id
+    # [요청] 물품 정보도 같이 기록 (ItemStock에서 자동 복사·동기화, _sync_unit_stock_info 참고)
+    site_group = db.Column(db.String(50), default='')   # 사업장 구분
+    site_name = db.Column(db.String(100), default='')   # 사업장
+    code = db.Column(db.String(100), default='')        # 코드명
+    spec = db.Column(db.String(255), default='')        # 세부 규격
     in_date = db.Column(db.String(10), default='')     # 입고일 YYYY-MM-DD
     qty = db.Column(db.Integer, default=1)             # [추가] 수량
     serial = db.Column(db.String(100), default='')     # S/N
@@ -506,6 +512,32 @@ class ItemStockUnit(db.Model):
                 'serial': self.serial or '', 'used_date': self.used_date or '',
                 'used_equip': self.used_equip or '', 'work_kind': self.work_kind or '',
                 'from_usage': bool(self.usage_log_uid)}
+
+
+_UNIT_STOCK_INFO_FIELDS = ('site_group', 'site_name', 'code', 'spec')
+
+
+@event.listens_for(SAOrmSession, 'before_flush')
+def _sync_unit_stock_info(session, flush_context, instances):
+    """[요청] item_stock_unit에 사업장·코드명·규격 같이 기록
+    - 새 입고 기록: 해당 물품(ItemStock)의 값을 복사
+    - 물품의 사업장·코드명·규격이 바뀌면 그 물품의 입고 기록도 같이 갱신"""
+    with session.no_autoflush:
+        for obj in list(session.new):
+            if isinstance(obj, ItemStockUnit) and obj.stock_id:
+                st = session.get(ItemStock, obj.stock_id)
+                if st:
+                    for f in _UNIT_STOCK_INFO_FIELDS:
+                        setattr(obj, f, getattr(st, f) or '')
+        for obj in list(session.dirty):
+            if not isinstance(obj, ItemStock) or obj.id is None:
+                continue
+            st_state = sa_inspect(obj)
+            if not any(st_state.attrs[f].history.has_changes() for f in _UNIT_STOCK_INFO_FIELDS):
+                continue
+            for u in ItemStockUnit.query.filter_by(stock_id=obj.id).all():
+                for f in _UNIT_STOCK_INFO_FIELDS:
+                    setattr(u, f, getattr(obj, f) or '')
 
 # [추가] 작업 사용 물품 재고 반영 이력 (같은 작업이 두 번 차감되지 않도록 기록)
 class ItemUsageApply(db.Model):
@@ -787,6 +819,26 @@ def ensure_item_stock_table():
             db.session.commit()
         except Exception:
             db.session.rollback()
+        # [요청] 입고 기록에 사업장 구분·사업장·코드명·규격 컬럼 추가 후 기존 기록 채우기
+        for col, ddl in (('site_group', 'VARCHAR(50)'), ('site_name', 'VARCHAR(100)'),
+                         ('code', 'VARCHAR(100)'), ('spec', 'VARCHAR(255)')):
+            try:
+                db.session.execute(text(f"ALTER TABLE item_stock_unit ADD COLUMN {col} {ddl} DEFAULT ''"))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+        try:
+            db.session.execute(text(
+                "UPDATE item_stock_unit SET "
+                "site_group = COALESCE((SELECT s.site_group FROM item_stock s WHERE s.id = item_stock_unit.stock_id), ''), "
+                "site_name = COALESCE((SELECT s.site_name FROM item_stock s WHERE s.id = item_stock_unit.stock_id), ''), "
+                "code = COALESCE((SELECT s.code FROM item_stock s WHERE s.id = item_stock_unit.stock_id), ''), "
+                "spec = COALESCE((SELECT s.spec FROM item_stock s WHERE s.id = item_stock_unit.stock_id), '') "
+                "WHERE EXISTS (SELECT 1 FROM item_stock s WHERE s.id = item_stock_unit.stock_id)"))
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Error backfilling item_stock_unit info: {e}")
         _unit_migrate_existing_stock()
     except Exception as e:
         app.logger.error(f"Error creating/ensuring item_stock table: {e}")
@@ -2650,15 +2702,27 @@ def apply_item_usage():
         log = db.session.get(LogItem, log_uid)
         if not log:
             return jsonify({'status': 'fail', 'message': '작업을 찾을 수 없습니다.'}), 404
-        if ItemUsageApply.query.filter_by(log_uid=log_uid).first():
+        # [요청] 반영 수정: edit=true면 이전 반영을 되돌린 뒤 다시 반영 (한 트랜잭션, 실패하면 이전 반영 유지)
+        is_edit = bool((request.json or {}).get('edit'))
+        prev_apply = ItemUsageApply.query.filter_by(log_uid=log_uid).first()
+        if prev_apply and not is_edit:
             return jsonify({'status': 'fail', 'message': '이미 반영된 작업입니다.'}), 409
+        if is_edit and not prev_apply:
+            return jsonify({'status': 'fail', 'message': '반영되지 않은 작업입니다. 새로고침 후 다시 시도하세요.'}), 409
 
         site_group_map = {s.name: (s.group or '') for s in Site.query.all()}
         eq = db.session.get(Equipment, log.equip_id)
         w = _usage_build_work(log, {log.equip_id: eq} if eq else {}, site_group_map)
         if _usage_group_denied(w['site_group']):
             return jsonify({'status': 'fail', 'message': '본인 사업장의 물품만 수정할 수 있습니다.'}), 403
-        if not any(not it.get('excluded') for it in w['items']):
+        reverted = []
+        if prev_apply:
+            reverted = _usage_revert(log_uid)
+            db.session.delete(prev_apply)
+            db.session.flush()
+            # 되돌린 뒤 재고 위치(현재 수량)를 다시 계산해야 차감할 재고를 올바르게 찾음
+            w = _usage_build_work(log, {log.equip_id: eq} if eq else {}, site_group_map)
+        if not is_edit and not any(not it.get('excluded') for it in w['items']):
             return jsonify({'status': 'fail', 'message': '반영할 사용 물품이 없습니다. (무상(중고) 물품은 제외)'}), 400
 
         details, updated = [], []
@@ -2725,6 +2789,9 @@ def apply_item_usage():
             applied_at=(datetime.now(timezone.utc) + timedelta(hours=9)).strftime('%Y-%m-%d %H:%M'),
             details=json.dumps(details, ensure_ascii=False)
         ))
+        for s in reverted:  # 되돌리기만 되고 다시 차감되지 않은 재고도 화면에 반영
+            if s not in updated:
+                updated.append(s)
         db.session.commit()
         return jsonify({'status': 'success', 'details': details, 'stocks': [s.to_dict() for s in updated]})
     except Exception as e:
@@ -2756,6 +2823,16 @@ def get_item_usage_units():
     default_kind = _unit_work_kind_of(wtype)
     equip_core = ' '.join(p for p in [w['equip_name'], f"({w['equip_serial']})" if w['equip_serial'] else ''] if p)
 
+    # [요청] 반영 수정(edit=1): 이 작업으로 사용 처리된 물품은 되돌린다고 보고 계산
+    #  - 수량 모드: 현재 수량 = 지금 수량 + 이 작업이 사용한 수량
+    #  - S/N 모드: 이 작업이 사용한 물품도 고를 수 있게 넣고, 처음엔 그 물품을 선택
+    is_edit = request.args.get('edit') in ('1', 'true')
+    mine_units = ItemStockUnit.query.filter_by(usage_log_uid=log_uid).all() if is_edit else []
+    restore_qty = {}
+    for u in mine_units:
+        restore_qty[u.stock_id] = restore_qty.get(u.stock_id, 0) + (u.qty or 1)
+    mine_ids = {u.id for u in mine_units}
+
     groups = []
     sim_qty = {}   # [추가] 수량 모드: 재고별 반영 후 수량 (같은 재고에서 여러 번 빠지는 경우 누적)
     sim_sn = {}    # [추가] S/N 모드: 코드명별 이미 고른 개수
@@ -2770,7 +2847,7 @@ def get_item_usage_units():
             if not st:
                 groups.append(dict(base_info, mode='none', current=0, after=0))
                 continue
-            cur = sim_qty.get(st.id, st.quantity or 0)
+            cur = sim_qty.get(st.id, (st.quantity or 0) + restore_qty.get(st.id, 0))
             after = max(0, cur - (it.get('qty') or 1))
             sim_qty[st.id] = after
             groups.append(dict(base_info, mode='qty', current=cur, after=after))
@@ -2783,9 +2860,10 @@ def get_item_usage_units():
         equip_opts = []
         for s in stocks:
             for u in ItemStockUnit.query.filter_by(stock_id=s.id).order_by(ItemStockUnit.in_date, ItemStockUnit.id).all():
-                if not (u.used_date or ''):
+                if not (u.used_date or '') or u.id in mine_ids:
                     d = u.to_dict()
                     d['grade'] = s.grade or 'A'
+                    d['picked'] = u.id in mine_ids  # [요청] 반영 수정: 이전에 고른 물품
                     units.append(d)
             for o in _unit_equip_options(s):
                 if o not in equip_opts:
@@ -2888,6 +2966,27 @@ def _unit_consume(stock, n, used_date, used_equip, work_kind, log_uid=None):
     _unit_recount(stock)
 
 
+def _usage_revert(log_uid):
+    """[요청] 사용 이력 반영 되돌리기: 이 작업으로 사용 처리된 입고 기록을 미사용으로 되돌리고 수량 재계산
+    - 수량 모드는 반영 때 나뉜 줄을 다시 합침. 되돌린 재고(ItemStock) 목록을 돌려줌"""
+    stocks = {}
+    for u in ItemStockUnit.query.filter_by(usage_log_uid=log_uid).all():
+        u.used_date = ''
+        u.used_equip = ''
+        u.work_kind = ''
+        u.usage_log_uid = None
+        if u.stock_id not in stocks:
+            st = db.session.get(ItemStock, u.stock_id)
+            if st:
+                stocks[u.stock_id] = st
+    db.session.flush()
+    for st in stocks.values():
+        if not st.unit_managed:
+            _unit_merge_rows(st)
+        _unit_recount(st)
+    return list(stocks.values())
+
+
 def _unit_pick_equip(opts, equip_core):
     if not equip_core:
         return ''
@@ -2965,6 +3064,34 @@ def get_item_units():
         return err
     return jsonify({'status': 'success', 'stock': stock.to_dict(),
                     'units': _unit_list(stock), 'equip_options': _unit_equip_options(stock)})
+
+
+@app.route('/api/item/units/export', methods=['GET'])
+@login_required
+def export_item_units():
+    """[요청] 물품 관리 현황 내보내기 2번째 시트: 사업장 구분의 물품 상세(입고 기록) 목록
+    - 권한은 내보내기 버튼과 동일: 최종관리자는 전체, 그 외는 본인 사업장 구분만"""
+    group = (request.args.get('site_group') or '').strip()
+    is_all = group in ('', '전체', 'ALL')
+    if session.get('role') != 'superadmin':
+        me = db.session.get(User, session.get('user_id'))
+        my_site = ((me.site if me else '') or '').strip()
+        if is_all or not my_site or group != my_site:
+            return jsonify({'status': 'fail', 'message': '본인 사업장의 물품만 내보낼 수 있습니다.'}), 403
+    q = db.session.query(ItemStockUnit, ItemStock).join(ItemStock, ItemStock.id == ItemStockUnit.stock_id)
+    if not is_all:
+        q = q.filter(ItemStock.site_group == group)
+    rows = []
+    for u, st in q.all():
+        d = u.to_dict()
+        d.update({'site_group': st.site_group or '', 'site_name': st.site_name or '', 'partno': st.partno or '',
+                  'code': st.code or '', 'part': st.part or '', 'spec': st.spec or '',
+                  'unit_managed': bool(st.unit_managed)})
+        rows.append(d)
+    # 사업장 → 코드명 → 미사용(입고일 순) 먼저, 사용한 줄(사용일 순) 나중
+    rows.sort(key=lambda r: (r['site_group'], r['site_name'], r['code'], r['spec'], r['stock_id'],
+                             1 if r['used_date'] else 0, r['used_date'], r['in_date'], r['id']))
+    return jsonify({'status': 'success', 'units': rows})
 
 
 @app.route('/api/item/units/managed', methods=['POST'])

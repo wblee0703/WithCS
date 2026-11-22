@@ -19,9 +19,9 @@
                         <h3 style="margin: 0;">물품 관리 현황</h3>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <button type="button" id="btn-export-stock-csv" class="btn-settings" title="CSV 내보내기"
+                        <button type="button" id="btn-export-stock-csv" class="btn-settings" title="엑셀 내보내기 (1: 물품 관리 현황, 2: 물품 상세)"
                             style="font-size: 12px; padding: 4px 10px; border-radius: 4px; border: 1px solid #30363d; background: #21262d; color: #e6edf3; cursor: pointer;">
-                            CSV 내보내기
+                            엑셀 내보내기
                         </button>
                     </div>
                 </div>
@@ -142,7 +142,7 @@
         <div id="usage-pick-modal" class="modal-overlay" style="display: none;">
             <div class="modal-window" style="max-width: 760px; width: 95%; height: auto; max-height: 90vh; display: flex; flex-direction: column;">
                 <div class="modal-header">
-                    <h4>사용 물품 선택</h4>
+                    <h4 id="usage-pick-title">사용 물품 선택</h4>
                     <span class="close-btn" id="btn-close-usage-pick">&times;</span>
                 </div>
                 <div class="modal-body usage-pick-modal-body">
@@ -287,5 +287,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('SettingDAO', filename='JavaScript/item.js') }}?v=38"></script>
+<!-- [요청] 물품 관리 현황 엑셀 내보내기 (2개 시트) -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/item.js') }}?v=41"></script>
 {% endblock %}
