@@ -45,16 +45,19 @@
 
                 <!-- 2. 검색 및 컨트롤 툴바 -->
                 <div class="item-stock-toolbar" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
-                    <!-- 미확보 수, 부족 수 건수 표시 (검색창 왼쪽) -->
+                    <!-- 부족 건수 표시 (미확보 포함) + 재고 관리 버튼 (검색창 왼쪽) -->
                     <div class="item-stock-summary-badges" style="display: flex; align-items: center; gap: 8px;">
-                        <div class="stock-summary-badge badge-summary-zero" style="display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 6px; background: rgba(248, 81, 73, 0.12); border: 1px solid rgba(248, 81, 73, 0.35); font-size: 12px; color: #f85149; white-space: nowrap;">
-                            <span>미확보:</span>
-                            <strong id="stock-summary-zero-count" style="font-size: 13px; font-weight: 700;">0</strong>건
-                        </div>
                         <div class="stock-summary-badge badge-summary-shortage" style="display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 6px; background: rgba(210, 153, 34, 0.12); border: 1px solid rgba(210, 153, 34, 0.35); font-size: 12px; color: #d29922; white-space: nowrap;">
                             <span>부족:</span>
                             <strong id="stock-summary-shortage-count" style="font-size: 13px; font-weight: 700;">0</strong>건
                         </div>
+                        {% if session.get('role') in ['admin', 'superadmin'] %}
+                        <!-- [요청] 재고 관리: 미확보·부족 물품만 모아 수량 바로 변경 (부족 건수 옆) -->
+                        <button type="button" id="btn-open-stock-manage-modal" class="btn-stock-outline outline-yellow"
+                            title="미확보·부족 물품을 모아 보고 현재 수량을 바로 변경합니다.">
+                            재고 관리
+                        </button>
+                        {% endif %}
                     </div>
                     <div class="item-stock-search-wrap" style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 250px;">
                         <input type="text" id="item-stock-search" class="input-dark full-width"
@@ -70,11 +73,6 @@
                         <button type="button" id="btn-open-usage-modal" class="btn-stock-outline outline-blue"
                             title="최근 일주일 작업의 사용 물품을 확인하고 재고에 반영합니다.">
                             사용 이력
-                        </button>
-                        <!-- [요청] 재고 관리: 미확보·부족 물품만 모아 수량 바로 변경 -->
-                        <button type="button" id="btn-open-stock-manage-modal" class="btn-stock-outline outline-yellow"
-                            title="미확보·부족 물품을 모아 보고 현재 수량을 바로 변경합니다.">
-                            재고 관리
                         </button>
                         <button type="button" id="btn-open-add-stock-modal" class="btn-stock-outline outline-green">
                             <span>+</span> 물품 등록
@@ -105,6 +103,7 @@
                                 <th class="col-no">No.</th>
                                 <th class="col-site" data-sort="site" title="클릭하여 사업장별 정렬">사업장</th>
                                 <th class="col-partno" data-sort="partno" title="클릭하여 품번별 정렬">품번</th>
+                                <th class="col-mode" data-sort="mode" title="클릭하여 구분(S/N·수량)별 정렬">구분</th>
                                 <th class="col-code" data-sort="code" title="클릭하여 코드명별 정렬">코드명</th>
                                 <th class="col-part" data-sort="part" title="클릭하여 물품명별 정렬">물품명</th>
                                 <th class="col-spec" data-sort="spec" title="클릭하여 세부규격별 정렬">세부 규격</th>
@@ -121,7 +120,6 @@
                     </table>
                     <div id="item-stock-empty" class="item-stock-empty">
                         <p class="empty-title">등록된 물품이 없습니다.</p>
-                        <p class="empty-desc">우측 상단의 <strong>[+ 물품 등록]</strong>{% if session.get('role') == 'superadmin' %} 또는 <strong>[물품 불러오기]</strong>{% endif %} 버튼을 통해 물품을 추가해주세요.</p>
                     </div>
                 </div>
             </div>
@@ -209,7 +207,7 @@
                             <input type="number" id="stock-unit-add-qty" class="input-dark" min="1" value="1">
                             <input type="text" id="stock-unit-add-serial" class="input-dark" maxlength="100" placeholder="S/N" style="display: none;">
                         </label>
-                        <button type="button" id="btn-add-stock-unit" class="btn-stock-outline outline-green">+ 입고 추가</button>
+                        <button type="button" id="btn-add-stock-unit" class="btn-stock-outline outline-green">입고 추가</button>
                     </div>
                     <p class="stock-unit-hint" id="stock-unit-hint"></p>
                     <div class="item-stock-table-wrapper stock-unit-scroll" style="flex: none;">
@@ -217,7 +215,7 @@
                             <thead id="stock-unit-thead"></thead>
                             <tbody id="stock-unit-tbody"></tbody>
                         </table>
-                        <div id="stock-unit-empty" class="usage-empty" style="display: none;">입고 기록이 없습니다. 위에서 입고일과 수량을 적고 [+ 입고 추가]를 누르세요.</div>
+                        <div id="stock-unit-empty" class="usage-empty" style="display: none;">입고 기록이 없습니다.</div>
                     </div>
                 </div>
             </div>

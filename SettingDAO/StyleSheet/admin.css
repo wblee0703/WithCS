@@ -1266,6 +1266,24 @@ body.role-admin .tag-remove {
     border: 1px solid rgba(63, 185, 80, 0.5);
     vertical-align: middle;
 }
+/* [요청] 수량 모드 표시는 노란 계열 */
+.unit-managed-badge.unit-qty-badge {
+    color: #d29922;
+    border-color: rgba(210, 153, 34, 0.5);
+}
+/* [요청] 구분 열 (품번·코드명 사이) */
+.item-stock-table .col-mode {
+    width: 48px;
+    min-width: 48px;
+    padding: 8px 4px;
+    text-align: center;
+    white-space: nowrap;
+}
+.item-stock-table .code-mode-badge { display: none; } /* PC는 구분 열에 표시 */
+@media (max-width: 950px) {
+    .item-stock-table .col-mode { display: none !important; }
+    .item-stock-table .code-mode-badge { display: inline; } /* 모바일은 코드명 앞에 표시 */
+}
 #stock-unit-modal .stock-unit-body {
     padding: 12px;
     display: flex;
@@ -1301,6 +1319,17 @@ body.role-admin .tag-remove {
 #stock-unit-add-qty { width: 70px; text-align: center; }
 #stock-unit-add-serial { width: 160px; }
 .stock-unit-add .btn-stock-outline { height: 30px; }
+/* [요청] 모바일 물품 상세: 1줄 = 사업장 정보, 2줄 = 재고·사용 수량 + 모드 버튼 / 입고일·수량·입고 추가는 한 줄 */
+@media (max-width: 950px) {
+    #stock-unit-meta { flex-basis: 100%; }
+    .stock-unit-add { flex-wrap: nowrap; gap: 6px; }
+    .stock-unit-add label { flex: 0 1 auto; min-width: 0; gap: 4px; white-space: nowrap; }
+    .stock-unit-add label:first-child { flex: 1 1 auto; }
+    #stock-unit-add-date { min-width: 0; width: 100%; }
+    #stock-unit-add-qty { width: 52px; }
+    #stock-unit-add-serial { width: 100px; }
+    .stock-unit-add .btn-stock-outline { flex-shrink: 0; padding: 0 8px; white-space: nowrap; }
+}
 .stock-unit-table td { color: #c9d1d9; }
 .stock-unit-table th,
 .stock-unit-table td { text-align: center; } /* [요청] 물품 상세 리스트 가운데 정렬 */
@@ -1610,6 +1639,12 @@ body.role-admin .tag-remove {
 .usage-items .usage-item-excluded { opacity: 0.55; }
 .usage-items .usage-item-excluded strong { text-decoration: line-through; }
 .usage-items .usage-stock-excluded { color: #8b949e; }
+/* [요청] 모바일 사용 이력: 비용처리 라벨·물품명·재고 표시 글자 1px 축소 */
+@media (max-width: 950px) {
+    .usage-items { font-size: 13px; }
+    .usage-items .usage-stock { font-size: 12px; }
+    .usage-items .usage-stock-label { display: none; } /* [요청] 모바일: "현재 재고" 글씨 숨기고 "N개"만 표시 */
+}
 .usage-work-action { flex-shrink: 0; }
 .btn-usage-apply {
     height: 32px;
@@ -1766,6 +1801,13 @@ body.role-admin .tag-remove {
     }
     .item-stock-toolbar .stock-summary-badge {
         padding: 5px 8px !important;
+    }
+    /* [요청] 부족 건수 옆 재고 관리 버튼: 배지 높이에 맞춤 */
+    .item-stock-toolbar #btn-open-stock-manage-modal {
+        height: 30px !important;
+        padding: 0 10px !important;
+        font-size: 12px !important;
+        white-space: nowrap;
     }
     .item-stock-toolbar .item-stock-search-wrap {
         min-width: 0 !important;

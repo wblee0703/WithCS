@@ -350,7 +350,7 @@ function renderUsageWorkList(works) {
         const items = (w.items || []).map(it => {
             let stock;
             if (it.excluded) stock = '<span class="usage-stock usage-stock-excluded">반영 제외</span>';
-            else if (it.stock_id) stock = `<span class="usage-stock">현재 재고 ${it.stock_qty}개</span>`;
+            else if (it.stock_id) stock = `<span class="usage-stock"><span class="usage-stock-label">현재 재고 </span>${it.stock_qty}개</span>`;
             else stock = '<span class="usage-stock usage-stock-none">재고 없음</span>';
             const cost = it.cost ? `<span class="usage-cost${it.excluded ? ' excluded' : ''}">[${escapeHtml(it.cost)}]</span> ` : '';
             return `<li class="${it.excluded ? 'usage-item-excluded' : ''}">${cost}<strong>${escapeHtml(it.code)}</strong>${it.detail ? ` <span class="usage-spec">[${escapeHtml(it.detail)}]</span>` : ''} ${stock}</li>`;
@@ -644,7 +644,7 @@ function openStockManageModal() {
             <td class="sm-code">${escapeHtml(it.code || '-')}${isAll && it.site_group ? `<div class="sm-site">${escapeHtml(it.site_group)}</div>` : ''}</td>
             <td class="sm-spec">${escapeHtml(it.spec || '-')}</td>
             <td class="sm-qty">
-                <button type="button" class="btn-stock-outline outline-green sm-unit-open" title="물품 상세(입고 기록)에서 수량 변경">${qty}개 · 상세</button>
+                <button type="button" class="btn-stock-outline outline-green sm-unit-open" title="눌러서 물품 상세(입고 기록)에서 수량 변경">${qty}개</button>
             </td>
             <td class="sm-safety">${isStockSafetyGrade(it) ? safety : '-'}</td>
             <td class="sm-status stock-status-cell">${getItemStockStatusBadgeHtml(qty, safety)}</td>`;
@@ -813,6 +813,8 @@ function renderStockUnits() {
         btnMode.classList.toggle('on', serialMode);
         btnMode.textContent = serialMode ? 'S/N 모드' : '수량 모드';
         btnMode.title = serialMode ? '누르면 수량 모드로 전환 (입고 기록을 수량 단위로 관리)' : '누르면 S/N 모드로 전환 (물품 1개씩 S/N 기록)';
+        // [요청] 입고 기록이 생기면 모드 버튼 숨김 (실수로 눌러 기록이 바뀌는 것 방지)
+        btnMode.style.display = currentUnits.length ? 'none' : '';
     }
 
     const qtyOf = (u) => parseInt(u.qty) || 1;
@@ -1155,6 +1157,9 @@ function renderItemStockTable() {
                     diff = sA.localeCompare(sB, 'ko');
                     break;
                 }
+                case 'mode':
+                    diff = (a.unit_managed ? 0 : 1) - (b.unit_managed ? 0 : 1);
+                    break;
                 case 'partno':
                     diff = (a.partno || '').localeCompare(b.partno || '', 'ko', { numeric: true });
                     break;
@@ -1224,12 +1229,17 @@ function renderItemStockTable() {
         const gradeBadge = getItemGradeBadgeHtml(grade);
         const statusBadge = stockStatusHtmlOf(item);
         const displaySite = item.site_group || item.site_name || '-';
+        // [요청] 구분: S/N 모드 / 수량 모드 (PC는 품번·코드명 사이 열, 모바일은 코드명 앞에 표시)
+        const modeBadge = item.unit_managed
+            ? '<span class="unit-managed-badge">S/N</span>'
+            : '<span class="unit-managed-badge unit-qty-badge">수량</span>';
 
         tr.innerHTML = `
             <td class="col-no">${index + 1}</td>
             <td class="col-site">${displaySite}</td>
             <td class="col-partno">${item.partno || '-'}</td>
-            <td class="col-code">${item.code || '-'}</td>
+            <td class="col-mode">${modeBadge}</td>
+            <td class="col-code"><span class="code-mode-badge">${modeBadge} </span>${item.code || '-'}</td>
             <td class="col-part">${item.part || '-'}</td>
             <td class="col-spec">${item.spec || '-'}</td>
             <td class="col-qty">
@@ -1249,11 +1259,6 @@ function renderItemStockTable() {
                 <button type="button" class="btn-del-stock" title="목록에서 삭제" data-id="${item.id}">✕</button>
             </td>
         `;
-        // [수정] S/N 상세 관리 물품은 코드명 앞에 표시
-        if (item.unit_managed) {
-            const codeCell = tr.querySelector('.col-code');
-            if (codeCell) codeCell.insertAdjacentHTML('afterbegin', '<span class="unit-managed-badge">S/N</span> ');
-        }
 
         const rowEditable = canEditStockGroup(item.site_group);
         if (!rowEditable) {
@@ -1391,23 +1396,17 @@ function updateStockSummaryCounts() {
         groupItems = groupItems.filter(item => (item.site_group || '').trim() === currentStockSiteGroup.trim());
     }
 
-    let zeroCount = 0;
+    // [요청] 미확보(수량 0)도 부족 건수에 합쳐서 표시
     let shortageCount = 0;
 
     groupItems.forEach(item => {
-        if (!isStockSafetyGrade(item)) return; // [요청] B등급 이하는 미확보·부족 건수에서 제외
+        if (!isStockSafetyGrade(item)) return; // [요청] B등급 이하는 부족 건수에서 제외
         const q = parseInt(item.quantity) || 0;
         const s = stockSafetyOf(item);
-        if (q === 0) {
-            zeroCount++;
-        } else if (q < s) {
-            shortageCount++;
-        }
+        if (q === 0 || q < s) shortageCount++;
     });
 
-    const zeroEl = document.getElementById('stock-summary-zero-count');
     const shortageEl = document.getElementById('stock-summary-shortage-count');
-    if (zeroEl) zeroEl.textContent = zeroCount;
     if (shortageEl) shortageEl.textContent = shortageCount;
 }
 

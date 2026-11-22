@@ -2975,6 +2975,9 @@ def set_item_unit_managed():
     stock, err = _unit_get_stock(data.get('stock_id'))
     if err:
         return err
+    # [요청] 입고 기록이 하나라도 있으면 모드 변경 불가 (실수로 눌러 S/N·수량 기록이 바뀌는 것 방지)
+    if ItemStockUnit.query.filter_by(stock_id=stock.id).first():
+        return jsonify({'status': 'fail', 'message': '입고 기록이 있는 물품은 모드를 바꿀 수 없습니다.'}), 400
     try:
         stock.unit_managed = bool(data.get('managed'))
         if stock.unit_managed:
