@@ -1311,3 +1311,16 @@ body.role-user #event-detail-modal button[style*="display: inline-block"] {
         margin-bottom: 0;
     }
 }
+
+/* [요청] HOME 셋업 관리 셋업 진행률 글자 확대 (Setup 메뉴와 같은 크기) */
+#gantt-wrapper .setup-progress__overall-label { font-size: 15px; }
+#gantt-wrapper .setup-progress__overall-label span { font-size: 13px; }
+#gantt-wrapper .setup-progress__overall-value { width: 60px; font-size: 21px; }
+#gantt-wrapper .setup-progress__stage { font-size: 14px; }
+#gantt-wrapper .setup-progress__value { font-size: 13px; }
+#gantt-wrapper .setup-progress__value strong { font-size: 14px; }
+#gantt-wrapper .setup-progress__sub { font-size: 13px; padding: 3px 10px; }
+#gantt-wrapper .setup-progress__row { grid-template-columns: 220px minmax(80px, 1fr) 100px; }
+@media (max-width: 768px) {
+    #gantt-wrapper .setup-progress__row { grid-template-columns: 130px minmax(60px, 1fr) 84px; }
+}
