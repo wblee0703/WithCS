@@ -14,7 +14,7 @@
     <!-- 공통 CSS -->
     <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common.css') }}?v=1.1.7">
     <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common_modals.css') }}?v=1.0.9">
-    <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common_setup.css') }}?v=8">
+    <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common_setup.css') }}?v=16">
     <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/chatbot.css') }}?v=1.5.1">
     <link
         href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Noto+Sans+KR:wght@100;300;500;700&display=swap"
@@ -1096,20 +1096,25 @@
                     </div>
                 </div>
                 <div class="form-row setup-log-form-row">
-                    <label class="setup-log-label">셋업 구분</label>
+                    <label class="setup-log-label">구분</label>
                     <div id="setup-log-reg-category-wrapper" class="log-select-wrapper setup-log-worker-wrapper">
                         <input type="hidden" id="setup-log-reg-category">
-                        <div id="setup-log-reg-category-trigger" class="log-select-trigger">셋업 구분 선택</div>
+                        <div id="setup-log-reg-category-trigger" class="log-select-trigger">구분 선택</div>
+                        <!-- [추가] 선택한 구분의 진행률 (입력창 안 오른쪽) -->
+                        <span id="setup-log-reg-category-progress" class="setup-log-progress-badge"></span>
                         <div id="setup-log-reg-category-dropdown" class="log-select-dropdown setup-log-worker-dropdown">
                             <div id="setup-log-reg-category-list" class="log-select-list setup-log-worker-list"></div>
                         </div>
                     </div>
                 </div>
+                <!-- [요청] 세부 구분은 구분 다음 줄에 -->
                 <div class="form-row setup-log-form-row">
                     <label class="setup-log-label">세부 구분</label>
                     <div id="setup-log-reg-subcategory-wrapper" class="log-select-wrapper setup-log-worker-wrapper">
                         <input type="hidden" id="setup-log-reg-subcategory">
                         <div id="setup-log-reg-subcategory-trigger" class="log-select-trigger">세부 구분 선택</div>
+                        <!-- [추가] 선택한 세부 구분의 진행 상태 (입력창 안 오른쪽) -->
+                        <span id="setup-log-reg-subcategory-progress" class="setup-log-progress-badge"></span>
                         <div id="setup-log-reg-subcategory-dropdown" class="log-select-dropdown setup-log-worker-dropdown">
                             <div id="setup-log-reg-subcategory-list" class="log-select-list setup-log-worker-list"></div>
                         </div>
@@ -1125,7 +1130,8 @@
                     <label class="setup-log-label">내용</label>
                     <input type="text" id="setup-log-reg-content" class="input-dark setup-log-input" placeholder="내용 입력" autocomplete="off">
                 </div>
-                <div class="form-row setup-log-form-row">
+                <!-- [요청] 작업자·공수를 한 줄에 (공수는 작업자 수로 자동, 직접 입력 불가) -->
+                <div class="form-row setup-log-form-row setup-log-row-pair">
                     <label class="setup-log-label">작업자</label>
                     <div id="setup-log-reg-worker-wrapper" class="log-select-wrapper setup-log-worker-wrapper">
                         <input type="hidden" id="setup-log-reg-worker">
@@ -1138,13 +1144,14 @@
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="form-row setup-log-form-row">
-                    <label class="setup-log-label">공수(M/D)</label>
-                    <input type="number" id="setup-log-reg-md" class="input-dark setup-log-input" min="0" step="0.1">
+                    <label class="setup-log-md-label" for="setup-log-reg-md">공수</label>
+                    <input type="number" id="setup-log-reg-md" class="input-dark setup-log-md-input" min="0" step="0.1" readonly tabindex="-1"
+                        title="작업자 수로 자동 계산됩니다 (M/D)">
                 </div>
                 <div class="form-row setup-log-form-row">
                     <label class="setup-log-label">셋업 물품</label>
+                    <!-- [요청] 셋업 물품은 없는 경우가 대부분: [+ 물품 추가]를 눌러야 물품 선택·상세 창 표시 -->
+                    <button type="button" id="btn-setup-log-reg-part-open" class="btn-gray setup-log-part-open-btn">+ 물품 추가</button>
                     <div id="setup-log-reg-part-wrapper" class="log-select-wrapper setup-log-worker-wrapper">
                         <div id="setup-log-reg-part-trigger" class="log-select-trigger">물품 선택</div>
                         <div id="setup-log-reg-part-dropdown" class="log-select-dropdown setup-log-worker-dropdown">
@@ -1156,7 +1163,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="form-row setup-log-form-row">
+                <div class="form-row setup-log-form-row" id="setup-log-reg-part-display-row">
                     <label class="setup-log-label"></label>
                     <div id="setup-log-reg-part-display" style="flex:1; width:100%; min-width:0; min-height:50px; max-height:120px; overflow-y:auto; background:#0d1117; border:1px solid #30363d; border-radius:4px; padding:8px; box-sizing:border-box;"></div>
                     <input type="hidden" id="setup-log-reg-part-hidden">
@@ -1522,8 +1529,8 @@
     </template>
 
     <script src="{{ url_for('SettingDAO', filename='JavaScript/common_modals.js') }}?v=1.1.6"></script>
-    <script src="{{ url_for('SettingDAO', filename='JavaScript/common.js') }}?v=1.2.9"></script>
-    <script src="{{ url_for('SettingDAO', filename='JavaScript/common_setup.js') }}?v=1.1.7"></script>
+    <script src="{{ url_for('SettingDAO', filename='JavaScript/common.js') }}?v=1.3.1"></script>
+    <script src="{{ url_for('SettingDAO', filename='JavaScript/common_setup.js') }}?v=1.2.4"></script>
     <script src="{{ url_for('SettingDAO', filename='JavaScript/chatbot.js') }}?v=1.5.2"></script>
     <!-- 페이지별 추가 스크립트 -->
     {% block extra_js %}{% endblock %}

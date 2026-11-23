@@ -2,7 +2,7 @@
 {% set active_page = 'setup' %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/setup.css') }}?v=6">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/setup.css') }}?v=11">
 <style>
     /* 달력 아이콘 회색 변경 */
     .custom-date-icon::-webkit-calendar-picker-indicator {
@@ -44,10 +44,8 @@
         <div class="detail-content" style="display: none;">
             <div class="detail-header-row">
                 <header class="breadcrumb breadcrumb-no-margin" id="current-path">📍 사업장 > 장비명</header>
-                <button class="btn-blue-sm btn-gantt-move" onclick="moveToGanttView()">📊 HOME 진행률 보기</button>
                 <input type="file" id="setup-csv-file-input" accept=".csv" style="display: none;" onchange="handleSetupCsvFile(this)">
                 <button type="button" class="btn-setup-csv-import" id="btn-import-setup-log-csv" onclick="triggerSetupCsvImport()" title="셋업 일지 CSV 불러오기">📥 CSV 불러오기</button>
-                <button class="btn-gray btn-header-setting" onclick="openSetupEquipModal()">장비 정보</button>
             </div>
 
             <!-- 셋업 워크스페이스 영역 (좌측: 셋업 진행률 / 우측: 셋업 일지 · 작업 내용 · 셋업 이슈 1:1:1) -->
@@ -56,6 +54,8 @@
                 <div class="setup-card setup-card-flex" id="setup-progress-card">
                     <div class="setup-card-header">
                         <h3 style="margin: 0;">셋업 진행률</h3>
+                        <!-- [요청] 작업 등록 버튼: 셋업 진행률 제목 줄의 제일 오른쪽 -->
+                        <button id="btn-setup-register-task" class="btn-green-sm" onclick="openSetupRegisterModal()" style="white-space: nowrap; height: 28px;">➕ 작업 등록</button>
                     </div>
                     <div class="setup-card-body setup-card-body-flex">
                         <div class="setup-progress" id="setup-progress-body" style="display: flex; height: 100%;"></div>
@@ -74,7 +74,6 @@
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <input type="text" id="setup-log-filter-date" placeholder="검색 (날짜, 내용, 작업자)" title="검색"
                                     class="input-search-dark">
-                                <button id="btn-setup-register-task" class="btn-green-sm" onclick="openSetupRegisterModal()" style="white-space: nowrap; height: 28px;">➕ 작업 등록</button>
                             </div>
                         </div>
                         <div class="setup-card-body setup-card-body-flex">
@@ -129,5 +128,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('SettingDAO', filename='JavaScript/setup.js') }}?v=20261118_4"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/setup.js') }}?v=20261123_6"></script>
 {% endblock %}

@@ -557,11 +557,11 @@ window.saveSetupIssue = saveSetupIssue;
 
 function openSetupRegisterModal() {
     if (!currentPath.site || !currentPath.equip) return alert('장비를 먼저 선택해주세요.');
-    const today = new Date().toISOString().split('T')[0];
-    if (typeof window.openSetupScheduleRegisterModal === 'function') {
-        window.openSetupScheduleRegisterModal(currentPath.site, currentPath.equip, today);
-    } else if (typeof window.openSetupLogRegisterModal === 'function') {
-        window.openSetupLogRegisterModal(currentPath.site, currentPath.equip, '', '', false, true);
+    // [요청] 작업 등록 → 바로 셋업 작업 기록 창 (셋업 작업 등록 창은 쓰지 않음)
+    //  - 셋업 구분·세부 구분은 진행률에서 마지막 완료 항목의 다음 것으로 자동 선택 (창에서 바꿀 수 있음)
+    const next = (typeof window.getNextSetupSub === 'function') ? window.getNextSetupSub(currentPath.site, currentPath.equip) : null;
+    if (typeof window.openSetupLogRegisterModal === 'function') {
+        window.openSetupLogRegisterModal(currentPath.site, currentPath.equip, next ? next.sub : '', '', false, false, next ? next.category : '');
     }
 }
 window.openSetupRegisterModal = openSetupRegisterModal;
@@ -588,12 +588,8 @@ function renderSetupDetailList() {
         const matchedModel = equipmentModels.find(m => m.name === equipRawName || m.abbr === equipRawName);
         const actualModelName = matchedModel ? matchedModel.name : equipRawName;
 
-        const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
-        let templateToUse = templates[actualModelName];
-
-        if (!templateToUse || templateToUse.length === 0) {
-            templateToUse = templates['default'] || window.getDefaultSetupTemplate();
-        }
+        // [수정] 장비의 셋업 구분 템플릿 > 모델별 사본 > 공통
+        const templateToUse = window.getSetupTemplateRawForEquip(currentPath.site, currentPath.equip, actualModelName);
 
         data.setupDetails = templateToUse.map((item, idx) => ({
             id: Date.now() + idx, category: window.mapSetupCategory(item.category, item.subcategory, item.content),
@@ -1042,11 +1038,8 @@ function updateExecutionRate(completed, total) {
 }
 
 function getSetupCategoryOptions() {
-    const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
-    let list = templates['default'];
-    if (!Array.isArray(list) || list.length === 0) {
-        list = window.getDefaultSetupTemplate();
-    }
+    // [수정] 현재 장비의 셋업 구분 템플릿 (없으면 공통)
+    let list = window.getSetupTemplateRawForEquip(currentPath.site, currentPath.equip);
     const combined = typeof window.normalizeSetupTemplate === 'function' ? window.normalizeSetupTemplate(list) : [...list];
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
     if (typeof currentPath !== 'undefined' && currentPath.site && currentPath.equip) {
@@ -1987,27 +1980,6 @@ function loadSetupInfoFromTarget() {
     document.getElementById('setup-load-info-modal').style.display = 'none';
     alert('정보를 불러왔습니다. 저장 버튼을 눌러 반영해주세요.');
 }
-
-// [추가] 간트뷰 이동 로직
-window.moveToGanttView = function () {
-    if (!currentPath.site || !currentPath.equip) {
-        alert('장비를 선택해주세요.');
-        return;
-    }
-
-    // 저장되지 않은 변경사항 확인
-    if (typeof window.checkUnsavedChanges === 'function' && !window.checkUnsavedChanges()) {
-        return;
-    }
-
-    // 간트 차트 필터 설정 및 홈 화면 셋업 탭 지정
-    const ganttFilter = { site: currentPath.site, equip: currentPath.equip };
-    localStorage.setItem('currentGanttFilters', JSON.stringify(ganttFilter));
-    localStorage.setItem('lastHomeSection', 'setup');
-
-    // 홈 화면으로 이동
-    window.location.href = '/?scrollTo=gantt';
-};
 
 /* ==========================================================================
    셋업 일지 CSV 불러오기 (Import) 관련 함수

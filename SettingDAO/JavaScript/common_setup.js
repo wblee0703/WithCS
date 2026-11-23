@@ -359,6 +359,31 @@ window.findSetupLogEquip = function (site, equip, id) {
     return hit || equip;
 };
 
+// [추가] 셋업 구분(AMCs, 광학, Chem, Wafer ...)별 일정 템플릿
+//  - setup_templates['type:<셋업 구분>'] 에 저장, 없으면 공통(default) 사용
+//  - 장비의 셋업 구분은 ADMIN > 장비 관리 > 셋업 구분 (details_*.setup.setupType)
+window.SETUP_TYPE_TEMPLATE_PREFIX = 'type:';
+window.getEquipSetupType = function (site, equip) {
+    if (!site || !equip) return '';
+    try {
+        return String((((JSON.parse(localStorage.getItem(`details_${site}_${equip}`)) || {}).setup) || {}).setupType || '').trim();
+    } catch (e) { return ''; }
+};
+// setupType: 셋업 구분 / modelName: 모델별 사본(예전 방식) 키
+window.getSetupTemplateRaw = function (setupType, modelName) {
+    let templates = {};
+    try { templates = JSON.parse(localStorage.getItem('setup_templates')) || {}; } catch (e) { }
+    const own = setupType ? templates[window.SETUP_TYPE_TEMPLATE_PREFIX + setupType] : null;
+    if (Array.isArray(own) && own.length) return own;
+    const byModel = modelName ? templates[modelName] : null;
+    if (Array.isArray(byModel) && byModel.length) return byModel;
+    if (Array.isArray(templates['default']) && templates['default'].length) return templates['default'];
+    return window.getDefaultSetupTemplate();
+};
+window.getSetupTemplateRawForEquip = function (site, equip, modelName) {
+    return window.getSetupTemplateRaw(window.getEquipSetupType(site, equip), modelName);
+};
+
 // [추가] 셋업 진행률
 //  - 단계 진행률 = 그 단계 세부 구분 중 완료된 개수 / 전체 개수
 //  - 전체 진행률 = 단계 진행률의 평균 (단계마다 같은 비중)
@@ -435,14 +460,27 @@ window.computeSetupProgress = function (equipData, templateList) {
 };
 
 
+// [추가] 다음에 할 세부 구분: 셋업 진행률 순서에서 마지막으로 완료한 세부 구분의 다음 (불필요 작업·완료 항목은 건너뜀)
+//  - 완료한 것이 없으면 첫 세부 구분, 뒤쪽이 모두 완료면 앞쪽에 남은 미완료 항목
+//  - 진행률을 계산하지 않는 단계(사전 작업)는 제외
+window.getNextSetupSub = function (site, equip) {
+    if (!site || !equip) return null;
+    const { stages } = window.computeSetupProgress(window.getSetupProjectData(site, equip), window.getSetupTemplateRawForEquip(site, equip));
+    const seq = [];
+    stages.filter(st => !st.noProgress).forEach(st => st.subs.forEach(sub => seq.push({ category: st.category, sub: sub.name, done: sub.done, excluded: sub.excluded })));
+    let lastDone = -1;
+    seq.forEach((x, i) => { if (x.done) lastDone = i; });
+    const open = (x) => !x.done && !x.excluded;
+    const next = seq.slice(lastDone + 1).find(open) || seq.find(open);
+    return next ? { category: next.category, sub: next.sub } : null;
+};
+
 // 셋업 진행률 화면 그리기 (HOME 셋업 관리, WORKS Setup 공용)
 //  - 세부 구분을 클릭하면 그 세부 구분으로 일지 작성 창이 열림
 window.renderSetupProgress = function (container, site, equip) {
     if (!container) return;
     const equipData = window.getSetupProjectData(site, equip);
-    const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
-    const templateList = (Array.isArray(templates['default']) && templates['default'].length)
-        ? templates['default'] : window.getDefaultSetupTemplate();
+    const templateList = window.getSetupTemplateRawForEquip(site, equip); // [수정] 장비의 셋업 구분 템플릿
     const { stages, overall } = window.computeSetupProgress(equipData, templateList);
 
     const esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -504,10 +542,8 @@ window.setupSubName = function (item, category, template) {
     return hit ? (hit.subcategory || hit.content) : item.content;
 };
 
-function getSetupTemplateForPopup() {
-    const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
-    const list = (Array.isArray(templates['default']) && templates['default'].length) ? templates['default'] : window.getDefaultSetupTemplate();
-    return window.normalizeSetupTemplate(list);
+function getSetupTemplateForPopup(site, equip) {
+    return window.normalizeSetupTemplate(window.getSetupTemplateRawForEquip(site, equip)); // [수정] 장비의 셋업 구분 템플릿
 }
 
 // 세부 구분에 해당하는 작업 항목/일지인지
@@ -558,7 +594,7 @@ window.refreshSetupSubLogPopup = function () {
     if (!modal || !modal._ctx) return;
     const { site, equip, category, sub } = modal._ctx;
     const esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-    const template = getSetupTemplateForPopup();
+    const template = getSetupTemplateForPopup(site, equip);
     const data = window.getSetupProjectData(site, equip);
     const projectEquips = window.getSetupProjectEquips(site, equip);
 
@@ -654,7 +690,7 @@ window.refreshSetupSubLogPopup = function () {
 
 // 세부 구분 완료 상태 지정 (프로젝트 장비 모두에 반영, 대표 장비에 항목이 없으면 새로 만듦)
 window.setSetupSubCompleted = async function (site, equip, category, sub, done) {
-    const template = getSetupTemplateForPopup();
+    const template = getSetupTemplateForPopup(site, equip);
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
     const equips = window.getSetupProjectEquips(site, equip);
     const changed = [];
@@ -689,7 +725,7 @@ window.setSetupSubCompleted = async function (site, equip, category, sub, done) 
 
 // 세부 구분 불필요 작업 지정/취소
 window.setSetupSubExcluded = async function (site, equip, category, sub, excluded) {
-    const template = getSetupTemplateForPopup();
+    const template = getSetupTemplateForPopup(site, equip);
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
     const equips = window.getSetupProjectEquips(site, equip);
     const changed = [];
@@ -750,10 +786,9 @@ function findSetupTasksForLog(data, category, subcategory, content) {
 //  - 1~8단계 세부 구분 중, ADMIN 셋업 템플릿에서 세부 구분 이름과 다른 작업 내용이 등록된 경우 그 작업 내용들이 선택항목
 //    (예: 5-1 유틸리티 턴온 → EXH·Bulk·UPW·Drain / 5-2 인증 → FOUP 센터/수평·OHT·PIO(E84))
 //  - 일지에는 subOptions 에 쉼표로 이어서 저장 (예: "EXH, Bulk")
-window.getSetupSubOptions = function (category, subcategory) {
+window.getSetupSubOptions = function (category, subcategory, site, equip) {
     if (!category || !subcategory || !/^[1-8]단계/.test(category)) return [];
-    const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
-    const raw = (Array.isArray(templates['default']) && templates['default'].length) ? templates['default'] : window.getDefaultSetupTemplate();
+    const raw = window.getSetupTemplateRawForEquip(site, equip); // [수정] 장비의 셋업 구분 템플릿
     const list = window.normalizeSetupTemplate(raw);
     const opts = list
         .filter(t => t.category === category && t.subcategory === subcategory)
@@ -766,15 +801,62 @@ window.parseSetupSubOptions = function (value) {
     return String(value || '').split(',').map(s => s.trim()).filter(Boolean);
 };
 
+// [추가] 셋업 작업 기록 창: 구분별 진행률·세부 구분별 상태 (셋업 진행률 화면과 같은 계산)
+window.getSetupLogRegProgress = function (modal) {
+    const site = (modal.querySelector('#setup-log-reg-site') || {}).value || '';
+    const equip = (modal.querySelector('#setup-log-reg-equip') || {}).value || '';
+    if (!site || !equip || typeof window.computeSetupProgress !== 'function') return null;
+    try {
+        const { stages } = window.computeSetupProgress(window.getSetupProjectData(site, equip), window.getSetupTemplateRawForEquip(site, equip));
+        const stage = {}, sub = {};
+        stages.forEach(st => {
+            stage[st.category] = st;
+            st.subs.forEach(s => { sub[`${st.category}::${s.name}`] = s; });
+        });
+        return { stage, sub };
+    } catch (e) { return null; }
+};
+const SETUP_SUB_STATUS_COLOR = { '완료': '#3fb950', '진행 중': '#d29922', '미착수': '#8b949e', '제외': '#6e7681' };
+window.setupStageProgressText = (st) => (!st || st.noProgress) ? '' : (st.excluded ? '제외' : `${Math.round(st.percent)}%`);
+window.setupSubStatusHtml = (s) => s ? `<span style="color:${SETUP_SUB_STATUS_COLOR[s.status] || '#8b949e'};">${s.status}</span>` : '';
+
+window.updateSetupLogRegProgress = function (modalContext) {
+    const modal = modalContext || document;
+    const catEl = modal.querySelector('#setup-log-reg-category-progress');
+    const subEl = modal.querySelector('#setup-log-reg-subcategory-progress');
+    if (!catEl && !subEl) return;
+    const cat = (modal.querySelector('#setup-log-reg-category') || {}).value || '';
+    const sub = (modal.querySelector('#setup-log-reg-subcategory') || {}).value || '';
+    const prog = window.getSetupLogRegProgress(modal);
+    const st = prog && cat ? prog.stage[cat] : null;
+    if (catEl) catEl.innerHTML = st && window.setupStageProgressText(st) ? `<b>${window.setupStageProgressText(st)}</b>` : '';
+    if (catEl) catEl.title = st ? `${cat} 진행률` : '';
+    const s = prog && cat && sub ? prog.sub[`${cat}::${sub}`] : null;
+    if (subEl) subEl.innerHTML = window.setupSubStatusHtml(s);
+    // [수정] 입력창 오른쪽 여백은 진행률 표시 길이만큼만 (표시가 없으면 기본 여백) → 구분 이름이 덜 잘림
+    const fitPadding = () => [[catEl, '#setup-log-reg-category-trigger'], [subEl, '#setup-log-reg-subcategory-trigger']].forEach(([badge, sel]) => {
+        const trig = modal.querySelector(sel);
+        if (!trig || !badge) return;
+        const text = badge.textContent.trim();
+        // 창이 아직 숨겨져 있으면 폭이 0 → 글자 수로 대략 계산하고, 화면에 나온 뒤 다시 맞춤
+        const w = badge.offsetWidth || text.length * 8;
+        trig.style.paddingRight = text ? `${w + 12}px` : '';
+    });
+    fitPadding();
+    requestAnimationFrame(fitPadding);
+};
+
 // 일지 등록 창의 세부 선택 체크 칩 그리기 (선택된 셋업 구분·세부 구분 기준)
 window.renderSetupLogSubOptions = function (modalContext, selectedValue = '') {
     const modal = modalContext || document;
+    window.updateSetupLogRegProgress(modal); // [추가] 구분·세부 구분이 바뀔 때마다 진행률 표시 갱신
     const row = modal.querySelector('#setup-log-reg-options-row');
     const box = modal.querySelector('#setup-log-reg-options');
     if (!row || !box) return;
     const cat = (modal.querySelector('#setup-log-reg-category') || {}).value || '';
     const sub = (modal.querySelector('#setup-log-reg-subcategory') || {}).value || '';
-    const opts = window.getSetupSubOptions(cat, sub);
+    const opts = window.getSetupSubOptions(cat, sub,
+        (modal.querySelector('#setup-log-reg-site') || {}).value || '', (modal.querySelector('#setup-log-reg-equip') || {}).value || '');
     const selected = window.parseSetupSubOptions(selectedValue);
     // 템플릿에서 빠진 예전 선택값도 수정 시 사라지지 않게 함께 표시
     selected.forEach(s => { if (opts.length && !opts.includes(s)) opts.push(s); });
@@ -817,12 +899,9 @@ function setupCategoryAndSubCategoryDropdowns(modalContext, selectedCategory = '
 
     // ADMIN 셋업 템플릿 마스터 데이터 불러오기
     const getTemplatesData = () => window.normalizeSetupTemplate(getRawTemplatesData());
-    const getRawTemplatesData = () => {
-        const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
-        const list = templates['default'];
-        if (Array.isArray(list) && list.length > 0) return list;
-        return window.getDefaultSetupTemplate();
-    };
+    // [수정] 일지 창에서 고른 장비의 셋업 구분 템플릿
+    const getRawTemplatesData = () => window.getSetupTemplateRawForEquip(
+        (modal.querySelector('#setup-log-reg-site') || {}).value || '', (modal.querySelector('#setup-log-reg-equip') || {}).value || '');
 
     // 세부 구분 활성화/비활성화 상태 관리
     const updateSubcategoryState = () => {
@@ -832,7 +911,7 @@ function setupCategoryAndSubCategoryDropdowns(modalContext, selectedCategory = '
             subcatTrigger.style.opacity = '0.5';
             subcatTrigger.style.cursor = 'not-allowed';
             subcatTrigger.style.pointerEvents = 'none';
-            subcatTrigger.textContent = '셋업 구분을 먼저 선택해주세요';
+            subcatTrigger.textContent = '구분을 먼저 선택해주세요';
             subcatTrigger.title = '';
             subcatTrigger.classList.remove('has-value');
             subcatHidden.value = '';
@@ -858,6 +937,7 @@ function setupCategoryAndSubCategoryDropdowns(modalContext, selectedCategory = '
         catList.innerHTML = '';
         const currentTpl = getTemplatesData();
         const categories = Array.from(new Set(currentTpl.map(t => t.category).filter(Boolean)));
+        const listProg = window.getSetupLogRegProgress(modal);
 
         let filtered = categories;
         if (kw) filtered = filtered.filter(c => c.toLowerCase().includes(kw.toLowerCase()));
@@ -871,7 +951,10 @@ function setupCategoryAndSubCategoryDropdowns(modalContext, selectedCategory = '
             const div = document.createElement('div');
             div.className = 'log-select-item' + (catHidden.value === catName ? ' selected' : '');
             div.style.cursor = 'pointer';
-            div.innerHTML = `<span>${typeof escapeHtml === 'function' ? escapeHtml(catName) : catName}</span>`;
+            // [추가] 구분 옆에 진행률
+            const catProg = (listProg && window.setupStageProgressText(listProg.stage[catName])) || '';
+            div.innerHTML = `<span>${typeof escapeHtml === 'function' ? escapeHtml(catName) : catName}</span>`
+                + (catProg ? `<span class="setup-log-item-progress">${catProg}</span>` : '');
 
             div.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -899,10 +982,11 @@ function setupCategoryAndSubCategoryDropdowns(modalContext, selectedCategory = '
         const currentTpl = getTemplatesData();
         const currentCat = catHidden.value;
         if (!currentCat) {
-            subcatList.innerHTML = '<div class="log-select-empty-msg" style="padding:10px; text-align:center; color:#8b949e;">셋업 구분을 먼저 선택해주세요.</div>';
+            subcatList.innerHTML = '<div class="log-select-empty-msg" style="padding:10px; text-align:center; color:#8b949e;">구분을 먼저 선택해주세요.</div>';
             return;
         }
 
+        const listProg = window.getSetupLogRegProgress(modal);
         let subItems = currentTpl.filter(t => t.category === currentCat).map(t => t.subcategory || t.content || t.category).filter(Boolean);
         let uniqueSubs = Array.from(new Set(subItems));
 
@@ -919,7 +1003,10 @@ function setupCategoryAndSubCategoryDropdowns(modalContext, selectedCategory = '
             const div = document.createElement('div');
             div.className = 'log-select-item' + (subcatHidden.value === subName ? ' selected' : '');
             div.style.cursor = 'pointer';
-            div.innerHTML = `<span>${typeof escapeHtml === 'function' ? escapeHtml(subName) : subName}</span>`;
+            // [추가] 세부 구분 옆에 진행 상태 (완료 / 진행 중 / 미착수)
+            const subProg = listProg ? window.setupSubStatusHtml(listProg.sub[`${currentCat}::${subName}`]) : '';
+            div.innerHTML = `<span>${typeof escapeHtml === 'function' ? escapeHtml(subName) : subName}</span>`
+                + (subProg ? `<span class="setup-log-item-progress">${subProg}</span>` : '');
 
             div.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -948,7 +1035,7 @@ function setupCategoryAndSubCategoryDropdowns(modalContext, selectedCategory = '
         catTrigger.classList.add('has-value');
     } else {
         catHidden.value = '';
-        catTrigger.textContent = '셋업 구분 선택';
+        catTrigger.textContent = '구분 선택';
         catTrigger.classList.remove('has-value');
     }
 
@@ -1542,6 +1629,24 @@ function setupSetupLogRegPartDropdown(modalContext, site, equip, presetParts = '
     const addBtn = context.querySelector('#btn-setup-log-reg-part-add');
 
     if(!trigger || !dropdown) return;
+
+    // [요청] 셋업 물품: 기본은 [+ 물품 추가] 버튼만, 누르면 물품 선택·상세 창 표시 (저장된 물품이 있으면 처음부터 표시)
+    const partWrapper = context.querySelector('#setup-log-reg-part-wrapper');
+    const partDisplayRow = context.querySelector('#setup-log-reg-part-display-row');
+    const partOpenBtn = context.querySelector('#btn-setup-log-reg-part-open');
+    const showPartArea = (show) => {
+        if (partWrapper) partWrapper.style.display = show ? '' : 'none';
+        if (partDisplayRow) partDisplayRow.style.display = show ? '' : 'none';
+        if (partOpenBtn) partOpenBtn.style.display = show ? 'none' : '';
+    };
+    showPartArea(!!String(presetParts || '').trim());
+    if (partOpenBtn) {
+        partOpenBtn.onclick = (e) => {
+            e.stopPropagation();
+            showPartArea(true);
+            trigger.click(); // 바로 물품 목록 열기
+        };
+    }
 
     let adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
     
@@ -2907,8 +3012,9 @@ function populateSetupSchedSubcategories(modal, category, targetSubcat = '') {
         return;
     }
 
-    const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
-    const tplList = templates['default'] || window.getDefaultSetupTemplate();
+    // [수정] 일정 창에서 고른 장비의 셋업 구분 템플릿
+    const tplList = window.getSetupTemplateRawForEquip(
+        (modal.querySelector('#setup-sched-site') || {}).value || '', (modal.querySelector('#setup-sched-equip') || {}).value || '');
 
     const matchedSubs = [...new Set(window.normalizeSetupTemplate(tplList).filter(t => t.category === category).map(t => t.subcategory).filter(Boolean))];
 
@@ -3106,8 +3212,7 @@ window.openSetupScheduleRegisterModal = function(site = '', equip = '', defaultD
     populateSetupSchedEquips(modal, currentSite, equip);
 
     // 셋업 구분 목록 populate
-    const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
-    const tplList = templates['default'] || window.getDefaultSetupTemplate();
+    const tplList = window.getSetupTemplateRawForEquip(currentSite, equip || ((modal.querySelector('#setup-sched-equip') || {}).value || '')); // [수정]
     const categories = [...new Set(window.normalizeSetupTemplate(tplList).map(t => t.category).filter(Boolean))];
     if (catSelect) {
         catSelect.innerHTML = '<option value="">셋업 구분 선택</option>';

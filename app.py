@@ -256,7 +256,8 @@ def ensure_equipment_columns():
         ('cust_manager', 'VARCHAR(100)'),
         ('cust_contact', 'VARCHAR(100)'),
         ('cust_email', 'VARCHAR(100)'),
-        ('project_no', 'VARCHAR(100)')
+        ('project_no', 'VARCHAR(100)'),
+        ('setup_type', "VARCHAR(50) DEFAULT ''")  # [추가] 셋업 구분 (AMCs, 광학, Chem, Wafer ...)
     ]
     for col, typ in columns:
         try:
@@ -325,6 +326,12 @@ class Equipment(db.Model):
     cust_contact = db.Column(db.String(100), default='')
     cust_email = db.Column(db.String(100), default='')
     project_no = db.Column(db.String(100), default='')
+    setup_type = db.Column(db.String(50), default='')  # [추가] 셋업 구분 (AMCs, 광학, Chem, Wafer ...)
+
+def _clip_setup_type(v):
+    """[추가] 셋업 구분 값 정리 (목록은 화면에서 관리, 서버는 길이만 제한)"""
+    return str(v or '').strip()[:50]
+
 
 def ensure_setup_columns():
     setup_log_cols = [
@@ -1278,7 +1285,7 @@ def load_data():
         # 장비 셋업(마스터) 정보
         data[detail_key]["setup"] = {
             "custEquipName": eq.cust_equip_name or "", "equipStatus": eq.equip_status or "", "deliveryDate": eq.delivery_date or "",
-            "projectNo": eq.project_no or "",
+            "projectNo": eq.project_no or "", "setupType": eq.setup_type or "",
             "warrantyStart": eq.warranty_start or "", "warrantyPeriod": eq.warranty_period or "", "building": eq.building or "",
             "floor": eq.floor or "", "detailLoc": eq.detail_loc or "", "manager": eq.manager or "", "contact": eq.contact or "",
             "email": eq.email or "", "custManager": eq.cust_manager or "", "custContact": eq.cust_contact or "",
@@ -4046,7 +4053,7 @@ def admin_crud():
 
                 db.session.add(Equipment(
                     id=db_id, site_name=site_name, name=e_name, serial=e_serial, cust_equip_name=cust_name, special_note=payload.get('special_note', ''),
-                    project_no=s_data.get('projectNo', ''), equip_status=s_data.get('equipStatus', ''),
+                    project_no=s_data.get('projectNo', ''), setup_type=_clip_setup_type(s_data.get('setupType')), equip_status=s_data.get('equipStatus', ''),
                     delivery_date=s_data.get('deliveryDate', ''), warranty_start=s_data.get('warrantyStart', ''), warranty_period=str(s_data.get('warrantyPeriod', '')),
                     building=s_data.get('building', ''), floor=s_data.get('floor', ''), detail_loc=s_data.get('detailLoc', ''),
                     manager=s_data.get('manager', ''), contact=s_data.get('contact', ''), email=s_data.get('email', ''),
@@ -4135,6 +4142,8 @@ def admin_crud():
                     s_data = payload.get('setup', {})
                     equip.cust_equip_name = s_data.get('custEquipName', '')
                     equip.project_no = s_data.get('projectNo', '')
+                    if 'setupType' in s_data:  # [추가] 셋업 구분: 보낸 경우에만 갱신 (다른 화면 저장 시 지워지지 않게)
+                        equip.setup_type = _clip_setup_type(s_data.get('setupType'))
                     equip.equip_status = s_data.get('equipStatus', '')
                     equip.delivery_date = s_data.get('deliveryDate', '')
                     equip.warranty_start = s_data.get('warrantyStart', '')
@@ -5656,6 +5665,7 @@ def rename_setup_subcategory():
     category = str(data.get('category') or '').strip()
     old = str(data.get('old') or '').strip()
     new = str(data.get('new') or '').strip()
+    setup_type = _clip_setup_type(data.get('setup_type'))  # [추가] 셋업 구분별 템플릿 ('' = 공통)
     if not category or not old or not new:
         return jsonify({"status": "fail", "message": "셋업 구분과 세부 구분 이름을 입력해주세요."}), 400
     if len(new) > 100:
@@ -5672,11 +5682,26 @@ def rename_setup_subcategory():
         def in_category(item):
             return map_setup_category(item.get('category', ''), item.get('subcategory', ''), item.get('content', '')) == category
 
-        default_items = templates.get('default') or []
-        if any(isinstance(it, dict) and in_category(it) and (it.get('subcategory') or it.get('content')) == new for it in default_items):
+        # [수정] 셋업 구분별 템플릿: 선택한 템플릿과 그 템플릿을 쓰는 장비만 변경
+        #  - 셋업 구분 선택: 'type:<구분>' 템플릿 (없으면 공통 사본으로 만든 뒤 변경) + 셋업 구분이 같은 장비
+        #  - 공통: default·모델별 사본 + 셋업 구분이 없거나 전용 템플릿이 없는 장비
+        type_key = f"type:{setup_type}" if setup_type else ''
+        if type_key and not (isinstance(templates.get(type_key), list) and templates.get(type_key)):
+            templates[type_key] = json.loads(json.dumps(templates.get('default') or []))
+        own_types = {k[5:] for k, v in templates.items() if k.startswith('type:') and isinstance(v, list) and v}
+        target_keys = [type_key] if type_key else [k for k in templates if not str(k).startswith('type:')]
+
+        target_items = templates.get(type_key or 'default') or []
+        if any(isinstance(it, dict) and in_category(it) and (it.get('subcategory') or it.get('content')) == new for it in target_items):
             return jsonify({"status": "fail", "message": "같은 이름의 세부 구분이 이미 있습니다."}), 400
 
-        for key, items in templates.items():
+        def equip_in_scope(t):
+            t = (t or '').strip()
+            return t == setup_type if setup_type else (not t or t not in own_types)
+        scope_equip_ids = {e.id for e in Equipment.query.all() if equip_in_scope(e.setup_type)}
+
+        for key in target_keys:
+            items = templates.get(key)
             if not isinstance(items, list):
                 continue
             for it in items:
@@ -5686,9 +5711,13 @@ def rename_setup_subcategory():
                         it['content'] = new
         if row:
             row.value = json.dumps(templates, ensure_ascii=False)
+        else:
+            db.session.add(SystemSetting(key='setup_templates', value=json.dumps(templates, ensure_ascii=False)))
 
         n_details = 0
         for sd in SetupDetail.query.filter(or_(SetupDetail.subcategory == old, SetupDetail.content == old)).all():
+            if sd.equip_id not in scope_equip_ids:
+                continue
             if map_setup_category(sd.category or '', sd.subcategory or '', sd.content or '') != category:
                 continue
             if (sd.subcategory or '') == old or (not sd.subcategory and (sd.content or '') == old):
@@ -5699,6 +5728,8 @@ def rename_setup_subcategory():
 
         n_logs = 0
         for sl in SetupLog.query.filter(SetupLog.subcategory == old).all():
+            if sl.equip_id not in scope_equip_ids:
+                continue
             if map_setup_category(sl.category or '', sl.subcategory or '', sl.content or '') != category:
                 continue
             sl.subcategory = new

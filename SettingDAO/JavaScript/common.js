@@ -2162,8 +2162,9 @@ function setupCollapsibleCards() {
             // [수정] 모바일(가로모드 포함) 초기 상태 설정
             if (window.innerWidth <= 950) {
                 const headerText = header.textContent;
-                // [요청] 셋업 진행 세부사항, 장비 점검 이력은 초기 상태에서 열어둠
-                const keepOpen = (card.id === 'setup-detail-card') || headerText.includes('셋업 진행 세부사항') || headerText.includes('장비 점검 이력');
+                // [요청] 셋업 진행 세부사항, 장비 점검 이력, 셋업 진행률(Setup 메뉴)은 초기 상태에서 열어둠 (셋업 일지는 접힘)
+                const keepOpen = (card.id === 'setup-detail-card') || (card.id === 'setup-progress-card')
+                    || headerText.includes('셋업 진행 세부사항') || headerText.includes('장비 점검 이력');
 
                 if (keepOpen) {
                     btn.innerHTML = '▲';
@@ -3587,7 +3588,10 @@ function getSetupProjectState(siteName, p, ctx) {
     let percent = null;
     if (inSetup && typeof window.computeSetupProgress === 'function') {
         const data = window.getSetupProjectData(siteName, p.equips[0], ctx.setupDataAll);
-        percent = Math.round(window.computeSetupProgress(data, ctx.templateList).overall);
+        // [수정] 대표 장비의 셋업 구분 템플릿으로 계산 (없으면 공통)
+        const tpl = (typeof window.getSetupTemplateRawForEquip === 'function')
+            ? window.getSetupTemplateRawForEquip(siteName, p.equips[0]) : ctx.templateList;
+        percent = Math.round(window.computeSetupProgress(data, tpl).overall);
     }
     return {
         modelText: models.join(', ') + (p.equips.length > 1 ? ` · ${p.equips.length}대` : ''),

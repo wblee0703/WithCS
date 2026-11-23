@@ -349,6 +349,7 @@ function setupAdminMenu() {
                 updateCheckTypeSiteSelect();
                 renderCheckTypeEquipList();
             } else if (item.dataset.target === 'setup-template-mgmt') {
+                setupSetupTemplateTypeSelect(); // [추가] 셋업 구분 선택 상자 갱신
                 renderSetupTemplateSubCategoryList();
             }
         });
@@ -2041,6 +2042,15 @@ function renderAdminEquipList() {
             document.getElementById('equip-info-location').value = setupInfo.detailLoc || '';
             const statusEl = document.getElementById('equip-info-status');
             if (statusEl) statusEl.value = setupInfo.equipStatus || '';
+            // [추가] 셋업 구분 (목록에 없는 예전 값이면 선택지에 임시로 추가해 보존)
+            const setupTypeEl = document.getElementById('equip-info-setup-type');
+            if (setupTypeEl) {
+                const st = setupInfo.setupType || '';
+                if (st && !Array.from(setupTypeEl.options).some(o => o.value === st)) {
+                    setupTypeEl.add(new Option(st, st));
+                }
+                setupTypeEl.value = st;
+            }
             const deliveryDateEl = document.getElementById('equip-info-delivery-date');
             if (deliveryDateEl) deliveryDateEl.value = setupInfo.deliveryDate || '';
             const wStartEl = document.getElementById('equip-info-warranty-start');
@@ -2086,7 +2096,7 @@ function resetEquipForm() {
     const bSelect = document.getElementById('equip-info-building');
     if (bSelect) bSelect.innerHTML = '<option value="">건물 선택</option>';
 
-    ['equip-info-project-no', 'equip-info-location', 'equip-info-status', 'equip-info-delivery-date', 'equip-info-warranty-start', 'equip-info-warranty-period', 'equip-info-cust-equip-name', 'equip-info-floor',
+    ['equip-info-project-no', 'equip-info-location', 'equip-info-status', 'equip-info-setup-type', 'equip-info-delivery-date', 'equip-info-warranty-start', 'equip-info-warranty-period', 'equip-info-cust-equip-name', 'equip-info-floor',
         'equip-info-manager', 'equip-info-contact', 'equip-info-email',
         'equip-info-cust-manager', 'equip-info-cust-contact', 'equip-info-cust-email', 'equip-info-special-note'].forEach(id => {
             const el = document.getElementById(id);
@@ -2169,6 +2179,8 @@ async function handleEquipSave() {
     const location = document.getElementById('equip-info-location').value.trim();
     const statusEl = document.getElementById('equip-info-status');
     const equipStatus = statusEl ? statusEl.value : '';
+    const setupTypeEl = document.getElementById('equip-info-setup-type'); // [추가] 셋업 구분
+    const setupType = setupTypeEl ? setupTypeEl.value : '';
     const deliveryDateEl = document.getElementById('equip-info-delivery-date');
     const deliveryDate = deliveryDateEl ? deliveryDateEl.value : '';
     const wStartEl = document.getElementById('equip-info-warranty-start');
@@ -2266,6 +2278,7 @@ async function handleEquipSave() {
             { label: '고객사 장비명', oldVal: oldSetup.custEquipName || oldCustEquipName || '', newVal: custEquipName || '' },
             { label: '프로젝트 번호', oldVal: oldSetup.projectNo || '', newVal: projectNo || '' },
             { label: '장비 구분', oldVal: oldSetup.equipStatus || '', newVal: equipStatus || '' },
+            { label: '셋업 구분', oldVal: oldSetup.setupType || '', newVal: setupType || '' },
             { label: '납품일', oldVal: oldSetup.deliveryDate || '', newVal: deliveryDate || '' },
             { label: '워런티 시작일', oldVal: oldSetup.warrantyStart || '', newVal: warrantyStart || '' },
             { label: '워런티 기간', oldVal: oldSetup.warrantyPeriod || '', newVal: warrantyPeriod || '' },
@@ -2293,7 +2306,7 @@ async function handleEquipSave() {
     }
 
     const setupPayload = {
-        custEquipName: custEquipName, projectNo: projectNo, equipStatus: equipStatus, deliveryDate: deliveryDate,
+        custEquipName: custEquipName, projectNo: projectNo, equipStatus: equipStatus, setupType: setupType, deliveryDate: deliveryDate,
         warrantyStart: warrantyStart, warrantyPeriod: warrantyPeriod, building: building,
         floor: floor, detailLoc: location, manager: manager, contact: contact, email: email,
         custManager: custManager, custContact: custContact, custEmail: custEmail, model: serial
@@ -2322,7 +2335,7 @@ async function handleEquipSave() {
         let parsedData = oldData ? JSON.parse(oldData) : { maint: [], logs: [], memo: "", setup: {} };
 
         parsedData.setup = {
-            custEquipName: custEquipName, projectNo: projectNo, equipStatus: equipStatus, deliveryDate: deliveryDate,
+            custEquipName: custEquipName, projectNo: projectNo, equipStatus: equipStatus, setupType: setupType, deliveryDate: deliveryDate,
             warrantyStart: warrantyStart, warrantyPeriod: warrantyPeriod, building: building, floor: floor,
             detailLoc: location, manager: manager, contact: contact, email: email, custManager: custManager,
             custContact: custContact, custEmail: custEmail, model: serial
@@ -2354,7 +2367,7 @@ async function handleEquipSave() {
         const dataKey = `details_${originalSite}_${currentAdminEquipKey}`;
         let parsedData = JSON.parse(localStorage.getItem(dataKey)) || { maint: [], logs: [], memo: "", setup: {} };
         parsedData.setup = {
-            custEquipName: custEquipName, projectNo: projectNo, equipStatus: equipStatus, deliveryDate: deliveryDate,
+            custEquipName: custEquipName, projectNo: projectNo, equipStatus: equipStatus, setupType: setupType, deliveryDate: deliveryDate,
             warrantyStart: warrantyStart, warrantyPeriod: warrantyPeriod, building: building, floor: floor,
             detailLoc: location, manager: manager, contact: contact, email: email, custManager: custManager,
             custContact: custContact, custEmail: custEmail, model: serial
@@ -2381,6 +2394,7 @@ async function handleEquipSave() {
                 custEquipName: custEquipName,
                 projectNo: projectNo,
                 equipStatus: equipStatus,
+                setupType: setupType,
                 deliveryDate: deliveryDate,
                 warrantyStart: warrantyStart,
                 warrantyPeriod: warrantyPeriod,
@@ -2406,7 +2420,8 @@ async function handleEquipSave() {
         const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
         const actualModelName = matchedModel ? matchedModel.name : name;
 
-        let templateToUse = templates[actualModelName] || templates['default'] || window.getDefaultSetupTemplate();
+        // [수정] 셋업 구분 템플릿 > 모델별 사본 > 공통
+        let templateToUse = window.getSetupTemplateRaw(setupType, actualModelName);
         const initialSetupDetails = templateToUse.map((item, idx) => ({
             id: Date.now() + idx, category: window.mapSetupCategory(item.category, item.subcategory, item.content), subcategory: item.subcategory || '', content: item.content,
             startDate: "", date: "", estDays: item.estDays || "1",
@@ -6094,8 +6109,94 @@ async function loadCheckTypeDataFromTarget() {
 let currentSetupCategory = '1단계 - 납품/정위치';
 let currentSetupSubCategory = null;
 let setupSubcategorySettingsMode = false;
+// [추가] 셋업 구분별 일정 템플릿: '' = 공통(default), 그 외 = setup_templates['type:<셋업 구분>']
+let currentSetupTemplateType = '';
+// [요청] 저장 버튼을 눌러야 저장: 편집 내용은 작업본에만 두고 [저장] 시 서버·브라우저에 반영
+let setupTemplateDraft = null;   // 현재 선택한 셋업 구분의 편집 중 템플릿 (null = 변경 없음)
+
+function isSetupTemplateDirty() { return Array.isArray(setupTemplateDraft); }
+
+function updateSetupTemplateDirtyStatus() {
+    const statusEl = document.getElementById('setup-template-save-status');
+    const btn = document.getElementById('btn-save-setup-template');
+    if (btn) btn.disabled = !isSetupTemplateDirty();
+    if (statusEl && isSetupTemplateDirty()) {
+        statusEl.textContent = '● 저장되지 않은 변경 사항이 있습니다. [저장]을 눌러야 반영됩니다.';
+        statusEl.style.color = '#d29922';
+    }
+}
+
+// 다른 셋업 구분으로 바꾸거나 페이지를 떠날 때 저장 안 한 변경 확인
+function confirmDiscardSetupTemplateDraft() {
+    if (!isSetupTemplateDirty()) return true;
+    if (!confirm('저장하지 않은 셋업 일정 변경 사항이 있습니다.\n저장하지 않고 이동할까요? (변경 내용은 사라집니다)')) return false;
+    setupTemplateDraft = null;
+    const statusEl = document.getElementById('setup-template-save-status');
+    if (statusEl) statusEl.textContent = '';
+    updateSetupTemplateDirtyStatus();
+    return true;
+}
+window.addEventListener('beforeunload', (e) => {
+    if (isSetupTemplateDirty()) { e.preventDefault(); e.returnValue = ''; }
+});
+
+function setupTemplateStorageKey(type = currentSetupTemplateType) {
+    return type ? (window.SETUP_TYPE_TEMPLATE_PREFIX || 'type:') + type : 'default';
+}
+
+// 셋업 구분 선택 상자: 장비 관리의 셋업 구분 목록(equip-info-setup-type)을 그대로 사용 → 항목 추가는 한 곳에서
+function setupSetupTemplateTypeSelect() {
+    const sel = document.getElementById('setup-template-type-select');
+    if (!sel) return;
+    const src = document.getElementById('equip-info-setup-type');
+    const types = src ? Array.from(src.options).map(o => o.value).filter(Boolean) : [];
+    // 저장된 셋업 구분 템플릿 중 목록에서 빠진 것도 표시 (편집·확인 가능하게)
+    const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
+    const prefix = window.SETUP_TYPE_TEMPLATE_PREFIX || 'type:';
+    Object.keys(templates).forEach(k => {
+        if (k.startsWith(prefix) && !types.includes(k.slice(prefix.length))) types.push(k.slice(prefix.length));
+    });
+    sel.innerHTML = '<option value="">공통 (셋업 구분 없음)</option>' +
+        types.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+    sel.value = types.includes(currentSetupTemplateType) ? currentSetupTemplateType : '';
+    currentSetupTemplateType = sel.value;
+    sel.onchange = () => {
+        if (!confirmDiscardSetupTemplateDraft()) { sel.value = currentSetupTemplateType; return; }
+        currentSetupTemplateType = sel.value;
+        currentSetupSubCategory = null;
+        renderSetupTemplateSubCategoryList();
+        updateSetupTemplateTypeNote();
+    };
+    updateSetupTemplateTypeNote();
+}
+
+function hasOwnSetupTypeTemplate(type = currentSetupTemplateType) {
+    if (!type) return true;
+    const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
+    const own = templates[setupTemplateStorageKey(type)];
+    return Array.isArray(own) && own.length > 0;
+}
+
+function updateSetupTemplateTypeNote() {
+    const label = currentSetupTemplateType || '공통';
+    const title = document.getElementById('setup-template-detail-title');
+    if (title) title.textContent = `일정 구분 관리 (${label})`;
+    const note = document.getElementById('setup-template-type-note');
+    if (!note) return;
+    if (!currentSetupTemplateType) {
+        note.textContent = '셋업 구분이 없는 장비와, 전용 일정이 없는 셋업 구분에 적용됩니다.';
+        note.style.color = '#8b949e';
+    } else if (hasOwnSetupTypeTemplate()) {
+        note.textContent = `셋업 구분이 '${currentSetupTemplateType}'인 장비에 적용되는 전용 일정입니다.`;
+        note.style.color = '#3fb950';
+    } else {
+        note.textContent = `아직 공통 일정을 사용 중입니다. 수정 후 [저장]을 누르면 '${currentSetupTemplateType}' 전용 일정으로 저장됩니다.`;
+        note.style.color = '#d29922';
+    }
+}
 
 function setupSetupTemplateMgmt() {
+    setupSetupTemplateTypeSelect();
     const categoryList = document.getElementById('setup-template-category-list');
     if (categoryList) {
         categoryList.querySelectorAll('li').forEach(li => {
@@ -6143,7 +6244,6 @@ function setupSetupTemplateMgmt() {
             inputAddSub.value = '';
             currentSetupSubCategory = subName;
             renderSetupTemplateSubCategoryList();
-            saveSetupTemplateToServer(true); // [변경] 바로 서버에 반영
         };
         btnAddSub.onclick = handleAddSub;
         inputAddSub.onkeypress = (e) => { if (e.key === 'Enter') handleAddSub(); };
@@ -6166,6 +6266,8 @@ function getDefaultSetupTemplateData() {
     return window.getDefaultSetupTemplate();
 }
 
+// [수정] 선택한 셋업 구분의 템플릿 (공통이면 default)
+//  - 전용 템플릿이 없는 셋업 구분은 공통 템플릿 사본을 돌려줌 (수정해서 저장하면 그때 전용 템플릿이 생김)
 function getCommonSetupTemplate() {
     const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
     let template = templates['default'];
@@ -6174,13 +6276,17 @@ function getCommonSetupTemplate() {
         templates['default'] = template;
         localStorage.setItem('setup_templates', JSON.stringify(templates));
     }
-    return template;
+    if (isSetupTemplateDirty()) return setupTemplateDraft;
+    if (!currentSetupTemplateType) return JSON.parse(JSON.stringify(template));
+    const own = templates[setupTemplateStorageKey()];
+    if (Array.isArray(own) && own.length) return JSON.parse(JSON.stringify(own));
+    return JSON.parse(JSON.stringify(template));
 }
 
+// [수정] 편집 내용은 작업본에만 저장 (서버·브라우저 저장은 [저장] 버튼)
 function saveCommonSetupTemplateLocal(template) {
-    const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
-    templates['default'] = template;
-    localStorage.setItem('setup_templates', JSON.stringify(templates));
+    setupTemplateDraft = template;
+    updateSetupTemplateDirtyStatus();
 }
 
 function renderSetupTemplateSubCategoryList() {
@@ -6238,7 +6344,6 @@ function renderSetupTemplateSubCategoryList() {
                     saveCommonSetupTemplateLocal(updatedTemplate);
                     if (currentSetupSubCategory === sub) currentSetupSubCategory = null;
                     renderSetupTemplateSubCategoryList();
-                    saveSetupTemplateToServer(true); // [변경] 바로 서버에 반영
                 };
             }
         } else {
@@ -6348,7 +6453,6 @@ function addSetupTemplateOption(cat, sub, optInput) {
     }
     saveCommonSetupTemplateLocal(template);
     renderSetupTemplateOptionList();
-    saveSetupTemplateToServer(true);
     return true;
 }
 
@@ -6367,7 +6471,6 @@ function removeSetupTemplateOption(cat, sub, opt) {
     }
     saveCommonSetupTemplateLocal(template);
     renderSetupTemplateOptionList();
-    saveSetupTemplateToServer(true);
 }
 
 function setupSetupTemplateOptionPanel() {
@@ -6445,7 +6548,6 @@ function reorderSetupTemplateSubcategories(order) {
     positions.forEach((pos, k) => { template[pos] = sorted[k]; });
     saveCommonSetupTemplateLocal(template);
     renderSetupTemplateSubCategoryList();
-    saveSetupTemplateToServer(true);
 }
 
 // [추가] 세부 구분 이름을 목록에서 바로 수정 (Enter/바깥 클릭: 저장, Esc: 취소)
@@ -6493,6 +6595,10 @@ async function renameSetupTemplateSubcategory(oldName, newNameInput, categoryInp
     const newName = String(newNameInput || '').trim();
     const cat = categoryInput || currentSetupCategory;
     if (!newName || newName === oldName || !cat) return false;
+    if (isSetupTemplateDirty()) {
+        alert('세부 구분 이름 변경은 장비의 셋업 기록까지 바로 바뀝니다.\n저장하지 않은 변경 사항이 있으니 먼저 [저장]을 눌러주세요.');
+        return false;
+    }
 
     const template = getCommonSetupTemplate();
     if (template.some(t => t.category === cat && (t.subcategory || t.category) === newName)) {
@@ -6505,7 +6611,7 @@ async function renameSetupTemplateSubcategory(oldName, newNameInput, categoryInp
         const r = await fetch('/api/setup/rename_subcategory', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
-            body: JSON.stringify({ category: cat, old: oldName, new: newName })
+            body: JSON.stringify({ category: cat, old: oldName, new: newName, setup_type: currentSetupTemplateType })
         });
         res = await r.json();
     } catch (e) {
@@ -6519,21 +6625,22 @@ async function renameSetupTemplateSubcategory(oldName, newNameInput, categoryInp
     // 이 브라우저에 저장된 데이터도 서버와 같이 변경
     //  - 템플릿은 서버가 바꾼 결과를 그대로 받아서 사용 (화면 쪽 템플릿을 다시 저장하면 예전 이름으로 덮어쓸 수 있음)
     const mapCat = (t) => (typeof window.mapSetupCategory === 'function') ? window.mapSetupCategory(t.category, t.subcategory, t.content) : t.category;
-    const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
-    Object.keys(templates).forEach(key => {
-        if (!Array.isArray(templates[key])) return;
-        templates[key].forEach(t => {
-            if (t && mapCat(t) === cat && (t.subcategory || t.content) === oldName) {
-                t.subcategory = newName;
-                if ((t.content || '') === oldName) t.content = newName;
-            }
-        });
-    });
-    localStorage.setItem('setup_templates', JSON.stringify(
-        (res.templates && Array.isArray(res.templates.default) && res.templates.default.length) ? res.templates : templates));
+    // [수정] 템플릿은 서버가 바꾼 결과를 그대로 사용 (선택한 셋업 구분의 템플릿만 바뀜)
+    if (res.templates && Array.isArray(res.templates.default) && res.templates.default.length) {
+        localStorage.setItem('setup_templates', JSON.stringify(res.templates));
+    }
+    const prefix = window.SETUP_TYPE_TEMPLATE_PREFIX || 'type:';
+    const tplNow = JSON.parse(localStorage.getItem('setup_templates')) || {};
+    const ownType = (t) => !!t && Array.isArray(tplNow[prefix + t]) && tplNow[prefix + t].length > 0;
+    // 이 템플릿을 쓰는 장비만: 셋업 구분 선택 시 그 구분의 장비 / 공통이면 셋업 구분이 없거나 전용 템플릿이 없는 장비
+    const inScope = (setupKey) => {
+        const i = setupKey.indexOf('::');
+        const type = (typeof window.getEquipSetupType === 'function') ? window.getEquipSetupType(setupKey.slice(0, i), setupKey.slice(i + 2)) : '';
+        return currentSetupTemplateType ? type === currentSetupTemplateType : (!type || !ownType(type));
+    };
 
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
-    Object.values(setupData).forEach(d => {
+    Object.keys(setupData).filter(inScope).map(k => setupData[k]).forEach(d => {
         (d.setupDetails || []).forEach(t => {
             if (mapCat(t) !== cat) return;
             if ((t.subcategory || '') === oldName || (!t.subcategory && (t.content || '') === oldName)) {
@@ -6564,6 +6671,7 @@ async function renameSetupTemplateSubcategory(oldName, newNameInput, categoryInp
 // silent = true : 세부 구분 추가/삭제 때 바로 저장 (성공 시 알림 없이 하단 상태 문구만 표시)
 async function saveSetupTemplateToServer(silent = false) {
     if (silent !== true) silent = false; // 버튼 onclick 의 이벤트 객체가 넘어와도 일반 저장으로 처리
+    if (!isSetupTemplateDirty()) { if (!silent) alert('저장할 변경 사항이 없습니다.'); return true; }
     const template = getCommonSetupTemplate();
     const statusEl = document.getElementById('setup-template-save-status');
     if (statusEl) { statusEl.textContent = '저장 중...'; statusEl.style.color = '#8b949e'; }
@@ -6576,27 +6684,33 @@ async function saveSetupTemplateToServer(silent = false) {
     }
 
     const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
-    templates['default'] = template;
+    templates[setupTemplateStorageKey()] = template;
 
-    // 모든 개별 모델 키도 공통 템플릿으로 통일 동기화
-    const models = JSON.parse(localStorage.getItem('equipment_models')) || [];
-    models.forEach(m => {
-        templates[m.name] = template;
-        if (m.abbr) templates[m.abbr] = template;
-    });
+    // 모든 개별 모델 키도 공통 템플릿으로 통일 동기화 ([수정] 공통 템플릿을 저장할 때만)
+    if (!currentSetupTemplateType) {
+        const models = JSON.parse(localStorage.getItem('equipment_models')) || [];
+        models.forEach(m => {
+            templates[m.name] = template;
+            if (m.abbr) templates[m.abbr] = template;
+        });
+    }
 
     const success = await window.syncAdminDB('setting', 'UPDATE', { key: 'setup_templates', value: templates });
     if (success) {
         localStorage.setItem('setup_templates', JSON.stringify(templates));
+        setupTemplateDraft = null; // 저장 완료 → 작업본 비움
+        updateSetupTemplateTypeNote();
+        updateSetupTemplateDirtyStatus();
         if (typeof addSystemLog === 'function') {
-            addSystemLog('UPDATE_SETUP_TEMPLATE', '공통 템플릿', '공통 셋업 일정 템플릿 수정 및 동기화');
+            const label = currentSetupTemplateType ? `${currentSetupTemplateType} 템플릿` : '공통 템플릿';
+            addSystemLog('UPDATE_SETUP_TEMPLATE', label, `${label} 셋업 일정 수정 및 동기화`);
         }
         if (statusEl) {
             const now = new Date();
             statusEl.textContent = `✓ 저장됨 (${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')})`;
             statusEl.style.color = '#3fb950';
         }
-        if (!silent) alert('셋업 일정 공통 템플릿이 성공적으로 저장되었습니다.');
+        if (!silent) alert(`셋업 일정 ${currentSetupTemplateType ? `'${currentSetupTemplateType}'` : '공통'} 템플릿이 저장되었습니다.`);
         return true;
     }
     if (statusEl) { statusEl.textContent = '⚠ 저장 실패 - 다시 시도해주세요'; statusEl.style.color = '#f85149'; }

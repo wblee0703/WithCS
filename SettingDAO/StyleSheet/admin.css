@@ -829,10 +829,12 @@ body.role-admin .tag-remove {
     }
 
     /* 1행 & 2행 통합 행에 한해 모바일에서 flex-wrap 허용하여 2줄로 분할 (각각 1:1 비율) */
-    #admin-equip-form #equip-row-desktop-single {
+    #admin-equip-form #equip-row-desktop-single,
+    #admin-equip-form #equip-row-status { /* [요청] 장비 구분·셋업 구분·프로젝트 번호·납품일도 1줄에 2개씩 */
         flex-wrap: wrap !important;
     }
-    #admin-equip-form #equip-row-desktop-single .flex-row-item {
+    #admin-equip-form #equip-row-desktop-single .flex-row-item,
+    #admin-equip-form #equip-row-status .flex-row-item {
         flex: none !important;
         width: calc(50% - 4px) !important;
     }
@@ -2717,3 +2719,6 @@ body:not(.role-admin):not(.role-superadmin) #section-equip-param-mgmt .data-para
 #setup-template-subcategory-list li .subcat-edit-btn {
     margin-left: auto;
 }
+
+/* [요청] 셋업 일정 관리: 변경 사항이 없으면 저장 버튼 비활성 */
+#btn-save-setup-template:disabled { opacity: 0.45; cursor: not-allowed; }

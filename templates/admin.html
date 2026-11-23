@@ -4,7 +4,7 @@
 {% block title %}Admin - WITH ON{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/admin.css') }}?v=73">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/admin.css') }}?v=75">
 {% endblock %}
 
 {% block content %}
@@ -250,14 +250,8 @@
                                 </div>
                             </div>
 
-                            <!-- 3행: 프로젝트 번호, 장비 구분, 납품일 -->
-                            <div class="flex-row-gap-10">
-                                <div class="flex-row-item flex-10">
-                                    <label class="form-label-custom">프로젝트 번호</label>
-                                    <input type="text" id="equip-info-project-no" class="input-dark full-width"
-                                        placeholder="프로젝트 번호"
-                                        style="height: 32px; padding: 4px 8px; box-sizing: border-box;">
-                                </div>
+                            <!-- 3행: 장비 구분, 셋업 구분, 프로젝트 번호, 납품일 ([요청] 입력 순서 변경, 모바일은 1줄에 2개씩) -->
+                            <div class="flex-row-gap-10" id="equip-row-status">
                                 <div class="flex-row-item flex-10">
                                     <label class="form-label-custom">장비 구분</label>
                                     <select id="equip-info-status" class="input-dark full-width"
@@ -269,6 +263,24 @@
                                         <option value="유휴 장비">유휴 장비</option>
                                         <option value="폐기 장비">폐기 장비</option>
                                     </select>
+                                </div>
+                                <div class="flex-row-item flex-10">
+                                    <!-- [추가] 셋업 구분: 항목을 늘리려면 아래 option만 추가 -->
+                                    <label class="form-label-custom">셋업 구분</label>
+                                    <select id="equip-info-setup-type" class="input-dark full-width"
+                                        style="height: 32px; padding: 4px 8px; box-sizing: border-box;">
+                                        <option value="">셋업 구분 선택</option>
+                                        <option value="AMCs">AMCs</option>
+                                        <option value="광학">광학</option>
+                                        <option value="Chem">Chem</option>
+                                        <option value="Wafer">Wafer</option>
+                                    </select>
+                                </div>
+                                <div class="flex-row-item flex-10">
+                                    <label class="form-label-custom">프로젝트 번호</label>
+                                    <input type="text" id="equip-info-project-no" class="input-dark full-width"
+                                        placeholder="프로젝트 번호"
+                                        style="height: 32px; padding: 4px 8px; box-sizing: border-box;">
                                 </div>
                                 <div class="flex-row-item flex-10">
                                     <label class="form-label-custom">납품일</label>
@@ -753,17 +765,28 @@
 
         <!-- 5. 셋업 일정 관리 -->
         <div id="section-setup-template-mgmt" class="card admin-section" style="display: none;">
-            <div class="card-header">
+            <div class="card-header" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                 <h3>셋업 일정 관리</h3>
+                <!-- [추가] 셋업 구분별 일정 템플릿 선택 (항목은 장비 관리의 셋업 구분 목록을 그대로 사용) -->
+                <select id="setup-template-type-select" class="input-dark" title="셋업 구분별로 일정 구분·세부 구분을 따로 관리합니다."
+                    style="height: 30px; padding: 2px 8px; font-size: 13px; min-width: 150px;">
+                    <option value="">공통 (셋업 구분 없음)</option>
+                </select>
+                {% if session.get('role') in ['admin', 'superadmin'] %}
+                <!-- [요청] 저장 버튼을 눌러야 저장 (셋업 구분 드롭다운 오른쪽) -->
+                <button type="button" id="btn-save-setup-template" class="btn-green" disabled
+                    style="height: 30px; padding: 0 16px; font-size: 13px;">저장</button>
+                {% endif %}
+                <span id="setup-template-type-note" style="font-size: 12px; color: #8b949e;"></span>
             </div>
             <div class="card-body">
                 <div class="admin-split-view">
-                    <!-- 좌측 카테고리 영역: 셋업 구분 (대분류) 및 세부 구분 (소분류) -->
+                    <!-- 좌측 카테고리 영역: 일정 구분 (대분류) 및 세부 구분 (소분류) -->
                     <div class="check-type-categories-wrapper">
-                        <!-- 1. 셋업 구분 선택 -->
+                        <!-- 1. 일정 구분 선택 ([요청] 셋업 구분 → 일정 구분 명칭 변경) -->
                         <div class="admin-col-list" style="flex: 0 0 267px; max-width: 267px;">
                             <div class="list-header">
-                                <span>셋업 구분</span>
+                                <span>일정 구분</span>
                             </div>
                             <ul id="setup-template-category-list" class="admin-list">
                                 <li data-category="사전 작업">사전 작업</li>
@@ -826,9 +849,10 @@
                     <div class="admin-col-detail" style="flex: 0 1 420px; max-width: 100%;">
                         <div class="detail-header">
                             <div class="flex-between-center mb-5">
-                                <h4 class="m-0">셋업 구분 관리 (전체 공통)</h4>
+                                <h4 class="m-0" id="setup-template-detail-title">일정 구분 관리 (공통)</h4>
                             </div>
-                            <p class="detail-desc">⚙️ 버튼을 누르면 세부 구분을 추가·이름 수정(✏️)·삭제하고 끌어서(⠿) 순서를 바꿀 수 있으며, 바로 저장되어 모든 화면에 반영됩니다.</p>
+                            <p class="detail-desc">⚙️ 버튼을 누르면 세부 구분을 추가·삭제하고 끌어서(⠿) 순서를 바꿀 수 있습니다. 변경 내용은 [저장]을 눌러야 모든 화면에 반영됩니다.</p>
+                            <p class="detail-desc">세부 구분 이름 수정(✏️)은 장비의 셋업 기록까지 함께 바뀌므로 바로 저장됩니다.</p>
                             <p class="detail-desc">세부 선택 항목은 셋업 일지 등록 시 해당 세부 구분을 고르면 체크박스로 나오는 항목입니다. (1~8단계만, ⚙️ 버튼으로 추가·삭제)</p>
                             <p id="setup-template-save-status" style="font-size: 12px; margin: 4px 0 0;"></p>
                         </div>
@@ -841,5 +865,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('SettingDAO', filename='JavaScript/admin.js') }}?v=52"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/admin.js') }}?v=55"></script>
 {% endblock %}

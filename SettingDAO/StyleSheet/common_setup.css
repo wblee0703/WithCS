@@ -1037,3 +1037,80 @@ select.modal-select option,
 
 /* 진행률 없는 단계 (사전 작업): 막대 자리 비움 */
 .setup-progress__bar.setup-progress__bar--none { visibility: hidden; }
+
+/* [추가] 셋업 작업 기록: 구분 진행률 / 세부 구분 진행 상태 (입력창 안 오른쪽, 목록 항목 오른쪽) */
+.setup-log-progress-badge {
+    position: absolute;
+    top: 0;
+    right: 8px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    font-size: 11px;
+    color: #8b949e;
+    white-space: nowrap;
+    pointer-events: none; /* 눌러도 입력창(드롭다운)이 열리게 */
+}
+.setup-log-progress-badge:empty { display: none; }
+/* 표시가 글자와 겹치지 않게 입력창 오른쪽 여백 */
+/* (오른쪽 여백은 진행률 표시 길이에 맞춰 JS에서 지정) */
+
+.setup-log-progress-badge b { color: #58a6ff; }
+#setup-log-register-modal .log-select-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.setup-log-item-progress {
+    flex-shrink: 0;
+    font-size: 11px;
+    color: #58a6ff;
+    white-space: nowrap;
+}
+
+/* [요청] 셋업 작업 기록: 구분·세부 구분 / 작업자·공수를 한 줄에 */
+.setup-log-row-pair {
+    gap: 6px;
+}
+.setup-log-row-pair .setup-log-label {
+    margin-right: 0;
+}
+.setup-log-md-label {
+    flex-shrink: 0;
+    width: auto !important;
+    margin: 0 0 0 4px !important;
+    color: #8b949e;
+    font-size: 13px;
+    font-weight: bold;
+    white-space: nowrap;
+}
+/* 공수: 작업자 수로 자동 계산 (직접 입력 불가) */
+#setup-log-reg-md.setup-log-md-input {
+    flex: 0 0 56px;
+    width: 56px !important;
+    min-width: 0;
+    height: 30px;
+    box-sizing: border-box;
+    text-align: center;
+    background: #161b22;
+    color: #c9d1d9;
+    cursor: default;
+    pointer-events: none;
+}
+
+/* [요청] 셋업 물품 추가 버튼 (누르면 물품 선택·상세 창 표시) */
+.setup-log-part-open-btn {
+    height: 30px;
+    padding: 0 12px !important;
+    font-size: 12px !important;
+    white-space: nowrap;
+}
+
+/* [수정] 드롭다운 목록의 진행률도 입력창처럼 오른쪽 정렬 (목록 공통 span flex:1 덮어쓰기) */
+#setup-log-register-modal .log-select-item .setup-log-item-progress {
+    flex: 0 0 auto;
+    margin-left: auto;
+    text-align: right;
+    overflow: visible;
+}
