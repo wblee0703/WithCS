@@ -486,6 +486,24 @@ body {
     width: 100%;
 }
 
+/* [추가] HOME 셋업 관리: 셋업 진행 이슈 / 셋업 완료 장비(오른쪽) 리스트는 카드 높이에 맞춤 */
+#setup-idle-card .status-list-container {
+    flex: 1;
+    height: auto;
+    min-height: 0;
+    border: none;
+}
+
+#setup-idle-card .status-group-title {
+    margin: 0;
+}
+
+#setup-completed-container .status-list-container {
+    flex: 1;
+    height: auto;
+    min-height: 0;
+}
+
 #equip-detail-container,
 #setup-equip-detail-container {
     max-height: none;
@@ -1060,6 +1078,24 @@ body {
         height: auto !important;
         max-height: none !important;
     }
+
+    /* [요청] 모바일: 셋업 진행 이슈 카드를 사업장 및 프로젝트 현황 카드와 같은 크기로
+       (리스트 높이는 모바일 공통 .status-list-container 200px 를 그대로 사용, 넘치는 항목은 스크롤) */
+    #setup-idle-card {
+        height: auto !important;
+    }
+
+    #setup-idle-card .status-list-container {
+        flex: none;
+    }
+
+    #setup-idle-card .status-list-container .upcoming-list {
+        height: 100% !important;
+    }
+
+    #setup-idle-card .status-group-title {
+        margin: 0 0 5px 0;
+    }
 }
 
 /* [요청] 점검 리스트 어제오늘건수 요약 폰트 크기 (웹 브라우저 12px) */
@@ -1258,4 +1294,20 @@ body {
 body.role-user #event-detail-modal button[style*="display: block"],
 body.role-user #event-detail-modal button[style*="display: inline-block"] {
     display: block !important;
+}
+
+/* [요청] 모바일 HOME 셋업 진행률: 셋업 이력 버튼을 제목 줄 오른쪽에 (제목은 가운데 유지) */
+@media (max-width: 950px) {
+    #gantt-chart-area .gantt__title-wrapper {
+        position: relative;
+    }
+
+    #gantt-chart-area .gantt__left-toolbar {
+        position: absolute !important;
+        left: auto;
+        right: 0;
+        top: 0;
+        transform: none !important;
+        margin-bottom: 0;
+    }
 }

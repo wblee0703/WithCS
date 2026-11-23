@@ -1981,6 +1981,27 @@ function loadSetupInfoFromTarget() {
     alert('정보를 불러왔습니다. 저장 버튼을 눌러 반영해주세요.');
 }
 
+// [복구] HOME 셋업 관리로 이동: 선택한 장비의 셋업 진행률이 보이도록 필터 지정
+window.moveToGanttView = function () {
+    if (!currentPath.site || !currentPath.equip) {
+        alert('장비를 선택해주세요.');
+        return;
+    }
+
+    // 저장되지 않은 변경사항 확인
+    if (typeof window.checkUnsavedChanges === 'function' && !window.checkUnsavedChanges()) {
+        return;
+    }
+
+    // 간트 차트 필터 설정 및 홈 화면 셋업 탭 지정
+    const ganttFilter = { site: currentPath.site, equip: currentPath.equip };
+    localStorage.setItem('currentGanttFilters', JSON.stringify(ganttFilter));
+    localStorage.setItem('lastHomeSection', 'setup');
+
+    // 홈 화면으로 이동
+    window.location.href = '/?scrollTo=gantt';
+};
+
 /* ==========================================================================
    셋업 일지 CSV 불러오기 (Import) 관련 함수
    컬럼 순서:

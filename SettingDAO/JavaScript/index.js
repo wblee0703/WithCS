@@ -1001,7 +1001,7 @@ function updateSetupDashboard() {
     renderSetupSiteStatus(siteStatsArr, totalActive, allSetupEquips);
     renderSetupEquipChart(equipStatsArr, totalActive, allSetupEquips);
     renderSetupEquipDetailList(activeSetupEquips);
-    renderSetupUpcomingList(activeSetupEquips);
+    renderSetupIdleList(activeSetupEquips); // [변경] 예정 작업 → 셋업 진행 이슈
     if (typeof renderGanttChart === 'function') renderGanttChart();
 }
 
@@ -1294,98 +1294,122 @@ function renderSetupEquipDetailList(activeEquips) {
     });
 }
 
-function renderSetupUpcomingList(activeEquips) {
-    const listEl = document.getElementById('setup-upcoming-list');
-    const container = document.getElementById('setup-upcoming-container');
-    if (!listEl || !container) return;
+// [추가] 셋업 진행 이슈: 셋업 단계(사전 작업 제외)를 하나라도 시작한 미완료 프로젝트를
+//        최근 작업일(셋업 일지 기준)부터 며칠 지났는지 오래된 순으로 표시
+function renderSetupIdleList(activeEquips) {
+    const listEl = document.getElementById('setup-idle-list');
+    if (!listEl) return;
     listEl.innerHTML = '';
-
-    let upcomingItems = [];
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const countEl = document.getElementById('setup-idle-count');
     const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
-
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    activeEquips.forEach(eq => {
-        if (setupDashboardFilter.site && window.getSiteGroupName(eq.site) !== setupDashboardFilter.site) return;
-        if (setupDashboardFilter.equip) {
-            const name = eq.equip.split('::')[0];
+    let filtered = activeEquips.filter(e => !e.isCompleted);
+    if (setupDashboardFilter.site) filtered = filtered.filter(e => window.getSiteGroupName(e.site) === setupDashboardFilter.site);
+    if (setupDashboardFilter.equip) {
+        filtered = filtered.filter(e => {
+            const name = e.equip.split('::')[0];
             const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
-            const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
-            if (displayName !== setupDashboardFilter.equip) return;
+            return ((matchedModel && matchedModel.abbr) ? matchedModel.abbr : name) === setupDashboardFilter.equip;
+        });
+    }
+
+    // 같은 프로젝트 번호의 장비는 한 줄로 묶음
+    const groups = [];
+    const groupByKey = {};
+    filtered.forEach(item => {
+        const projectNo = (typeof window.getSetupProjectNo === 'function') ? window.getSetupProjectNo(item.site, item.equip) : '';
+        const key = projectNo ? `${item.site}::${projectNo}` : `${item.site}::${item.equip}`;
+        if (!groupByKey[key]) {
+            groupByKey[key] = { site: item.site, projectNo, items: [] };
+            groups.push(groupByKey[key]);
         }
-        // 선택한 장비와 같은 프로젝트 장비의 예정 작업까지 표시
-        if (currentGanttFilters.equip && (eq.site !== currentGanttFilters.site || !(typeof window.isSameSetupProject === 'function' ? window.isSameSetupProject(currentGanttFilters.site, currentGanttFilters.equip, eq.equip) : eq.equip === currentGanttFilters.equip))) return;
-
-        const data = setupData[`${eq.site}::${eq.equip}`];
-
-        if (data && data.setupDetails) {
-            const uncheckedTasks = data.setupDetails.filter(t => !t.completed);
-
-            uncheckedTasks.forEach(task => {
-                if (task.startDate) {
-                    if (currentGanttFilters.site && currentGanttFilters.equip) {
-                        if (eq.site !== currentGanttFilters.site || !(typeof window.isSameSetupProject === 'function' ? window.isSameSetupProject(currentGanttFilters.site, currentGanttFilters.equip, eq.equip) : eq.equip === currentGanttFilters.equip)) return;
-                    }
-
-                    const start = new Date(task.startDate);
-                    start.setHours(0, 0, 0, 0);
-                    const diffTime = start - today;
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-                    upcomingItems.push({
-                        diffDays: diffDays,
-                        site: eq.site,
-                        equip: eq.equip,
-                        task: task
-                    });
-                }
-            });
-        }
+        groupByKey[key].items.push(item);
     });
 
-    upcomingItems.sort((a, b) => a.diffDays - b.diffDays);
+    const rows = [];
+    groups.forEach(group => {
+        const projectEquips = (group.projectNo && typeof window.getSetupProjectEquips === 'function')
+            ? window.getSetupProjectEquips(group.site, group.items[0].equip) : [];
+        const repEquip = projectEquips.find(e => group.items.some(it => it.equip === e)) || group.items[0].equip;
+        let stages, overall;
+        try {
+            const equipData = window.getSetupProjectData(group.site, repEquip, setupData);
+            ({ stages, overall } = window.computeSetupProgress(equipData, window.getSetupTemplateRawForEquip(group.site, repEquip)));
+            group.logs = equipData.setupLogs || [];
+        } catch (e) { return; }
 
-    if (upcomingItems.length === 0) {
-        listEl.innerHTML = '<div class="upcoming-empty-msg">예정된 작업이 없습니다.</div>';
+        const progStages = stages.filter(st => !st.noProgress && !st.excluded);
+        const started = progStages.some(st => st.subs.some(s => s.status === '완료' || s.status === '진행 중'));
+        if (!started) return;
+
+        const lastDate = group.logs.map(l => String(l.date || '').substring(0, 10))
+            .filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d)).sort().pop() || '';
+        let days = null;
+        if (lastDate) {
+            const [y, m, d] = lastDate.split('-').map(Number);
+            days = Math.round((today - new Date(y, m - 1, d)) / 86400000);
+        }
+        const curStage = progStages.find(st => st.percent < 100);
+        rows.push({ group, repEquip, lastDate, days, overall, curStage });
+    });
+
+    // 오래 쉰 프로젝트가 위로 (작업일이 없는 프로젝트는 맨 아래)
+    rows.sort((a, b) => (b.days === null ? -1 : b.days) - (a.days === null ? -1 : a.days));
+    if (countEl) countEl.textContent = `(${rows.length})`;
+
+    if (rows.length === 0) {
+        listEl.innerHTML = '<li class="list-empty-msg">셋업을 진행 중인 프로젝트가 없습니다.</li>';
         return;
     }
 
-    const template = document.getElementById('setup-upcoming-item-template');
-
-    upcomingItems.forEach(item => {
-        const info = formatEquipDisplayInfo(item.site, item.equip, equipmentModels);
-
-        let badgeClass = 'safe';
-        let dateText = item.task.startDate;
-        if (item.diffDays < 0) {
-            badgeClass = 'danger';
-        } else if (item.diffDays === 0) {
-            badgeClass = 'warning';
-        } else if (item.diffDays <= 3) {
-            badgeClass = 'warning';
+    rows.forEach(row => {
+        const { group, repEquip } = row;
+        let mainText;
+        if (group.projectNo) {
+            const modelCounts = {};
+            group.items.forEach(it => {
+                const name = formatEquipDisplayInfo(it.site, it.equip, equipmentModels).name;
+                modelCounts[name] = (modelCounts[name] || 0) + 1;
+            });
+            mainText = `${group.site} > ${group.projectNo} [${Object.keys(modelCounts).map(n => `${n} ${modelCounts[n]}대`).join(', ')}]`;
+        } else {
+            const info = formatEquipDisplayInfo(group.site, repEquip, equipmentModels);
+            const plainSub = info.subInfo.replace(/<[^>]*>?/gm, '');
+            mainText = `${group.site} > ${info.name}${plainSub ? ` ${plainSub}` : ''}`;
         }
 
-        const clone = template.content.cloneNode(true);
-        const div = clone.querySelector('.upcoming-item');
-        div.onclick = () => {
-            if (typeof window.openSetupLogRegisterModal === 'function') {
-                const todayStr = new Date().toISOString().substring(0, 10);
-                window.openSetupLogRegisterModal(item.site, item.equip, item.task.content, todayStr);
-            } else {
-                location.href = `/setup?site=${encodeURIComponent(item.site)}&equip=${encodeURIComponent(item.equip)}`;
-            }
+        // 경과일 색: 3일 이내 초록 / 7일 이내 주황 / 그 이상 빨강
+        const color = row.days === null ? '#8b949e' : row.days <= 3 ? '#3fb950' : row.days <= 7 ? '#d29922' : '#f85149';
+        const dayText = row.days === null ? '-' : (row.days <= 0 ? '오늘' : `D+${row.days}`);
+        // 현재 단계는 '1단계 - 납품/정위치' → '1단계' 로 줄여 표시 (전체 이름은 툴팁)
+        const stageText = row.curStage ? `${row.curStage.category.split(' - ')[0]} ${Math.round(row.curStage.percent)}%` : '마무리 대기';
+        const metaText = `최근 작업 ${row.lastDate || '-'} · ${stageText} · 전체 ${Math.round(row.overall)}%`;
+        const metaTitle = row.curStage ? `${metaText} (${row.curStage.category})` : metaText;
+
+        const li = document.createElement('li');
+        li.className = 'upcoming-item';
+        li.style.borderLeft = `4px solid ${color}`;
+        li.innerHTML = `
+            <div style="font-size: 12px; font-weight: 800; color: ${color}; min-width: 46px; flex-shrink: 0;">${dayText}</div>
+            <div style="display: flex; flex-direction: column; gap: 4px; overflow: hidden; flex: 1; min-width: 0;">
+                <span style="font-size: 13px; font-weight: bold; color: #e6edf3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(mainText)}">${escapeHtml(mainText)}</span>
+                <span style="font-size: 11px; color: #8b949e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(metaTitle)}">${escapeHtml(metaText)}</span>
+            </div>
+        `;
+        // 클릭: 아래 셋업 진행률에서 해당 프로젝트 보기
+        li.onclick = () => {
+            currentGanttFilters.site = group.site;
+            currentGanttFilters.equip = repEquip;
+            updateSetupDashboard();
+            setTimeout(() => {
+                const ganttWrapper = document.getElementById('gantt-wrapper');
+                if (ganttWrapper) ganttWrapper.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
         };
-
-        clone.querySelector('.upcoming-info-site').textContent = info.mainInfo;
-        clone.querySelector('.upcoming-info-content').textContent = item.task.content;
-
-        const badge = clone.querySelector('.d-day-badge');
-        badge.className = `d-day-badge ${badgeClass} badge-auto`;
-        badge.textContent = dateText;
-
-        listEl.appendChild(clone);
+        listEl.appendChild(li);
     });
 }
 

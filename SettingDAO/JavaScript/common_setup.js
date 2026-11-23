@@ -816,7 +816,7 @@ window.getSetupLogRegProgress = function (modal) {
         return { stage, sub };
     } catch (e) { return null; }
 };
-const SETUP_SUB_STATUS_COLOR = { '완료': '#3fb950', '진행 중': '#d29922', '미착수': '#8b949e', '제외': '#6e7681' };
+var SETUP_SUB_STATUS_COLOR = { '완료': '#3fb950', '진행 중': '#d29922', '미착수': '#8b949e', '제외': '#6e7681' };
 window.setupStageProgressText = (st) => (!st || st.noProgress) ? '' : (st.excluded ? '제외' : `${Math.round(st.percent)}%`);
 window.setupSubStatusHtml = (s) => s ? `<span style="color:${SETUP_SUB_STATUS_COLOR[s.status] || '#8b949e'};">${s.status}</span>` : '';
 

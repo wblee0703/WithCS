@@ -2,7 +2,7 @@
 {% set active_page = 'home' %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/index.css') }}">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/index.css') }}?v=5">
 <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/calendar.css') }}?v=7">
 <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/gantt.css') }}?v=2">
 <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/integ.css') }}">
@@ -59,15 +59,11 @@
                     <div class="maint-split-view" id="setup-split-view">
                         <!-- 왼쪽: 차트 영역 -->
                         <div class="maint-left-charts">
-                            <div class="status-group card-like" style="flex: 1;">
-                                <h5 class="status-group-title">셋업 완료 장비</h5>
-                                <div class="status-list-container status-list-flex">
-                                    <div class="status-list-header">
-                                        <span class="header-name" style="flex: 1;">장비 정보</span>
-                                        <span style="width: 70px; text-align: center; font-size: 12px; font-weight: bold; color: #8b949e;">상태</span>
-                                        <span class="header-count" style="width: 80px; text-align: center;">완료일</span>
-                                    </div>
-                                    <ul class="site-status-list" id="setup-completed-list"></ul>
+                            <!-- [변경] 셋업 진행 이슈: 셋업을 시작한 프로젝트의 최근 작업일 경과 모니터링 -->
+                            <div class="status-group card-like" id="setup-idle-card" style="flex: 1;">
+                                <h5 class="status-group-title" style="color: #f0883e;" title="셋업 단계(사전 작업 제외)를 시작한 미완료 프로젝트, 최근 작업일 기준 경과일">셋업 진행 이슈 <span id="setup-idle-count" style="font-size: 12px; color: #8b949e;"></span></h5>
+                                <div class="status-list-container status-list-flex" style="min-height: 0; width: 100%;">
+                                    <ul id="setup-idle-list" class="upcoming-list" style="padding: 0 5px; margin: 0; list-style: none;"></ul>
                                 </div>
                             </div>
                             <div class="status-group card-like" style="flex: 1;">
@@ -101,9 +97,17 @@
                                 </div>
                             </div>
                         </div>
-                        <div id="setup-upcoming-container" class="upcoming-container">
-                            <h5 class="upcoming-title">⚠️ 예정 작업</h5>
-                            <div id="setup-upcoming-list" class="upcoming-list"></div>
+                        <!-- [변경] 예정 작업 카드 삭제, 셋업 완료 장비를 오른쪽으로 이동 -->
+                        <div id="setup-completed-container" class="upcoming-container">
+                            <h5 class="upcoming-title" style="color: #e6edf3;">셋업 완료 장비</h5>
+                            <div class="status-list-container status-list-flex" style="min-height: 0;">
+                                <div class="status-list-header">
+                                    <span class="header-name" style="flex: 1;">장비 정보</span>
+                                    <span style="width: 70px; text-align: center; font-size: 12px; font-weight: bold; color: #8b949e;">상태</span>
+                                    <span class="header-count" style="width: 80px; text-align: center;">완료일</span>
+                                </div>
+                                <ul class="site-status-list" id="setup-completed-list"></ul>
+                            </div>
                         </div>
                     </div>
                     <div class="setup-card-body gantt" id="gantt-chart-area">
@@ -117,12 +121,6 @@
                                     <button class="btn-move" onclick="goToSetupPage()">장비 셋업 이동</button>
                                 </div>
                                 <div id="gantt-target-info" class="gantt__target-info"></div>
-                            </div>
-                            <div class="gantt__right-toolbar">
-                                <div class="calendar-search-wrapper search-wrapper-flex">
-                                    <button id="btn-gantt-filter" class="btn-gray ml-5" title="장비 검색">검색</button>
-                                    <span id="gantt-filter-status" class="filter-status-text"></span>
-                                </div>
                             </div>
                         </div>
                         <!-- 셋업 진행률 (단계별 세부 구분 완료 비율, 전체 = 단계 평균) -->
@@ -538,8 +536,8 @@
 {% block extra_js %}
 <script src="{{ url_for('SettingDAO', filename='JavaScript/gantt.js') }}?v=2.0.0"></script>
 <script src="{{ url_for('SettingDAO', filename='JavaScript/calendar.js') }}?v=1.0.3"></script>
-<script src="{{ url_for('SettingDAO', filename='JavaScript/index.js') }}?v=1.1.6"></script>
-<script src="{{ url_for('SettingDAO', filename='JavaScript/common_setup.js') }}?v=1.2.4"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/index.js') }}?v=1.1.7"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/common_setup.js') }}?v=1.2.5"></script>
 <script src="{{ url_for('SettingDAO', filename='JavaScript/integ.js') }}?v=1.1.0"></script>
 <script src="{{ url_for('SettingDAO', filename='JavaScript/tracking.js') }}?v=1.6.2"></script>
 <script>

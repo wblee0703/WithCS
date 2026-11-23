@@ -470,9 +470,16 @@ body.role-superadmin .btn-setup-csv-import {
     border-color: #8b949e;
 }
 
-/* [요청] HOME 진행률 보기·장비 정보 버튼 삭제 → CSV 불러오기만 오른쪽 끝 (작은 크기) */
-.detail-header-row .btn-setup-csv-import {
+/* [요청] HOME 진행률 보기 버튼 (오른쪽), CSV 불러오기는 그 오른쪽 (작은 크기) */
+.btn-gantt-move {
     margin-left: auto;
+    padding: 2px 10px;
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.detail-header-row .btn-setup-csv-import {
+    margin-left: 5px;
     margin-right: 0;
     padding: 2px 8px;
     font-size: 11px;
@@ -663,10 +670,19 @@ body.role-superadmin .btn-setup-csv-import {
     }
 
     /* [요청] 모바일: CSV 불러오기는 경로 옆 오른쪽 끝에 작은 크기로 */
+    /* 줄이 넘쳐 다음 줄로 내려가도 오른쪽 끝에 붙도록 auto */
     body.role-superadmin .btn-setup-csv-import {
         display: inline-flex !important;
         margin-left: auto !important;
+        margin-top: 4px;
         margin-right: 0 !important;
+    }
+
+    /* [요청] 모바일: HOME 진행률 보기는 경로 옆 오른쪽, CSV 불러오기와 같은 작은 크기 */
+    .btn-gantt-move {
+        margin-left: auto !important;
+        padding: 2px 8px !important;
+        font-size: 11px !important;
     }
 
     /* [Fix] 모바일에서 카드 접기 버튼 표시 */

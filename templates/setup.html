@@ -2,7 +2,7 @@
 {% set active_page = 'setup' %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/setup.css') }}?v=11">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/setup.css') }}?v=12">
 <style>
     /* 달력 아이콘 회색 변경 */
     .custom-date-icon::-webkit-calendar-picker-indicator {
@@ -44,6 +44,8 @@
         <div class="detail-content" style="display: none;">
             <div class="detail-header-row">
                 <header class="breadcrumb breadcrumb-no-margin" id="current-path">📍 사업장 > 장비명</header>
+                <!-- [요청] HOME 셋업 관리로 이동 (선택한 장비의 셋업 진행률 표시) -->
+                <button type="button" class="btn-blue-sm btn-gantt-move" onclick="moveToGanttView()">📊 HOME 진행률 보기</button>
                 <input type="file" id="setup-csv-file-input" accept=".csv" style="display: none;" onchange="handleSetupCsvFile(this)">
                 <button type="button" class="btn-setup-csv-import" id="btn-import-setup-log-csv" onclick="triggerSetupCsvImport()" title="셋업 일지 CSV 불러오기">📥 CSV 불러오기</button>
             </div>
@@ -128,5 +130,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('SettingDAO', filename='JavaScript/setup.js') }}?v=20261123_6"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/setup.js') }}?v=20261123_7"></script>
 {% endblock %}
