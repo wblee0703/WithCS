@@ -1094,6 +1094,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
     /* [요청] 작업 내용(메모 등) 높이 수정 (최소 300px ~ 최대 800px, 스크롤) */
     #device-memo,
+    #device-memo-parts,
     #setup-log-detail-memo,
     textarea.delay-reason-textarea {
         height: 250px !important;
@@ -1353,35 +1354,46 @@ body[class*="role-"] #maint-table-body .btn-del-sm {
     line-height: 1 !important;
 }
 
-/* [추가] 장비 점검 이력 작업내용: 증상/원인/조치사항 (작업 상세 정보에서 기록) */
+/* [수정] 장비 점검 이력 작업내용: [메모] ↔ [증상·원인·조치사항] 입력 화면 전환 */
+#btn-toggle-maint-memo-mode {
+    white-space: nowrap;
+    margin-left: auto;
+    margin-right: 6px;
+    padding: 3px 10px;
+    font-size: 12px;
+    width: auto;
+    height: auto;
+}
 .device-memo-parts {
-    display: flex;
     flex-direction: column;
-    gap: 4px;
-    margin-bottom: 8px;
-    padding: 8px 10px;
-    background: var(--c-surface-3);
-    border: 1px solid var(--c-border);
-    border-radius: 4px;
-    max-height: 40%;
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
-    flex-shrink: 0;
 }
 .device-memo-part {
     display: flex;
-    gap: 8px;
-    font-size: 13px;
-    line-height: 1.5;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+    min-height: 0;
 }
 .device-memo-part-label {
-    flex: 0 0 60px;
+    font-size: 12px;
     font-weight: bold;
     color: var(--c-text-muted);
 }
-.device-memo-part-text {
+.device-memo-part-input {
     flex: 1;
-    min-width: 0;
-    white-space: pre-wrap;
-    word-break: break-word;
-    color: var(--c-text);
+    width: 100%;
+    min-height: 48px;
+    resize: none;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-heading);
+    padding: 8px;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-family: inherit;
+    font-size: 13px;
 }

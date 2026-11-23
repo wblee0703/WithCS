@@ -3933,6 +3933,7 @@ function onEquipClick(site, equip) {
     originalMemo = "";
     const memoInput = document.getElementById('device-memo');
     if (memoInput) memoInput.value = "";
+    if (typeof renderMaintMemoParts === 'function') renderMaintMemoParts(null); // [추가] 증상/원인/조치사항 칸 초기화
     const memoBtn = document.getElementById('memo-save-btn');
     if (memoBtn) {
         memoBtn.classList.remove('btn-orange-sm', 'btn-blue-sm');

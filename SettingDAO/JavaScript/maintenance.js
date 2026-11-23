@@ -1599,7 +1599,9 @@ async function saveMemoTimes() {
             data.logs[logIndex].startTime = newStart;
             data.logs[logIndex].endTime = newEnd;
 
-            if (memoInput) data.logs[logIndex].memo = memoInput.value.trim();
+            // [수정] 메모 / 증상·원인·조치사항 중 현재 화면의 값만 기록 (다른 쪽은 비움)
+            const memoValues = getMaintMemoValues();
+            Object.assign(data.logs[logIndex], memoValues);
             if (memoWorkerInput) data.logs[logIndex].worker = memoWorkerInput.value.trim();
             if (memoMdInput) data.logs[logIndex].md = memoMdInput.value.trim();
             if (memoCostTypeInput) data.logs[logIndex].cost_type = memoCostTypeInput.value;
@@ -1613,7 +1615,12 @@ async function saveMemoTimes() {
 
             originalStartTime = newStart;
             originalEndTime = newEnd;
-            if (memoInput) originalMemo = memoInput.value.trim();
+            if (memoInput) {
+                memoInput.value = memoValues.memo;
+                originalMemo = memoValues.memo;
+            }
+            document.querySelectorAll('#device-memo-parts textarea[data-key]').forEach(t => { t.value = memoValues[t.dataset.key] || ''; });
+            originalMaintMemoState = JSON.stringify(getMaintMemoValues());
             if (memoWorkerInput) originalWorker = memoWorkerInput.value.trim();
             if (memoMdInput) originalMd = memoMdInput.value.trim();
             if (memoCostTypeInput) originalCostType = memoCostTypeInput.value;
@@ -2064,7 +2071,48 @@ window.renderSpecialNote = function () {
 /* ==========================================================================
    [추가] 메모/작업내용 필드 비활성화 제어 (Memo Fields State Control)
    ========================================================================== */
-// [추가] 장비 점검 이력 작업내용: 증상/원인/조치사항 (읽기 전용, 값이 있을 때만)
+// [수정] 장비 점검 이력 작업내용: [메모] ↔ [증상·원인·조치사항] 입력 화면 전환 (저장 시 현재 화면의 값만 기록)
+const MAINT_MEMO_SECTIONS = () => window.WORK_MEMO_SECTIONS || [
+    { key: 'symptom', label: '증상' }, { key: 'cause', label: '원인' }, { key: 'action', label: '조치사항' }
+];
+let originalMaintMemoState = '';
+
+function getMaintMemoMode() {
+    const box = document.getElementById('device-memo-parts');
+    return (box && box.style.display !== 'none') ? 'structured' : 'free';
+}
+
+// 현재 화면의 값만 반환 (다른 쪽은 빈 값)
+function getMaintMemoValues() {
+    const memoInput = document.getElementById('device-memo');
+    const box = document.getElementById('device-memo-parts');
+    const structured = getMaintMemoMode() === 'structured';
+    const out = { memo: structured ? '' : (memoInput ? memoInput.value.trim() : '') };
+    MAINT_MEMO_SECTIONS().forEach(sec => {
+        const t = box ? box.querySelector(`textarea[data-key="${sec.key}"]`) : null;
+        out[sec.key] = (structured && t) ? t.value.trim() : '';
+    });
+    return out;
+}
+
+function isMaintMemoChanged() {
+    return selectedLogId !== null && JSON.stringify(getMaintMemoValues()) !== originalMaintMemoState;
+}
+
+function markMaintMemoDirty() {
+    const btn = document.getElementById('btn-save-memo');
+    if (btn) { btn.classList.remove('btn-green-sm'); btn.classList.add('btn-orange-sm'); }
+}
+
+function applyMaintMemoMode(structured) {
+    const memoInput = document.getElementById('device-memo');
+    const box = document.getElementById('device-memo-parts');
+    const toggleBtn = document.getElementById('btn-toggle-maint-memo-mode');
+    if (box) box.style.display = structured ? 'flex' : 'none';
+    if (memoInput) memoInput.style.display = structured ? 'none' : '';
+    if (toggleBtn) toggleBtn.textContent = structured ? '메모 입력' : '증상·원인·조치 입력';
+}
+
 function renderMaintMemoParts(logItem) {
     const memoInput = document.getElementById('device-memo');
     if (!memoInput) return;
@@ -2073,16 +2121,51 @@ function renderMaintMemoParts(logItem) {
         box = document.createElement('div');
         box.id = 'device-memo-parts';
         box.className = 'device-memo-parts';
+        box.style.display = 'none';
+        box.innerHTML = MAINT_MEMO_SECTIONS().map(sec => `
+            <div class="device-memo-part">
+                <span class="device-memo-part-label">${sec.label}</span>
+                <textarea data-key="${sec.key}" class="device-memo-part-input" spellcheck="false" placeholder="${sec.label} 입력"></textarea>
+            </div>`).join('');
+        box.querySelectorAll('textarea').forEach(t => t.addEventListener('input', markMaintMemoDirty));
     }
     if (box.parentNode !== memoInput.parentNode || box.nextSibling !== memoInput) {
         memoInput.parentNode.insertBefore(box, memoInput);
     }
+
+    // 전환 버튼 (저장 버튼 왼쪽)
+    let toggleBtn = document.getElementById('btn-toggle-maint-memo-mode');
+    const saveBtn = document.getElementById('btn-save-memo');
+    if (!toggleBtn && saveBtn) {
+        toggleBtn = document.createElement('button');
+        toggleBtn.type = 'button';
+        toggleBtn.id = 'btn-toggle-maint-memo-mode';
+        toggleBtn.className = 'btn-shortcut';
+        saveBtn.parentNode.insertBefore(toggleBtn, saveBtn);
+        toggleBtn.addEventListener('click', () => {
+            const toStructured = getMaintMemoMode() !== 'structured';
+            applyMaintMemoMode(toStructured);
+            try { localStorage.setItem('workMemoMode', toStructured ? 'structured' : 'free'); } catch (e) { }
+            if (isMaintMemoChanged()) markMaintMemoDirty();
+            else if (saveBtn) { saveBtn.classList.remove('btn-orange-sm'); saveBtn.classList.add('btn-green-sm'); }
+        });
+    }
+    if (toggleBtn) toggleBtn.style.display = logItem ? '' : 'none';
+
+    // 값 채우기
     const it = logItem || {};
-    const secs = (window.WORK_MEMO_SECTIONS || []).filter(sec => String(it[sec.key] || '').trim());
-    if (!secs.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
-    const esc = (v) => String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-    box.innerHTML = secs.map(sec => `<div class="device-memo-part"><span class="device-memo-part-label">${sec.label}</span><span class="device-memo-part-text">${esc(it[sec.key])}</span></div>`).join('');
-    box.style.display = '';
+    box.querySelectorAll('textarea[data-key]').forEach(t => { t.value = it[t.dataset.key] || ''; });
+
+    // 화면: 증상/원인/조치사항이 있으면 그 화면, 메모만 있으면 메모 화면, 둘 다 비면 마지막으로 쓴 화면
+    const hasParts = MAINT_MEMO_SECTIONS().some(sec => String(it[sec.key] || '').trim());
+    let pref = 'free';
+    try { pref = localStorage.getItem('workMemoMode') || 'free'; } catch (e) { }
+    if (!logItem) applyMaintMemoMode(false);
+    else if (hasParts) applyMaintMemoMode(true);
+    else if (String(it.memo || '').trim()) applyMaintMemoMode(false);
+    else applyMaintMemoMode(pref === 'structured');
+
+    originalMaintMemoState = JSON.stringify(getMaintMemoValues());
 }
 
 function setMemoFieldsDisabled(disabled) {
@@ -2092,6 +2175,8 @@ function setMemoFieldsDisabled(disabled) {
         memoInput.style.opacity = '1';
         memoInput.style.cursor = disabled ? 'default' : 'text';
     }
+    // [추가] 증상/원인/조치사항 입력칸도 함께 잠금
+    document.querySelectorAll('#device-memo-parts textarea').forEach(t => { t.readOnly = disabled; });
  
     const costType = document.getElementById('memo-cost-type');
     const mdInput = document.getElementById('memo-md');
@@ -2279,7 +2364,7 @@ window.moveToCalendarView = function () {
     // 저장되지 않은 변경사항 확인
     const currentMemo = document.getElementById('device-memo') ? document.getElementById('device-memo').value : "";
     const currentWorker = document.getElementById('memo-worker') ? document.getElementById('memo-worker').value : "";
-    if (selectedLogId !== null && (currentMemo !== originalMemo || currentWorker !== originalWorker)) {
+    if (selectedLogId !== null && (currentMemo !== originalMemo || currentWorker !== originalWorker || isMaintMemoChanged())) {
         if (!confirm('작성 중인 작업 내용(메모)이 저장되지 않았습니다. 저장하지 않고 이동하시겠습니까?')) {
             return;
         }
@@ -2306,7 +2391,7 @@ window.moveToDataView = function () {
     // 저장되지 않은 변경사항 확인
     const currentMemo = document.getElementById('device-memo') ? document.getElementById('device-memo').value : "";
     const currentWorker = document.getElementById('memo-worker') ? document.getElementById('memo-worker').value : "";
-    if (selectedLogId !== null && (currentMemo !== originalMemo || currentWorker !== originalWorker)) {
+    if (selectedLogId !== null && (currentMemo !== originalMemo || currentWorker !== originalWorker || isMaintMemoChanged())) {
         if (!confirm('작성 중인 작업 내용(메모)이 저장되지 않았습니다. 저장하지 않고 이동하시겠습니까?')) {
             return;
         }

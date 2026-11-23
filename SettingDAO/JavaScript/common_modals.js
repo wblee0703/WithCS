@@ -35,6 +35,24 @@ window.getDetailMemoParts = function () {
     box.querySelectorAll('textarea[data-key]').forEach(t => { out[t.dataset.key] = t.value.trim(); });
     return out;
 };
+// 작업 상세 정보 창의 현재 입력 화면: 'structured'(증상/원인/조치사항) 또는 'free'(메모)
+window.getDetailMemoMode = function () {
+    const box = document.getElementById('detail-work-memo-structured');
+    return (box && box.style.display !== 'none') ? 'structured' : 'free';
+};
+// [수정] 현재 화면의 값만 기록: 메모 화면이면 증상/원인/조치사항을 비우고, 증상·원인·조치 화면이면 메모를 비움
+window.getDetailMemoValues = function () {
+    const memoInput = document.getElementById('detail-work-memo');
+    const rawMemo = memoInput ? memoInput.value.trim() : '';
+    const rawParts = window.getDetailMemoParts();
+    const parts = {};
+    if (window.getDetailMemoMode() === 'structured') {
+        window.WORK_MEMO_SECTIONS.forEach(sec => { parts[sec.key] = rawParts[sec.key] || ''; });
+        return { memo: '', parts };
+    }
+    window.WORK_MEMO_SECTIONS.forEach(sec => { parts[sec.key] = ''; });
+    return { memo: rawMemo, parts };
+};
 
 // 작업 상세 정보 창: 입력 화면 구성 + 열 때 값 채우기
 window.setupWorkMemoStructured = function (item) {
@@ -2506,7 +2524,7 @@ function getDetailSnapshot() {
         worker,
         md,
         memo,
-        memoParts: JSON.stringify(window.getDetailMemoParts ? window.getDetailMemoParts() : {}), // [추가]
+        memoParts: JSON.stringify(window.getDetailMemoValues ? window.getDetailMemoValues() : {}), // [수정] 입력 화면 전환도 변경으로 인식
         date,
         costType,
         issueShared,
@@ -2554,8 +2572,10 @@ async function saveDetailChanges() {
 
     const newWorker = document.getElementById('detail-worker').value.trim();
     const newMd = document.getElementById('detail-md').value.trim();
-    const newMemo = document.getElementById('detail-work-memo').value.trim();
-    const detailMemoParts = window.getDetailMemoParts ? window.getDetailMemoParts() : {}; // [추가] 증상/원인/조치사항
+    // [수정] 메모 / 증상·원인·조치사항 중 현재 화면의 값만 기록 (다른 쪽은 비움)
+    const detailMemoValues = window.getDetailMemoValues();
+    const newMemo = detailMemoValues.memo;
+    const detailMemoParts = detailMemoValues.parts;
     const newDate = document.getElementById('detail-scheduled-date').value;
     const newStart = getSplitDateTimeValue('detail-start');
     const newEnd = getSplitDateTimeValue('detail-end');
@@ -3189,8 +3209,10 @@ async function completeScheduleWork() {
     const worker = document.getElementById('detail-worker').value.trim();
     const mdInput = document.getElementById('detail-md');
     const md = mdInput ? mdInput.value.trim() : '';
-    const memo = document.getElementById('detail-work-memo').value.trim();
-    const completeMemoParts = window.getDetailMemoParts ? window.getDetailMemoParts() : {}; // [추가] 증상/원인/조치사항
+    // [수정] 메모 / 증상·원인·조치사항 중 현재 화면의 값만 기록 (다른 쪽은 비움)
+    const completeMemoValues = window.getDetailMemoValues();
+    const memo = completeMemoValues.memo;
+    const completeMemoParts = completeMemoValues.parts;
     const issueShareCb = document.getElementById('detail-issue-share-checkbox');
     const isIssueShared = issueShareCb ? issueShareCb.checked : false;
     const costTypeInput = document.getElementById('detail-cost-type');
