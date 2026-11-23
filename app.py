@@ -2600,6 +2600,7 @@ def _usage_find_stock(site_group, site_name, item, why=None):
     if not cands:
         if why is not None:
             why['reason'] = '물품 관리 현황에 미등록'
+            why['unregistered'] = True
         return None
     my_site = norm(site_name)
     cands.sort(key=lambda s: (
@@ -2626,6 +2627,7 @@ def _usage_build_work(log, eq_map, site_group_map):
         why = {}
         st = _usage_find_stock(site_group, site_name, it, why) if site_group else None
         it['stock_reason'] = '' if st else (why.get('reason') or '사업장 구분 없음')  # [추가] 재고 없음 이유
+        it['stock_unregistered'] = bool(why.get('unregistered'))  # [요청] 미등록이면 '미등록'으로 표시
         it['stock_id'] = st.id if st else None
         it['stock_qty'] = (st.quantity or 0) if st else None
         it['stock_grade'] = (st.grade or 'A') if st else ''
@@ -2856,7 +2858,8 @@ def get_item_usage_units():
             # [요청] 수량 모드 물품도 목록에 표시 (자동 차감, 현재 → 반영 후 수량)
             st = _usage_find_stock(w['site_group'], w['site_name'], it) if w['site_group'] else None
             if not st:
-                groups.append(dict(base_info, mode='none', current=0, after=0))
+                groups.append(dict(base_info, mode='none', current=0, after=0,
+                                   unregistered=bool(it.get('stock_unregistered'))))
                 continue
             cur = sim_qty.get(st.id, (st.quantity or 0) + restore_qty.get(st.id, 0))
             after = max(0, cur - (it.get('qty') or 1))

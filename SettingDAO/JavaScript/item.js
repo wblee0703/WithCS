@@ -355,7 +355,9 @@ function renderUsageWorkList(works) {
             if (it.excluded) stock = '<span class="usage-stock usage-stock-excluded">반영 제외</span>';
             else if (it.stock_id) stock = `<span class="usage-stock"><span class="usage-stock-label">현재 재고 </span>${it.stock_qty}개</span>`;
             // [수정] 재고 없음 이유 표시 (미등록 / 다른 사업장 재고만 있음 등)
-            else stock = `<span class="usage-stock usage-stock-none" title="${escapeHtml(it.stock_reason || '')}">재고 없음${it.stock_reason ? ` <span class="usage-stock-reason">(${escapeHtml(it.stock_reason)})</span>` : ''}</span>`;
+            else if (it.stock_unregistered) stock = '<span class="usage-stock usage-stock-none" title="물품 관리 현황에 등록되지 않은 물품입니다.">미등록</span>'; // [요청]
+            // [요청] 괄호 이유는 표시하지 않음 (PC에서 마우스를 올리면 이유 확인)
+            else stock = `<span class="usage-stock usage-stock-none" title="${escapeHtml(it.stock_reason || '')}">재고 없음</span>`;
             const cost = it.cost ? `<span class="usage-cost${it.excluded ? ' excluded' : ''}">[${escapeHtml(it.cost)}]</span> ` : '';
             return `<li class="${it.excluded ? 'usage-item-excluded' : ''}">${cost}<strong>${escapeHtml(it.code)}</strong>${it.detail ? ` <span class="usage-spec">[${escapeHtml(it.detail)}]</span>` : ''} ${stock}</li>`;
         }).join('');
@@ -542,7 +544,7 @@ async function openUsagePickModal(logUid, summary, onConfirm, isEdit = false) {
         body.innerHTML = usagePickGroups.map(g => {
             // [요청] 현재 수량 → 반영 후 수량
             const qtyInfo = g.mode === 'none'
-                ? '<span class="up-qty up-qty-none">재고 없음 (차감 안 함)</span>'
+                ? `<span class="up-qty up-qty-none">${g.unregistered ? '미등록' : '재고 없음'}</span>`
                 : `<span class="up-qty">${g.mode === 'qty' ? `<span class="up-mode">수량 ${g.use_qty}개 자동 차감</span>` : ''}현재 <b>${g.current}</b>개 → 반영 후 <b class="${g.after === 0 ? 'zero' : ''}">${g.after}</b>개</span>`;
             if (g.mode !== 'sn') {
                 return `
@@ -568,7 +570,7 @@ async function openUsagePickModal(logUid, summary, onConfirm, isEdit = false) {
                     </div>
                     ${(g.units || []).length
                         ? `<select class="input-dark up-unit"><option value="" disabled>사용한 물품 선택</option>${unitOpts}</select>`
-                        : `<div class="up-none">미사용 물품이 없습니다. 물품 상세에서 먼저 입고하세요.</div>`}
+                        : `<div class="up-none">모든 물품이 사용되었습니다.</div>`}
                 </div>`;
         }).join('');
 
