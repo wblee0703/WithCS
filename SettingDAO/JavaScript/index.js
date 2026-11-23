@@ -382,7 +382,7 @@ function updateHomeDashboard() {
             }
         } catch (e) { console.error("Failed to restore filters", e); }
 
-        // [추가] 셋업 진행률 선택 장비 복원 (Setup 화면 [HOME 진행률 보기] 또는 마지막으로 본 장비)
+        // [추가] 셋업 진행률 선택 장비 복원 (Setup 화면 [HOME 이동] 또는 마지막으로 본 장비)
         try {
             const savedGantt = JSON.parse(localStorage.getItem('currentGanttFilters'));
             if (savedGantt && savedGantt.site && savedGantt.equip) {

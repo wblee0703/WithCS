@@ -2722,3 +2722,24 @@ body:not(.role-admin):not(.role-superadmin) #section-equip-param-mgmt .data-para
 
 /* [요청] 셋업 일정 관리: 변경 사항이 없으면 저장 버튼 비활성 */
 #btn-save-setup-template:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* [추가] 모바일: 셋업 일정 관리의 세부 선택 항목은 일정 구분·세부 구분 아래 줄에 따로 표시 */
+@media (max-width: 950px) {
+    #section-setup-template-mgmt .check-type-categories-wrapper {
+        flex-wrap: wrap;
+        overflow-x: visible;
+        row-gap: 12px;
+    }
+    #section-setup-template-mgmt #setup-template-subcategory-panel {
+        border-right: none !important;
+        padding-right: 0 !important;
+    }
+    #section-setup-template-mgmt #setup-template-option-panel {
+        flex: 0 0 100% !important;
+        width: 100% !important;
+        border-right: none !important;
+        border-top: 1px solid var(--c-border);
+        padding-right: 0 !important;
+        padding-top: 12px;
+    }
+}

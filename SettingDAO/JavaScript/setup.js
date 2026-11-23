@@ -2300,3 +2300,19 @@ function processSetupCsv(csvText) {
     alert(`CSV 셋업 일지 ${newLogs.length}건이 성공적으로 반영되었습니다.\n(작업내용 및 특이사항이 각 일지 항목별로 개별 기록되었습니다.)`);
 }
 window.processSetupCsv = processSetupCsv;
+
+// [추가] 모바일: [HOME 이동] 버튼을 셋업 진행률 제목 줄의 [작업 등록] 왼쪽으로 옮김 (PC에서는 경로 옆 그대로)
+(function () {
+    const mq = window.matchMedia('(max-width: 950px)');
+    const placeHomeMoveBtn = () => {
+        const btn = document.querySelector('.btn-gantt-move');
+        const regBtn = document.getElementById('btn-setup-register-task');
+        const breadcrumb = document.getElementById('current-path');
+        if (!btn || !regBtn || !breadcrumb) return;
+        if (mq.matches) regBtn.parentNode.insertBefore(btn, regBtn);
+        else breadcrumb.after(btn);
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', placeHomeMoveBtn);
+    else placeHomeMoveBtn();
+    mq.addEventListener('change', placeHomeMoveBtn);
+})();

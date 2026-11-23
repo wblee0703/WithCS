@@ -470,7 +470,7 @@ body.role-superadmin .btn-setup-csv-import {
     border-color: var(--c-text-muted);
 }
 
-/* [요청] HOME 진행률 보기 버튼 (오른쪽), CSV 불러오기는 그 오른쪽 (작은 크기) */
+/* [요청] HOME 이동 버튼 (오른쪽), CSV 불러오기는 그 오른쪽 (작은 크기) */
 .btn-gantt-move {
     margin-left: auto;
     padding: 2px 10px;
@@ -686,7 +686,7 @@ body.role-superadmin .btn-setup-csv-import {
         margin-right: 0 !important;
     }
 
-    /* [요청] 모바일: HOME 진행률 보기는 경로 옆 오른쪽, CSV 불러오기와 같은 작은 크기 */
+    /* [요청] 모바일: HOME 이동는 경로 옆 오른쪽, CSV 불러오기와 같은 작은 크기 */
     .btn-gantt-move {
         margin-left: auto !important;
         padding: 2px 8px !important;
@@ -1022,5 +1022,18 @@ body[class*="role-"] #setup-detail-card.edit-mode .btn-add-category {
     #setup-replaced-parts-container.parts-collapsed > #setup-parts-open-btn {
         display: inline-block;
         align-self: flex-start;
+    }
+}
+
+/* [추가] 모바일: 셋업 진행률 제목 줄 [HOME 이동] (작업 등록 왼쪽) */
+@media (max-width: 950px) {
+    #setup-progress-card .setup-card-header .btn-gantt-move {
+        order: 98;
+        margin-left: auto !important;
+        white-space: nowrap;
+        height: 28px;
+    }
+    #setup-progress-card .setup-card-header .btn-gantt-move ~ #btn-setup-register-task {
+        margin-left: 0;
     }
 }
