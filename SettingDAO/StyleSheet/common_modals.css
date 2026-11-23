@@ -1852,7 +1852,14 @@ input[type="date"]::-webkit-datetime-edit-year {
     margin-bottom: 0 !important;
     width: auto !important;
 }
+#event-detail-modal .work-memo-head-btns {
+    display: flex;
+    gap: 6px;
+    flex: none;
+}
+#btn-clear-work-memo,
 #btn-toggle-work-memo-mode {
+    white-space: nowrap;
     padding: 3px 10px !important;
     font-size: 12px;
     width: auto !important;

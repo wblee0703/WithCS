@@ -40,18 +40,13 @@ window.getDetailMemoMode = function () {
     const box = document.getElementById('detail-work-memo-structured');
     return (box && box.style.display !== 'none') ? 'structured' : 'free';
 };
-// [수정] 현재 화면의 값만 기록: 메모 화면이면 증상/원인/조치사항을 비우고, 증상·원인·조치 화면이면 메모를 비움
+// [수정] 메모와 증상/원인/조치사항을 함께 기록 (어느 화면에서 수정해도 두 쪽 모두 저장)
 window.getDetailMemoValues = function () {
     const memoInput = document.getElementById('detail-work-memo');
-    const rawMemo = memoInput ? memoInput.value.trim() : '';
     const rawParts = window.getDetailMemoParts();
     const parts = {};
-    if (window.getDetailMemoMode() === 'structured') {
-        window.WORK_MEMO_SECTIONS.forEach(sec => { parts[sec.key] = rawParts[sec.key] || ''; });
-        return { memo: '', parts };
-    }
-    window.WORK_MEMO_SECTIONS.forEach(sec => { parts[sec.key] = ''; });
-    return { memo: rawMemo, parts };
+    window.WORK_MEMO_SECTIONS.forEach(sec => { parts[sec.key] = rawParts[sec.key] || ''; });
+    return { memo: memoInput ? memoInput.value.trim() : '', parts };
 };
 
 // 작업 상세 정보 창: 입력 화면 구성 + 열 때 값 채우기
@@ -94,11 +89,31 @@ window.setupWorkMemoStructured = function (item) {
             head.className = 'work-memo-head';
             label.parentNode.insertBefore(head, label);
             head.appendChild(label);
+            const btnGroup = document.createElement('div');
+            btnGroup.className = 'work-memo-head-btns';
+            head.appendChild(btnGroup);
+
+            // [추가] 현재 화면(메모 또는 증상/원인/조치사항)의 내용 전체 지움
+            const clearBtn = document.createElement('button');
+            clearBtn.type = 'button';
+            clearBtn.id = 'btn-clear-work-memo';
+            clearBtn.className = 'btn-shortcut';
+            clearBtn.textContent = '전체 지움';
+            btnGroup.appendChild(clearBtn);
+            clearBtn.addEventListener('click', () => {
+                if (memoInput.disabled) return;
+                const structured = box.style.display !== 'none';
+                const targets = structured ? Array.from(box.querySelectorAll('textarea')) : [memoInput];
+                if (!targets.some(t => t.value.trim())) return;
+                if (!confirm(structured ? '증상 / 원인 / 조치사항 내용을 모두 지우시겠습니까?' : '메모 내용을 모두 지우시겠습니까?')) return;
+                targets.forEach(t => { t.value = ''; t.dispatchEvent(new Event('input', { bubbles: true })); });
+            });
+
             toggleBtn = document.createElement('button');
             toggleBtn.type = 'button';
             toggleBtn.id = 'btn-toggle-work-memo-mode';
             toggleBtn.className = 'btn-shortcut';
-            head.appendChild(toggleBtn);
+            btnGroup.appendChild(toggleBtn);
             toggleBtn.addEventListener('click', () => {
                 const toStructured = box.style.display === 'none';
                 applyMode(toStructured);
@@ -2572,7 +2587,7 @@ async function saveDetailChanges() {
 
     const newWorker = document.getElementById('detail-worker').value.trim();
     const newMd = document.getElementById('detail-md').value.trim();
-    // [수정] 메모 / 증상·원인·조치사항 중 현재 화면의 값만 기록 (다른 쪽은 비움)
+    // [수정] 메모와 증상·원인·조치사항을 함께 기록
     const detailMemoValues = window.getDetailMemoValues();
     const newMemo = detailMemoValues.memo;
     const detailMemoParts = detailMemoValues.parts;
@@ -3209,7 +3224,7 @@ async function completeScheduleWork() {
     const worker = document.getElementById('detail-worker').value.trim();
     const mdInput = document.getElementById('detail-md');
     const md = mdInput ? mdInput.value.trim() : '';
-    // [수정] 메모 / 증상·원인·조치사항 중 현재 화면의 값만 기록 (다른 쪽은 비움)
+    // [수정] 메모와 증상·원인·조치사항을 함께 기록
     const completeMemoValues = window.getDetailMemoValues();
     const memo = completeMemoValues.memo;
     const completeMemoParts = completeMemoValues.parts;

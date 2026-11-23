@@ -1599,7 +1599,7 @@ async function saveMemoTimes() {
             data.logs[logIndex].startTime = newStart;
             data.logs[logIndex].endTime = newEnd;
 
-            // [수정] 메모 / 증상·원인·조치사항 중 현재 화면의 값만 기록 (다른 쪽은 비움)
+            // [수정] 메모와 증상·원인·조치사항을 함께 기록
             const memoValues = getMaintMemoValues();
             Object.assign(data.logs[logIndex], memoValues);
             if (memoWorkerInput) data.logs[logIndex].worker = memoWorkerInput.value.trim();
@@ -2071,7 +2071,7 @@ window.renderSpecialNote = function () {
 /* ==========================================================================
    [추가] 메모/작업내용 필드 비활성화 제어 (Memo Fields State Control)
    ========================================================================== */
-// [수정] 장비 점검 이력 작업내용: [메모] ↔ [증상·원인·조치사항] 입력 화면 전환 (저장 시 현재 화면의 값만 기록)
+// [수정] 장비 점검 이력 작업내용: [메모] ↔ [증상·원인·조치사항] 입력 화면 전환 (저장 시 두 쪽 모두 기록)
 const MAINT_MEMO_SECTIONS = () => window.WORK_MEMO_SECTIONS || [
     { key: 'symptom', label: '증상' }, { key: 'cause', label: '원인' }, { key: 'action', label: '조치사항' }
 ];
@@ -2082,15 +2082,14 @@ function getMaintMemoMode() {
     return (box && box.style.display !== 'none') ? 'structured' : 'free';
 }
 
-// 현재 화면의 값만 반환 (다른 쪽은 빈 값)
+// 메모 + 증상/원인/조치사항 값 (어느 화면에서 수정해도 두 쪽 모두 저장)
 function getMaintMemoValues() {
     const memoInput = document.getElementById('device-memo');
     const box = document.getElementById('device-memo-parts');
-    const structured = getMaintMemoMode() === 'structured';
-    const out = { memo: structured ? '' : (memoInput ? memoInput.value.trim() : '') };
+    const out = { memo: memoInput ? memoInput.value.trim() : '' };
     MAINT_MEMO_SECTIONS().forEach(sec => {
         const t = box ? box.querySelector(`textarea[data-key="${sec.key}"]`) : null;
-        out[sec.key] = (structured && t) ? t.value.trim() : '';
+        out[sec.key] = t ? t.value.trim() : '';
     });
     return out;
 }
@@ -2133,9 +2132,29 @@ function renderMaintMemoParts(logItem) {
         memoInput.parentNode.insertBefore(box, memoInput);
     }
 
-    // 전환 버튼 (저장 버튼 왼쪽)
+    // 전체 지움 / 전환 버튼 (저장 버튼 왼쪽)
     let toggleBtn = document.getElementById('btn-toggle-maint-memo-mode');
+    let clearBtn = document.getElementById('btn-clear-maint-memo');
     const saveBtn = document.getElementById('btn-save-memo');
+    if (!clearBtn && saveBtn) {
+        clearBtn = document.createElement('button');
+        clearBtn.type = 'button';
+        clearBtn.id = 'btn-clear-maint-memo';
+        clearBtn.className = 'btn-shortcut';
+        clearBtn.textContent = '전체 지움';
+        saveBtn.parentNode.insertBefore(clearBtn, saveBtn);
+        // [추가] 현재 화면(메모 또는 증상/원인/조치사항)의 내용 전체 지움
+        clearBtn.addEventListener('click', () => {
+            const structured = getMaintMemoMode() === 'structured';
+            const targets = structured
+                ? Array.from(document.querySelectorAll('#device-memo-parts textarea'))
+                : [document.getElementById('device-memo')].filter(Boolean);
+            if (targets.some(t => t.readOnly) || !targets.some(t => t.value.trim())) return;
+            if (!confirm(structured ? '증상 / 원인 / 조치사항 내용을 모두 지우시겠습니까?' : '메모 내용을 모두 지우시겠습니까?')) return;
+            targets.forEach(t => { t.value = ''; });
+            markMaintMemoDirty();
+        });
+    }
     if (!toggleBtn && saveBtn) {
         toggleBtn = document.createElement('button');
         toggleBtn.type = 'button';
@@ -2146,10 +2165,9 @@ function renderMaintMemoParts(logItem) {
             const toStructured = getMaintMemoMode() !== 'structured';
             applyMaintMemoMode(toStructured);
             try { localStorage.setItem('workMemoMode', toStructured ? 'structured' : 'free'); } catch (e) { }
-            if (isMaintMemoChanged()) markMaintMemoDirty();
-            else if (saveBtn) { saveBtn.classList.remove('btn-orange-sm'); saveBtn.classList.add('btn-green-sm'); }
         });
     }
+    if (clearBtn) clearBtn.style.display = logItem ? '' : 'none';
     if (toggleBtn) toggleBtn.style.display = logItem ? '' : 'none';
 
     // 값 채우기

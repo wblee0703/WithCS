@@ -1355,9 +1355,9 @@ body[class*="role-"] #maint-table-body .btn-del-sm {
 }
 
 /* [수정] 장비 점검 이력 작업내용: [메모] ↔ [증상·원인·조치사항] 입력 화면 전환 */
+#btn-clear-maint-memo,
 #btn-toggle-maint-memo-mode {
     white-space: nowrap;
-    margin-left: auto;
     margin-right: 6px;
     padding: 3px 10px;
     font-size: 12px;
@@ -1396,4 +1396,7 @@ body[class*="role-"] #maint-table-body .btn-del-sm {
     box-sizing: border-box;
     font-family: inherit;
     font-size: 13px;
+}
+#btn-clear-maint-memo {
+    margin-left: auto;
 }
