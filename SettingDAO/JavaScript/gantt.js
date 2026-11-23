@@ -49,7 +49,7 @@ function renderGanttChart() {
     const labelSub = custEquipName ? `[${custEquipName}]` : (serial ? `(${serial})` : '');
 
     if (targetInfoEl) {
-        targetInfoEl.innerHTML = `<strong>${escapeHtml(site)}</strong> &gt; ${escapeHtml(displayName)} <span style="color:#3fb950; font-weight:500;">${escapeHtml(labelSub)}</span>`;
+        targetInfoEl.innerHTML = `<strong>${escapeHtml(site)}</strong> &gt; ${escapeHtml(displayName)} <span style="color:var(--c-green); font-weight:500;">${escapeHtml(labelSub)}</span>`;
     }
 
     window.renderSetupProgress(view, site, equip);

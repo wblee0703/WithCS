@@ -810,7 +810,7 @@ function addSetupDetailItem(category) {
             <td><input type="date" class="detail-start-date-input" value=""></td>
             <td><input type="date" class="detail-exec-start-date-input" value=""></td>
             <td><input type="date" class="detail-date-input" value=""></td>
-            <td style="text-align: center;"><div style="font-weight:bold; color:#8b949e; font-size:12px;">0%</div></td>
+            <td style="text-align: center;"><div style="font-weight:bold; color:var(--c-text-muted); font-size:12px;">0%</div></td>
         <td style="text-align: center;"><button class="btn-del-sm" onclick="deleteSetupDetailItem(${id})">✕</button></td>
     `;
     tr.addEventListener('dragstart', () => tr.classList.add('dragging'));
@@ -1169,7 +1169,7 @@ function renderSetupLogList() {
                 <td class="log-subcategory" style="padding: 2px 4px; vertical-align: middle;">${subcatSelectHtml}</td>
                 <td class="log-content" style="padding: 2px 4px; vertical-align: middle;">${contentInputHtml}</td>
                 <td class="log-worker">${escapeHtml(item.worker)}</td>
-                <td class="log-md" style="color:#d29922; font-weight:bold;">${item.md ? item.md : '0'}</td>
+                <td class="log-md" style="color:var(--c-yellow); font-weight:bold;">${item.md ? item.md : '0'}</td>
                 <td class="manage-col" style="text-align: center; vertical-align:middle;">
                     <button class="btn-del-sm" onclick="event.stopPropagation(); deleteSetupLogItem(${item.id})">✕</button>
                 </td>
@@ -1178,11 +1178,11 @@ function renderSetupLogList() {
 
         return `<tr data-id="${item.id}" data-equip="${escapeHtml(item._equip)}" onclick="selectSetupLog(${item.id})" class="${selectedSetupLogId == item.id ? 'active-log' : ''}" style="cursor: pointer;">
             <td class="log-date">${item.date}</td>
-            <td class="log-category" style="text-align:center; vertical-align:middle; color:#8b949e; font-size:12px;">${escapeHtml(catText)}</td>
-            <td class="log-subcategory" style="text-align:center; vertical-align:middle; color:#8b949e; font-size:12px;">${escapeHtml(subcatText)}${subOptHtml}</td>
+            <td class="log-category" style="text-align:center; vertical-align:middle; color:var(--c-text-muted); font-size:12px;">${escapeHtml(catText)}</td>
+            <td class="log-subcategory" style="text-align:center; vertical-align:middle; color:var(--c-text-muted); font-size:12px;">${escapeHtml(subcatText)}${subOptHtml}</td>
             <td class="log-content" style="text-align:left; vertical-align:middle;">${contentHtml}</td>
             <td class="log-worker">${escapeHtml(item.worker)}</td>
-            <td class="log-md" style="color:#d29922; font-weight:bold;">${item.md ? item.md : '0'}</td>
+            <td class="log-md" style="color:var(--c-yellow); font-weight:bold;">${item.md ? item.md : '0'}</td>
             <td class="manage-col" style="text-align: center; vertical-align:middle;">
                 <button class="btn-edit" onclick="event.stopPropagation(); if(typeof window.openLogForEditing === 'function'){ window.openLogForEditing(currentPath.site, this.closest('tr').dataset.equip, ${item.id}); } else { toggleSetupLogEdit(${item.id}); }">✏️</button>
                 <button class="btn-del-sm" onclick="event.stopPropagation(); deleteSetupLogItem(${item.id})">✕</button>
@@ -1275,19 +1275,19 @@ function selectSetupLog(id) {
         replacedPartsContainer.id = 'setup-replaced-parts-container';
         replacedPartsContainer.style.display = 'flex';
         replacedPartsContainer.style.flexDirection = 'column';
-        replacedPartsContainer.style.background = '#161b22';
-        replacedPartsContainer.style.border = '1px solid #30363d';
+        replacedPartsContainer.style.background = 'var(--c-surface)';
+        replacedPartsContainer.style.border = '1px solid var(--c-border)';
         replacedPartsContainer.style.borderRadius = '6px';
         replacedPartsContainer.style.overflow = 'hidden';
         replacedPartsContainer.style.minHeight = '0';
 
         const partsTitle = document.createElement('div');
         partsTitle.style.padding = '8px 12px';
-        partsTitle.style.background = '#21262d';
-        partsTitle.style.borderBottom = '1px solid #30363d';
+        partsTitle.style.background = 'var(--c-surface-2)';
+        partsTitle.style.borderBottom = '1px solid var(--c-border)';
         partsTitle.style.fontWeight = 'bold';
         partsTitle.style.fontSize = '13px';
-        partsTitle.style.color = '#e6edf3';
+        partsTitle.style.color = 'var(--c-text)';
         partsTitle.textContent = '셋업 물품';
         replacedPartsContainer.appendChild(partsTitle);
 
@@ -1370,17 +1370,17 @@ function renderSetupLogParts(log) {
     const parts = log ? parseSetupParts(log.parts) : [];
     partsList.innerHTML = '';
     if (!parts.length) {
-        partsList.innerHTML = '<li style="padding:20px; text-align:center; color:#8b949e; font-size:12px;">선택된 물품 없음</li>';
+        partsList.innerHTML = '<li style="padding:20px; text-align:center; color:var(--c-text-muted); font-size:12px;">선택된 물품 없음</li>';
         return;
     }
     parts.forEach((part, idx) => {
         const li = document.createElement('li');
-        li.style.cssText = 'padding:6px 8px 6px 10px; border-bottom:1px solid #30363d; font-size:12px; color:#c9d1d9; display:flex; align-items:center; gap:6px;';
+        li.style.cssText = 'padding:6px 8px 6px 10px; border-bottom:1px solid var(--c-border); font-size:12px; color:var(--c-text-2); display:flex; align-items:center; gap:6px;';
         const costOptions = [...new Set([...SETUP_PART_COSTS, part.costType])].map(c =>
             `<option value="${escapeHtml(c)}" ${c === part.costType ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('');
         li.innerHTML = `
-            <span style="flex:1; min-width:0; font-weight:bold; color:#58a6ff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(part.name)}">${escapeHtml(part.name)}</span>
-            <select class="setup-part-cost" style="flex-shrink:0; background:#0d1117; border:1px solid #30363d; color:#e6edf3; border-radius:3px; padding:1px 2px; font-size:10px;">${costOptions}</select>
+            <span style="flex:1; min-width:0; font-weight:bold; color:var(--c-blue); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(part.name)}">${escapeHtml(part.name)}</span>
+            <select class="setup-part-cost" style="flex-shrink:0; background:var(--c-bg); border:1px solid var(--c-border); color:var(--c-text); border-radius:3px; padding:1px 2px; font-size:10px;">${costOptions}</select>
             <button type="button" class="btn-del-sm" style="flex-shrink:0;" title="삭제">✕</button>`;
         li.querySelector('.setup-part-cost').onchange = (e) => {
             parts[idx].costType = e.target.value;
@@ -1420,7 +1420,7 @@ function setupSetupPartsSearch(input) {
     if (!box) {
         box = document.createElement('ul');
         box.id = 'setup-parts-suggest';
-        box.style.cssText = 'display:none; position:fixed; z-index:2000; list-style:none; margin:0; padding:4px; max-height:240px; overflow-y:auto; background:#161b22; border:1px solid #30363d; border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.5);';
+        box.style.cssText = 'display:none; position:fixed; z-index:2000; list-style:none; margin:0; padding:4px; max-height:240px; overflow-y:auto; background:var(--c-surface); border:1px solid var(--c-border); border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.5);';
         document.body.appendChild(box);
     }
     let matches = [];
@@ -1470,11 +1470,11 @@ function setupSetupPartsSearch(input) {
         activeIdx = matches.findIndex(m => !m.added);
 
         box.innerHTML = matches.length ? matches.map((m, i) => `
-            <li data-idx="${i}" style="padding:6px 8px; font-size:12px; border-radius:4px; cursor:${m.added ? 'default' : 'pointer'}; color:${m.added ? '#6e7681' : '#e6edf3'}; display:flex; justify-content:space-between; gap:8px;">
-                <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(m.name)}${m.sub ? ` <span style="color:#8b949e;">${escapeHtml(m.sub)}</span>` : ''}</span>
+            <li data-idx="${i}" style="padding:6px 8px; font-size:12px; border-radius:4px; cursor:${m.added ? 'default' : 'pointer'}; color:${m.added ? 'var(--c-text-faint)' : 'var(--c-text)'}; display:flex; justify-content:space-between; gap:8px;">
+                <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(m.name)}${m.sub ? ` <span style="color:var(--c-text-muted);">${escapeHtml(m.sub)}</span>` : ''}</span>
                 ${m.added ? '<span style="flex-shrink:0; font-size:10px;">추가됨</span>' : ''}
             </li>`).join('')
-            : '<li style="padding:10px; text-align:center; color:#8b949e; font-size:12px;">검색 결과가 없습니다.</li>';
+            : '<li style="padding:10px; text-align:center; color:var(--c-text-muted); font-size:12px;">검색 결과가 없습니다.</li>';
         box.querySelectorAll('li[data-idx]').forEach(li => {
             const m = matches[Number(li.dataset.idx)];
             li.onmousedown = (e) => { e.preventDefault(); if (!m.added) addPart(m.name); };

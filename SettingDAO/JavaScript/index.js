@@ -834,11 +834,11 @@ function renderUpcomingList(data) {
         summaryEl.innerHTML = `
             <div style="display: flex; flex-direction: column; gap: 3px; padding: 2px 0;">
                 <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
-                    <span class="upcoming-summary-label" style="color:#3fb950; font-weight:700; flex-shrink:0;">오늘<span class="upcoming-count-text"> (${todayCount}건)</span>:</span>
+                    <span class="upcoming-summary-label" style="color:var(--c-green); font-weight:700; flex-shrink:0;">오늘<span class="upcoming-count-text"> (${todayCount}건)</span>:</span>
                     <div style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center;">${todayBadges}</div>
                 </div>
                 <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
-                    <span class="upcoming-summary-label" style="color:#58a6ff; font-weight:700; flex-shrink:0;">어제<span class="upcoming-count-text"> (${yesterdayCount}건)</span>:</span>
+                    <span class="upcoming-summary-label" style="color:var(--c-blue); font-weight:700; flex-shrink:0;">어제<span class="upcoming-count-text"> (${yesterdayCount}건)</span>:</span>
                     <div style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center;">${yesterdayBadges}</div>
                 </div>
             </div>
@@ -849,7 +849,7 @@ function renderUpcomingList(data) {
     upcomingListEl.innerHTML = '';
 
     if (inspectionItems.length === 0) {
-        upcomingListEl.innerHTML = '<div class="upcoming-empty-msg" style="padding: 16px; text-align: center; color: #8b949e; font-size: 13px;">어제 ~ 오늘 점검 내역이 없습니다.</div>';
+        upcomingListEl.innerHTML = '<div class="upcoming-empty-msg" style="padding: 16px; text-align: center; color: var(--c-text-muted); font-size: 13px;">어제 ~ 오늘 점검 내역이 없습니다.</div>';
         upcomingContainer.style.display = 'flex';
         return;
     }
@@ -873,15 +873,15 @@ function renderUpcomingList(data) {
 
         const color = typeColors[item.type] || '#8b949e';
         const dayLabel = item.isYesterday
-            ? '<span style="font-size:11px; font-weight:bold; padding: 1px 5px; border-radius:3px; background:#21262d; color:#8b949e; margin-right:4px;">어제</span>'
+            ? '<span style="font-size:11px; font-weight:bold; padding: 1px 5px; border-radius:3px; background:var(--c-surface-2); color:var(--c-text-muted); margin-right:4px;">어제</span>'
             : '<span style="font-size:11px; font-weight:bold; padding: 1px 5px; border-radius:3px; background:#238636; color:#ffffff; margin-right:4px;">오늘</span>';
 
         const div = document.createElement('div');
         div.className = 'upcoming-item';
-        div.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; margin-bottom: 6px; background: #161b22; border: 1px solid #30363d; border-radius: 6px; cursor: pointer; transition: background 0.2s;';
+        div.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; margin-bottom: 6px; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 6px; cursor: pointer; transition: background 0.2s;';
 
-        div.onmouseenter = () => div.style.background = '#21262d';
-        div.onmouseleave = () => div.style.background = '#161b22';
+        div.onmouseenter = () => div.style.background = 'var(--c-surface-2)';
+        div.onmouseleave = () => div.style.background = 'var(--c-surface)';
 
         div.onclick = () => {
             if (typeof window.openEventDetailModal === 'function') {
@@ -897,12 +897,12 @@ function renderUpcomingList(data) {
 
         div.innerHTML = `
                 <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1;">
-                    <div class="upcoming-item-title" style="display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; color: #c9d1d9; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    <div class="upcoming-item-title" style="display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; color: var(--c-text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                         ${dayLabel}
-                        <span style="color: #8b949e;">[${escapeHtml(item.site)}]</span>
-                        <span style="color: #e6edf3;">${escapeHtml(equipText)}</span>
+                        <span style="color: var(--c-text-muted);">[${escapeHtml(item.site)}]</span>
+                        <span style="color: var(--c-text);">${escapeHtml(equipText)}</span>
                     </div>
-                    <div style="font-size: 12px; color: #8b949e; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    <div style="font-size: 12px; color: var(--c-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                         ${escapeHtml(detailDisplayText)}
                     </div>
                 </div>
@@ -1044,7 +1044,7 @@ function renderSetupCompletedList(completedEquips) {
                     <div style="font-size: 11px; color: #da3633; margin-top: 2px;">반려 사유: ${escapeHtml(item.rejectReason)}</div>
                 </div>
                 <span style="width: 70px; text-align: center; font-size: 12px; color: ${statusColor}; font-weight: bold; flex-shrink: 0;">${displayStatus}</span>
-                <span class="status-count" style="width: 80px; text-align: center; font-size: 12px; color: #8b949e; flex-shrink: 0;">${item.date || '-'}</span>
+                <span class="status-count" style="width: 80px; text-align: center; font-size: 12px; color: var(--c-text-muted); flex-shrink: 0;">${item.date || '-'}</span>
             `;
         } else {
             li.innerHTML = `
@@ -1052,7 +1052,7 @@ function renderSetupCompletedList(completedEquips) {
                     <span class="status-name" title="${info.fullTitle}">${info.mainInfo}${info.subInfo ? `<span class="equip-serial">${info.subInfo}</span>` : ''}</span>
                 </div>
                 <span style="width: 70px; text-align: center; font-size: 12px; color: ${statusColor}; font-weight: bold; flex-shrink: 0;">${displayStatus}</span>
-                <span class="status-count" style="width: 80px; text-align: center; font-size: 12px; color: #8b949e; flex-shrink: 0;">${item.date || '-'}</span>
+                <span class="status-count" style="width: 80px; text-align: center; font-size: 12px; color: var(--c-text-muted); flex-shrink: 0;">${item.date || '-'}</span>
             `;
         }
 
@@ -1236,14 +1236,14 @@ function renderSetupEquipDetailList(activeEquips) {
             const modelText = Object.keys(modelCounts).map(n => `${n} ${modelCounts[n]}대`).join(', ');
             // 1줄: 사업장 > 프로젝트 번호 / 2줄: 장비 모델·수량
             nameHtml = `<span style="display:block; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(group.site)} > ${escapeHtml(group.projectNo)}</span>`
-                + `<span style="display:block; overflow:hidden; text-overflow:ellipsis; color:#8b949e; font-size:12px; font-weight:normal; margin-top:2px;">${escapeHtml(modelText)}</span>`;
+                + `<span style="display:block; overflow:hidden; text-overflow:ellipsis; color:var(--c-text-muted); font-size:12px; font-weight:normal; margin-top:2px;">${escapeHtml(modelText)}</span>`;
             titleText = `${group.site} > ${group.projectNo} [${modelText}]`;
         } else {
             // [변경] 프로젝트 번호 없는 장비: 1줄 '프로젝트 번호 미작성' / 2줄 모델 [고객사 장비명 또는 시리얼]
             const info = formatEquipDisplayInfo(item.site, item.equip, equipmentModels);
             const plainSub = info.subInfo.replace(/<[^>]*>?/gm, '');
-            nameHtml = `<span style="display:block; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(group.site)} > <span style="color:#8b949e;">프로젝트 번호 미작성</span></span>`
-                + `<span style="display:block; overflow:hidden; text-overflow:ellipsis; color:#8b949e; font-size:12px; font-weight:normal; margin-top:2px;">${escapeHtml(info.name)}${info.subInfo ? ` ${info.subInfo}` : ''}</span>`;
+            nameHtml = `<span style="display:block; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(group.site)} > <span style="color:var(--c-text-muted);">프로젝트 번호 미작성</span></span>`
+                + `<span style="display:block; overflow:hidden; text-overflow:ellipsis; color:var(--c-text-muted); font-size:12px; font-weight:normal; margin-top:2px;">${escapeHtml(info.name)}${info.subInfo ? ` ${info.subInfo}` : ''}</span>`;
             titleText = `${group.site} > 프로젝트 번호 미작성 (${info.name}${plainSub ? ` ${plainSub}` : ''})`;
         }
 
@@ -1395,8 +1395,8 @@ function renderSetupIdleList(activeEquips) {
         li.innerHTML = `
             <div style="font-size: 12px; font-weight: 800; color: ${color}; min-width: 46px; flex-shrink: 0;">${dayText}</div>
             <div style="display: flex; flex-direction: column; gap: 4px; overflow: hidden; flex: 1; min-width: 0;">
-                <span style="font-size: 13px; font-weight: bold; color: #e6edf3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(mainText)}">${escapeHtml(mainText)}</span>
-                <span style="font-size: 11px; color: #8b949e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(metaTitle)}">${escapeHtml(metaText)}</span>
+                <span style="font-size: 13px; font-weight: bold; color: var(--c-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(mainText)}">${escapeHtml(mainText)}</span>
+                <span style="font-size: 11px; color: var(--c-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(metaTitle)}">${escapeHtml(metaText)}</span>
             </div>
         `;
         // 클릭: 아래 셋업 진행률에서 해당 프로젝트 보기
@@ -1458,7 +1458,7 @@ function restructureHomeMaintenance() {
     issueCard.className = 'status-group card-like';
     issueCard.innerHTML = `
         <div style="position: relative; display: flex; justify-content: center; align-items: center; min-height: 26px;">
-            <h3 class="status-group-title" style="color: #eb371f; margin: 0; width: 100%; text-align: center; padding: 0 90px; box-sizing: border-box;" title="Tracking 진행중(정상화 미완료) 전체 작업">장기 Down 설비 <span id="home-issue-count" style="font-size: 12px; color: #8b949e;"></span></h3>
+            <h3 class="status-group-title" style="color: #eb371f; margin: 0; width: 100%; text-align: center; padding: 0 90px; box-sizing: border-box;" title="Tracking 진행중(정상화 미완료) 전체 작업">장기 Down 설비 <span id="home-issue-count" style="font-size: 12px; color: var(--c-text-muted);"></span></h3>
             <a href="/tracking" class="btn-move" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); font-size: 11px; padding: 2px 8px; text-decoration: none;">Tracking 이동</a>
         </div>
         <div class="status-list-container" style="flex: 1; min-height: 0; width: 100%; border: none; overflow: hidden; display: flex; flex-direction: column;">
@@ -1540,14 +1540,14 @@ function populateEquipmentIssues() {
         let isDueOver = false;
         if (dueDate === '') {
             dueText = '미입력';
-            dueHtml = '<span style="color: #f0883e; font-weight: bold;">미입력</span>';
+            dueHtml = '<span style="color: var(--c-orange); font-weight: bold;">미입력</span>';
         } else if (dueDate) {
             const overDays = getDueOverDays(dueDate);
             isDueOver = overDays > 0;
             dueText = overDays > 0 ? `${dueDate} (D+${overDays})` : dueDate;
             dueHtml = overDays > 0
-                ? `<span style="color: #f85149; font-weight: bold;">${escapeHtml(dueText)}</span>`
-                : `<span style="color: #f0883e; font-weight: bold;">${escapeHtml(dueText)}</span>`;
+                ? `<span style="color: var(--c-red); font-weight: bold;">${escapeHtml(dueText)}</span>`
+                : `<span style="color: var(--c-orange); font-weight: bold;">${escapeHtml(dueText)}</span>`;
         }
         const metaText = `최초 발생 ${item.startDate || '-'} · 조치 예정일 ${dueText}`;
         const metaHtml = `${escapeHtml(`최초 발생 ${item.startDate || '-'} · 조치 예정일 `)}${dueHtml}`;
@@ -1555,12 +1555,12 @@ function populateEquipmentIssues() {
         const li = document.createElement('li');
         li.className = 'upcoming-item';
         // 조치 예정일 경과 시 좌측 바 빨간색
-        li.style.borderLeft = `4px solid ${isDueOver ? '#f85149' : level.color}`;
+        li.style.borderLeft = `4px solid ${isDueOver ? 'var(--c-red)' : level.color}`;
         li.innerHTML = `
             <div style="font-size: 12px; font-weight: 800; color: ${level.color}; min-width: 52px; flex-shrink: 0;">D+${item.days}</div>
             <div style="display: flex; flex-direction: column; gap: 4px; overflow: hidden; flex: 1; min-width: 0;">
-                <span style="font-size: 13px; font-weight: bold; color: #e6edf3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${info.fullTitle}">${info.mainInfo} <span class="equip-serial">${info.subInfo}</span></span>
-                <span style="font-size: 11px; color: #8b949e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(metaText)}">${metaHtml}</span>
+                <span style="font-size: 13px; font-weight: bold; color: var(--c-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${info.fullTitle}">${info.mainInfo} <span class="equip-serial">${info.subInfo}</span></span>
+                <span style="font-size: 11px; color: var(--c-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(metaText)}">${metaHtml}</span>
             </div>
         `;
 

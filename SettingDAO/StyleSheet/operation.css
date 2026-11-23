@@ -23,16 +23,16 @@
     background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16' fill='%238b949e'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 8px center;
-    background-color: #0d1117;
-    color: #e6edf3;
-    border: 1px solid #30363d;
+    background-color: var(--c-bg);
+    color: var(--c-text);
+    border: 1px solid var(--c-border);
     border-radius: 4px;
     cursor: pointer;
 }
 
 #operation-year-select option {
-    background-color: #161b22;
-    color: #e6edf3;
+    background-color: var(--c-surface);
+    color: var(--c-text);
 }
 
 .operation-main-content {
@@ -70,8 +70,8 @@
 
     .dashboard-sidebar .sidebar-group {
         padding: 10px 12px;
-        background: #161b22;
-        border: 1px solid #30363d;
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
         border-radius: 8px;
         margin-bottom: 10px;
     }
@@ -101,8 +101,8 @@
         padding: 6px 10px;
         font-size: 12px;
         border-radius: 6px;
-        background: #0d1117;
-        border: 1px solid #30363d;
+        background: var(--c-bg);
+        border: 1px solid var(--c-border);
         margin-bottom: 4px;
     }
 
@@ -110,10 +110,10 @@
     #operation-equip-list {
         max-height: 180px;
         overflow-y: auto;
-        border: 1px solid #30363d;
+        border: 1px solid var(--c-border);
         border-radius: 6px;
         padding: 5px;
-        background: #0d1117;
+        background: var(--c-bg);
         margin-top: 4px;
     }
 
@@ -121,8 +121,8 @@
         padding: 8px 10px;
         margin-bottom: 4px;
         border-radius: 6px;
-        background: #161b22;
-        border: 1px solid #21262d;
+        background: var(--c-surface);
+        border: 1px solid var(--c-surface-2);
         font-size: 12px;
         box-sizing: border-box;
     }
@@ -144,7 +144,7 @@
 #operation-monthly-table thead th {
     position: sticky;
     z-index: 10;
-    background-color: #161b22;
+    background-color: var(--c-surface);
     top: 0;
 }
 
@@ -152,8 +152,8 @@
     position: sticky;
     z-index: 9;
     bottom: -1px; /* 픽셀 오차 방지 */
-    background-color: #21262d; /* [수정] 배경색을 변경하여 가시성 향상 */
-    border-top: 3px solid #30363d; /* 상단 구분선을 두껍게 */
+    background-color: var(--c-surface-2); /* [수정] 배경색을 변경하여 가시성 향상 */
+    border-top: 3px solid var(--c-border); /* 상단 구분선을 두껍게 */
     font-size: 13px; /* [추가] 개별 데이터(td)와 폰트 크기 동일하게 맞춤 */
 }
 
@@ -172,7 +172,7 @@
     transition: background-color 0.2s;
 }
 #operation-monthly-tbody tr:hover {
-    background-color: #21262d;
+    background-color: var(--c-surface-2);
 }
 #operation-monthly-tbody tr.active-row {
     background-color: rgba(56, 139, 253, 0.15) !important;
@@ -200,17 +200,17 @@
     display: inline-block;
     margin-left: 4px;
     font-size: 11px;
-    color: #8b949e;
+    color: var(--c-text-muted);
 }
 
 #operation-downtime-table thead th.sort-asc .sort-icon::after {
     content: "▲";
-    color: #58a6ff;
+    color: var(--c-blue);
 }
 
 #operation-downtime-table thead th.sort-desc .sort-icon::after {
     content: "▼";
-    color: #58a6ff;
+    color: var(--c-blue);
 }
 
 #operation-downtime-table th:nth-child(1) { width: 160px; } /* 발생/시작일시 */
@@ -266,9 +266,9 @@
     height: 34px;
     padding: 6px 10px;
     font-size: 13px;
-    background-color: #0d1117;
-    border: 1px solid #30363d;
-    color: #e6edf3;
+    background-color: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-text);
     border-radius: 4px;
     cursor: pointer;
     display: flex;
@@ -283,8 +283,8 @@
     top: 100%;
     left: 0;
     width: 100%;
-    background: #161b22;
-    border: 1px solid #30363d;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
     border-radius: 4px;
     z-index: 100;
     margin-top: 2px;
@@ -294,7 +294,7 @@
 }
 .operation-site-filter-wrapper .sort-group-filter-container {
     padding: 8px;
-    border-bottom: 1px solid #30363d;
+    border-bottom: 1px solid var(--c-border);
     display: flex;
     flex-wrap: wrap;
     gap: 5px;
@@ -319,11 +319,11 @@
     border-radius: 4px;
 }
 .operation-site-filter-wrapper .log-select-item:hover {
-    background-color: #21262d;
+    background-color: var(--c-surface-2);
 }
 .operation-site-filter-wrapper .log-select-footer {
     padding: 8px;
-    border-top: 1px solid #30363d;
+    border-top: 1px solid var(--c-border);
     display: flex;
     gap: 5px;
     justify-content: flex-end;
@@ -344,8 +344,8 @@
     height: 100%; /* [수정] 리스트 컨테이너가 항상 높이 100%를 유지하도록 강제 */
 }
 .operation-selected-sites-list li {
-    background: #21262d;
-    border: 1px solid #30363d;
+    background: var(--c-surface-2);
+    border: 1px solid var(--c-border);
     padding: 8px 10px;
     margin-bottom: 5px;
     border-radius: 4px;
@@ -358,7 +358,7 @@
 .operation-selected-sites-list li.empty-selection {
     background: transparent;
     border: none;
-    color: #8b949e;
+    color: var(--c-text-muted);
     font-size: 12px;
     justify-content: center;
     padding: 10px;
@@ -371,18 +371,18 @@
     flex: 1; /* [수정] 텍스트 정보 영역이 100% 너비를 사용하도록 설정 */
     min-width: 0;
 }
-.operation-selected-sites-list .site-group-label { font-size: 10px; color: #8b949e; }
-.operation-selected-sites-list .site-name-label { font-size: 12px; color: #e6edf3; font-weight: bold; }
+.operation-selected-sites-list .site-group-label { font-size: 10px; color: var(--c-text-muted); }
+.operation-selected-sites-list .site-name-label { font-size: 12px; color: var(--c-text); font-weight: bold; }
 
 .operation-selected-sites-list .btn-remove-site {
-    color: #f85149;
+    color: var(--c-red);
     cursor: pointer;
     font-size: 12px;
     padding: 4px;
     font-weight: bold;
 }
 .operation-selected-sites-list .btn-remove-site:hover {
-    color: #ff7b72;
+    color: var(--c-red-2);
 }
 
 /* ==========================================================================
@@ -445,7 +445,7 @@
     text-align: center;
     opacity: 0;
     font-weight: bold;
-    color: #58a6ff;
+    color: var(--c-blue);
     transition: opacity 0.2s;
 }
 .log-select-item.selected .check-icon {
@@ -461,7 +461,7 @@
     flex-direction: column;
     gap: 2px;
 }
-.equip-item-site { font-size: 10px; color: #8b949e; }
-.equip-item-name { font-size: 12px; color: #e6edf3; font-weight: bold; }
+.equip-item-site { font-size: 10px; color: var(--c-text-muted); }
+.equip-item-name { font-size: 12px; color: var(--c-text); font-weight: bold; }
 .downtime-content { text-align: left; }
 .downtime-hours { font-weight: bold; }

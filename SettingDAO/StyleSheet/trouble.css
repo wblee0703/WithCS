@@ -26,8 +26,8 @@
 .trouble-sidebar-group {
     display: flex;
     flex-direction: column;
-    background-color: #161b22;
-    border: 1px solid #30363d;
+    background-color: var(--c-surface);
+    border: 1px solid var(--c-border);
     border-radius: 6px;
     min-height: 0;
     /* 부모 크기에 맞춰 내부 스크롤이 생성되도록 강제 높이 제거 */
@@ -51,8 +51,8 @@
 
 .trouble-sidebar-group .group-header {
     padding: 10px 15px;
-    background: #21262d;
-    border-bottom: 1px solid #30363d;
+    background: var(--c-surface-2);
+    border-bottom: 1px solid var(--c-border);
     border-radius: 6px 6px 0 0;
     display: flex;
     align-items: center;
@@ -65,7 +65,7 @@
 .trouble-sidebar-group .group-header h3 {
     margin: 0;
     font-size: 13px;
-    color: #e6edf3;
+    color: var(--c-text);
     white-space: nowrap;
     flex-shrink: 0;
     /* 라벨 텍스트가 줄어들지 않도록 보호 */
@@ -118,8 +118,8 @@
 
 /* 오른쪽 메인 테이블 카드 */
 .trouble-container {
-    background-color: #161b22;
-    border: 1px solid #30363d;
+    background-color: var(--c-surface);
+    border: 1px solid var(--c-border);
     border-radius: 6px;
     padding: 20px;
     flex: 1;
@@ -136,7 +136,7 @@
     overflow-x: auto;
     min-height: 0;
     margin-top: 10px;
-    border: 1px solid #30363d;
+    border: 1px solid var(--c-border);
     border-radius: 6px;
 }
 
@@ -150,10 +150,10 @@
 #trouble-table th {
     position: sticky;
     top: 0;
-    background-color: #21262d;
+    background-color: var(--c-surface-2);
     z-index: 1;
     padding: 10px;
-    color: #8b949e;
+    color: var(--c-text-muted);
     font-size: 13px;
 }
 
@@ -214,7 +214,7 @@
 
 #trouble-table td {
     padding: 8px 10px;
-    border-bottom: 1px solid #30363d;
+    border-bottom: 1px solid var(--c-border);
     font-size: 13px;
 }
 
@@ -237,9 +237,9 @@
 }
 
 #btn-toggle-completed-trouble {
-    background-color: #21262d;
-    color: #e6edf3;
-    border: 1px solid #30363d;
+    background-color: var(--c-surface-2);
+    color: var(--c-text);
+    border: 1px solid var(--c-border);
     border-radius: 4px;
     padding: 6px 15px;
     font-size: 13px;
@@ -250,12 +250,12 @@
 }
 
 #btn-toggle-completed-trouble:hover {
-    background-color: #30363d;
+    background-color: var(--c-border);
 }
 
 #btn-toggle-completed-trouble.active {
     background-color: #238636;
-    border-color: #3fb950;
+    border-color: var(--c-green);
     color: #fff;
 }
 
@@ -341,13 +341,13 @@
     .trouble-container {
         padding: 15px 5px 10px 5px;
         /* 내부 좌우 8px 여백 확보 */
-        border: 1px solid #30363d;
+        border: 1px solid var(--c-border);
         /* 보더 및 라운드 코너 복원 */
         border-radius: 6px;
     }
 
     .trouble-table-wrapper {
-        border: 1px solid #30363d;
+        border: 1px solid var(--c-border);
         border-radius: 6px;
         margin-top: 15px;
     }
@@ -363,8 +363,8 @@
 #trouble-equip-list li {
     cursor: pointer;
     padding: 8px 12px;
-    border-bottom: 1px solid #30363d;
-    color: #8b949e;
+    border-bottom: 1px solid var(--c-border);
+    color: var(--c-text-muted);
     font-size: 13px;
     transition: background 0.2s, color 0.2s;
 }
@@ -372,17 +372,17 @@
 #trouble-site-list li:hover,
 #trouble-model-list li:hover,
 #trouble-equip-list li:hover {
-    background: #21262d;
-    color: #e6edf3;
+    background: var(--c-surface-2);
+    color: var(--c-text);
 }
 
 #trouble-site-list li.active,
 #trouble-model-list li.active,
 #trouble-equip-list li.active {
     background: rgba(88, 166, 255, 0.1);
-    color: #58a6ff;
+    color: var(--c-blue);
     font-weight: bold;
-    border-left: 3px solid #58a6ff;
+    border-left: 3px solid var(--c-blue);
 }
 
 /* Trouble 전용 대형 모달 (카드 크기 정도) */
@@ -414,8 +414,8 @@
 
 .trouble-image-preview-container {
     display: none;
-    background: #0d1117;
-    border: 1px solid #30363d;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
     border-radius: 4px;
     padding: 10px;
     text-align: center;
@@ -430,9 +430,9 @@
 
 /* 완료 여부 등 드롭다운(Select) 다크 테마 공통 적용 */
 select.input-dark {
-    background-color: #0d1117;
-    border: 1px solid #30363d;
-    color: #fff;
+    background-color: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-heading);
     padding: 4px 30px 4px 10px;
     appearance: none;
     -webkit-appearance: none;
@@ -442,6 +442,6 @@ select.input-dark {
 }
 
 select.input-dark option {
-    background-color: #161b22;
-    color: #fff;
+    background-color: var(--c-surface);
+    color: var(--c-heading);
 }

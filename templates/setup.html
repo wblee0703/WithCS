@@ -2,7 +2,7 @@
 {% set active_page = 'setup' %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/setup.css') }}?v=12">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/setup.css') }}?v=12-t2">
 <style>
     /* 달력 아이콘 회색 변경 */
     .custom-date-icon::-webkit-calendar-picker-indicator {
@@ -113,7 +113,7 @@
                     <!-- 셋업 이슈 -->
                     <div class="setup-section-panel" id="setup-issue-panel">
                         <div class="setup-card-header">
-                            <h3 style="margin: 0; color: #f0883e;">⚠️ 셋업 이슈 (장비 특이사항)</h3>
+                            <h3 style="margin: 0; color: var(--c-orange);">⚠️ 셋업 이슈 (장비 특이사항)</h3>
                             <button class="btn-green-sm" id="btn-save-setup-issue" onclick="saveSetupIssue()">저장</button>
                         </div>
                         <div class="setup-card-body" style="padding: 10px; display: flex; flex-direction: column;">
@@ -130,5 +130,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('SettingDAO', filename='JavaScript/setup.js') }}?v=20261123_7"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/setup.js') }}?v=20261123_7-t4"></script>
 {% endblock %}

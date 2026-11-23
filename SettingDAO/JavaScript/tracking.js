@@ -109,7 +109,7 @@
             return `<span class="tracking-dday" style="color:${w.level.color}">D+${w.days}</span>`;
         }
         if (w.status === 'planned') {
-            return `<span class="tracking-dday" style="color:#58a6ff">${w.days === 0 ? 'D-Day' : 'D-' + w.days}</span>`;
+            return `<span class="tracking-dday" style="color:var(--c-blue)">${w.days === 0 ? 'D-Day' : 'D-' + w.days}</span>`;
         }
         return `<span class="tracking-muted">${w.days > 0 ? `소요 ${w.days + 1}일` : '당일 완료'}</span>`;
     }
@@ -182,7 +182,7 @@
             const dueDate = report ? (report.dueDate || '') : '';
             const dueOverdue = dueDate && w.status === 'progress' && dueDate < localTodayStr();
             const dueCell = dueDate
-                ? `<span${dueOverdue ? ' style="color:#f85149;font-weight:bold" title="조치 예정일 경과"' : ''}>${esc(dueDate)}</span>`
+                ? `<span${dueOverdue ? ' style="color:var(--c-red);font-weight:bold" title="조치 예정일 경과"' : ''}>${esc(dueDate)}</span>`
                 : '<span class="tracking-muted">-</span>';
             tr.innerHTML = `
                 <td><span class="tracking-status" style="--st-color:${st.color}">${st.label}</span>${reason}</td>
@@ -580,9 +580,21 @@
 
         // 신규 레포트: 증상 기본값으로 완료된 작업 내용(+작업 메모) 기록
         const workLog = w.parentLog || {};
-        const defaultSymptom = [workLog.content, workLog.memo].map(t => String(t || '').trim()).filter(Boolean).join('\n');
+        let defaultSymptom = [workLog.content, workLog.memo].map(t => String(t || '').trim()).filter(Boolean).join('\n');
+        let defaultAction = '';
+        // [추가] 작업 이력에 증상/원인/조치사항을 기록했으면 레포트 칸에 나눠 넣음 (레포트에 원인 칸이 없어 증상 아래에)
+        const wSym = String(workLog.symptom || '').trim(), wCause = String(workLog.cause || '').trim(), wAct = String(workLog.action || '').trim();
+        if (wSym || wCause || wAct) {
+            defaultSymptom = [
+                String(workLog.content || '').trim(),
+                wSym,
+                wCause ? `원인: ${wCause}` : '',
+                String(workLog.memo || '').trim(),
+            ].filter(Boolean).join('\n');
+            defaultAction = wAct;
+        }
         document.getElementById('tracking-report-symptom').value = report ? report.symptom : defaultSymptom;
-        document.getElementById('tracking-report-action').value = report ? report.action : '';
+        document.getElementById('tracking-report-action').value = report ? report.action : defaultAction;
         document.getElementById('tracking-report-discussion-person').value = report ? (report.discussionPerson || '') : '';
         document.getElementById('tracking-report-due-date').value = report ? (report.dueDate || '') : '';
         partsItems = report && Array.isArray(report.partsItems) ? report.partsItems.map(p => Object.assign({}, p)) : [];

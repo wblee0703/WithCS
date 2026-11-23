@@ -4,7 +4,7 @@
 {% block title %}가동율 분석 - WITH ON{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/operation.css') }}">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/operation.css') }}?v=t3">
 {% endblock %}
 
 {% block content %}
@@ -47,7 +47,7 @@
                         style="display: flex; justify-content: space-between; align-items: center;">
                         <h3>운영장비 가동율</h3>
                         <button id="btn-export-operation-csv" class="btn-settings"
-                            style="font-size: 12px; padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid #30363d; background: #21262d; color: #e6edf3; margin-left: auto;">CSV
+                            style="font-size: 12px; padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid var(--c-border); background: var(--c-surface-2); color: var(--c-text); margin-left: auto;">CSV
                             내보내기</button>
                     </div>
                     <div class="card-body no-padding op-monthly-body">
@@ -186,5 +186,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('SettingDAO', filename='JavaScript/operation.js') }}"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/operation.js') }}?v=t4"></script>
 {% endblock %}

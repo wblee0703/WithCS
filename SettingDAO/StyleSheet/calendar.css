@@ -5,22 +5,22 @@
    ========================================================================== */
 
 :root {
-    --cal-bg-dark: #0d1117;
-    --cal-bg-card: #161b22;
-    --cal-bg-element: #21262d;
-    --cal-border: #30363d;
-    --cal-text-primary: #e6edf3;
-    --cal-text-secondary: #8b949e;
-    --cal-text-title: #c9d1d9;
+    --cal-bg-dark: var(--c-bg);
+    --cal-bg-card: var(--c-surface);
+    --cal-bg-element: var(--c-surface-2);
+    --cal-border: var(--c-border);
+    --cal-text-primary: var(--c-text);
+    --cal-text-secondary: var(--c-text-muted);
+    --cal-text-title: var(--c-text-2);
     --cal-text-white: #fff;
     --cal-blue: #1f6feb;
-    --cal-green: #3fb950;
+    --cal-green: var(--c-green);
     --cal-green-hover: #2ea043;
-    --cal-red: #ff7b72;
-    --cal-red-btn: #f85149;
-    --cal-orange: #d29922;
-    --cal-yellow: #e3b341;
-    --cal-blue-light: #58a6ff;
+    --cal-red: var(--c-red-2);
+    --cal-red-btn: var(--c-red);
+    --cal-orange: var(--c-yellow);
+    --cal-yellow: var(--c-yellow-2);
+    --cal-blue-light: var(--c-blue);
     --cal-purple: #8957e5;
     --cal-red-trouble: #da3633;
     --cal-hover-light: rgba(255, 255, 255, 0.05);
@@ -243,7 +243,7 @@
 
 .event-type-text.type-고객대응,
 .popup-type-badge.type-고객대응 {
-    color: #d29922;
+    color: var(--c-yellow);
 }
 
 .event-type-text.type-용액제조,
@@ -258,7 +258,7 @@
 
 .event-type-text.type-default,
 .popup-type-badge.type-default {
-    color: #8b949e;
+    color: var(--c-text-muted);
 }
 
 
@@ -490,7 +490,7 @@
 
     /* [요청] 모바일 캘린더 제목 글자색 흰색 */
     .calendar-main-title {
-        color: #ffffff;
+        color: var(--c-heading);
     }
 
     /* [요청] 모바일 캘린더 일자 컬럼 미완료 작업 글자색 변경 (연월 제목과 동일) */

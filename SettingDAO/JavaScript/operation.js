@@ -648,7 +648,7 @@ function renderEquipMonthlyTable(statsList, year) {
 
     const totalTr = document.createElement('tr');
     totalTr.className = 'total-avg-row';
-    let totalHtml = `<th colspan="4" style="text-align: center; color: #e6edf3;">전체 평균</th>`;
+    let totalHtml = `<th colspan="4" style="text-align: center; color: var(--c-text);">전체 평균</th>`;
     let totalMonthlyHtml = '';
 
     for (let m = 1; m <= 12; m++) {
@@ -1001,12 +1001,12 @@ function renderDowntimeTable(list, isSortChange = false) {
             if (isNaN(d.getTime())) return '<div>-</div>';
             const dateStr = d.toLocaleDateString('ko-KR');
             const timeStr = d.toLocaleTimeString('en-GB', { hour12: false, hour: '2-digit', minute: '2-digit' });
-            return `<div>${dateStr}</div><div style="font-size: 11px; color: #8b949e; margin-top: 2px;">${timeStr}</div>`;
+            return `<div>${dateStr}</div><div style="font-size: 11px; color: var(--c-text-muted); margin-top: 2px;">${timeStr}</div>`;
         };
 
         let equipHtml = escapeHtml(item.equipName);
         if (item.subText) {
-            equipHtml = `<div>${escapeHtml(item.equipName)}</div><div style="font-size: 11px; color: #3fb950; margin-top: 2px; font-weight: bold;">${escapeHtml(item.subText)}</div>`;
+            equipHtml = `<div>${escapeHtml(item.equipName)}</div><div style="font-size: 11px; color: var(--c-green); margin-top: 2px; font-weight: bold;">${escapeHtml(item.subText)}</div>`;
         }
 
         const tpl = document.getElementById('operation-downtime-row-template');

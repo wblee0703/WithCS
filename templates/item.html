@@ -4,7 +4,7 @@
 {% block title %}Item - WITH ON{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/admin.css') }}?v=75">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/admin.css') }}?v=75-t2">
 {% endblock %}
 
 {% block content %}
@@ -20,7 +20,7 @@
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <button type="button" id="btn-export-stock-csv" class="btn-settings" title="엑셀 내보내기 (1: 물품 관리 현황, 2: 물품 상세)"
-                            style="font-size: 12px; padding: 4px 10px; border-radius: 4px; border: 1px solid #30363d; background: #21262d; color: #e6edf3; cursor: pointer;">
+                            style="font-size: 12px; padding: 4px 10px; border-radius: 4px; border: 1px solid var(--c-border); background: var(--c-surface-2); color: var(--c-text); cursor: pointer;">
                             엑셀 내보내기
                         </button>
                     </div>
@@ -28,10 +28,10 @@
             </div>
             <div class="card-body" style="padding: 15px; display: flex; flex-direction: column; gap: 12px; height: 100%; min-height: 0;">
                 <!-- 1. 사업장 구분 및 사업장 선택 바 -->
-                <div class="item-stock-group-header" style="display: flex; align-items: center; justify-content: space-between; gap: 15px; flex-wrap: wrap; background: #161b22; padding: 10px 14px; border-radius: 6px; border: 1px solid #30363d;">
+                <div class="item-stock-group-header" style="display: flex; align-items: center; justify-content: space-between; gap: 15px; flex-wrap: wrap; background: var(--c-surface); padding: 10px 14px; border-radius: 6px; border: 1px solid var(--c-border);">
                     <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex: 1;">
                         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                            <span style="font-size: 13px; font-weight: bold; color: #58a6ff; white-space: nowrap;">🏢 사업장 구분:</span>
+                            <span style="font-size: 13px; font-weight: bold; color: var(--c-blue); white-space: nowrap;">🏢 사업장 구분:</span>
                             <div id="item-stock-group-tabs" class="item-stock-tabs-container" style="display: flex; gap: 5px; flex-wrap: wrap;">
                                 <!-- JS로 동적 렌더링 -->
                             </div>
@@ -47,7 +47,7 @@
                 <div class="item-stock-toolbar" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
                     <!-- 부족 건수 표시 (미확보 포함) + 재고 관리 버튼 (검색창 왼쪽) -->
                     <div class="item-stock-summary-badges" style="display: flex; align-items: center; gap: 8px;">
-                        <div class="stock-summary-badge badge-summary-shortage" style="display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 6px; background: rgba(210, 153, 34, 0.12); border: 1px solid rgba(210, 153, 34, 0.35); font-size: 12px; color: #d29922; white-space: nowrap;">
+                        <div class="stock-summary-badge badge-summary-shortage" style="display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 6px; background: rgba(210, 153, 34, 0.12); border: 1px solid rgba(210, 153, 34, 0.35); font-size: 12px; color: var(--c-yellow); white-space: nowrap;">
                             <span>부족:</span>
                             <strong id="stock-summary-shortage-count" style="font-size: 13px; font-weight: 700;">0</strong>건
                         </div>
@@ -129,7 +129,7 @@
         <div id="item-usage-modal" class="modal-overlay" style="display: none;">
             <div class="modal-window" style="max-width: 560px; width: 95%; height: auto; max-height: 90vh; display: flex; flex-direction: column;">
                 <div class="modal-header">
-                    <h4>사용 이력 (<span id="usage-modal-group-label" style="color: #58a6ff;">-</span>) <span id="usage-modal-range" style="font-size: 12px; color: #8b949e; font-weight: normal;"></span></h4>
+                    <h4>사용 이력 (<span id="usage-modal-group-label" style="color: var(--c-blue);">-</span>) <span id="usage-modal-range" style="font-size: 12px; color: var(--c-text-muted); font-weight: normal;"></span></h4>
                     <span class="close-btn" id="btn-close-usage-modal">&times;</span>
                 </div>
                 <div class="modal-body" style="padding: 12px; overflow-y: auto; max-height: calc(90vh - 60px);">
@@ -161,7 +161,7 @@
         <div id="stock-manage-modal" class="modal-overlay" style="display: none;">
             <div class="modal-window" style="max-width: 760px; width: 95%; height: auto; max-height: 90vh; display: flex; flex-direction: column;">
                 <div class="modal-header">
-                    <h4>재고 관리 (<span id="stock-manage-group-label" style="color: #58a6ff;">-</span>) <span id="stock-manage-count" style="font-size: 12px; color: #8b949e; font-weight: normal;"></span></h4>
+                    <h4>재고 관리 (<span id="stock-manage-group-label" style="color: var(--c-blue);">-</span>) <span id="stock-manage-count" style="font-size: 12px; color: var(--c-text-muted); font-weight: normal;"></span></h4>
                     <span class="close-btn" id="btn-close-stock-manage-modal">&times;</span>
                 </div>
                 <div class="modal-body" style="padding: 12px; overflow-y: auto; max-height: calc(90vh - 60px);">
@@ -191,7 +191,7 @@
         <div id="stock-unit-modal" class="modal-overlay" style="display: none;">
             <div class="modal-window" style="max-width: 900px; width: 95%; height: auto; max-height: 90vh; display: flex; flex-direction: column;">
                 <div class="modal-header">
-                    <h4>물품 상세 <span id="stock-unit-title" style="color: #58a6ff;"></span></h4>
+                    <h4>물품 상세 <span id="stock-unit-title" style="color: var(--c-blue);"></span></h4>
                     <span class="close-btn" id="btn-close-stock-unit-modal">&times;</span>
                 </div>
                 <div class="modal-body stock-unit-body">
@@ -225,16 +225,16 @@
         <div id="item-stock-add-modal" class="modal-overlay" style="display: none;">
             <div class="modal-window" style="max-width: 880px; width: 95%; height: auto; max-height: 90vh; display: flex; flex-direction: column;">
                 <div class="modal-header">
-                    <h4>물품 등록 (<span id="modal-stock-group-label" style="color: #58a6ff;">-</span>)</h4>
+                    <h4>물품 등록 (<span id="modal-stock-group-label" style="color: var(--c-blue);">-</span>)</h4>
                     <span class="close-btn" id="btn-close-item-stock-modal">&times;</span>
                 </div>
                 <div class="modal-body" style="padding: 15px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; max-height: calc(90vh - 60px);">
                     <div class="form-group">
-                        <label style="font-size: 12px; color: #8b949e; margin-bottom: 4px; display: block;">마스터 물품 검색 및 선택</label>
+                        <label style="font-size: 12px; color: var(--c-text-muted); margin-bottom: 4px; display: block;">마스터 물품 검색 및 선택</label>
                         <input type="text" id="modal-stock-item-search" class="input-dark full-width"
                             placeholder="물품명, 코드명, 규격 검색..." autocomplete="off">
-                        <div id="modal-stock-master-list-wrap" style="max-height: 200px; overflow-y: auto; overflow-x: auto; border: 1px solid #30363d; border-radius: 4px; margin-top: 5px; background: #0d1117;">
-                            <div class="modal-master-col-header" style="display: flex; min-width: 770px; background: #161b22; border-bottom: 1px solid #30363d; padding: 7px 10px; font-size: 11px; color: #8b949e; font-weight: 600; position: sticky; top: 0; z-index: 1;">
+                        <div id="modal-stock-master-list-wrap" style="max-height: 200px; overflow-y: auto; overflow-x: auto; border: 1px solid var(--c-border); border-radius: 4px; margin-top: 5px; background: var(--c-bg);">
+                            <div class="modal-master-col-header" style="display: flex; min-width: 770px; background: var(--c-surface); border-bottom: 1px solid var(--c-border); padding: 7px 10px; font-size: 11px; color: var(--c-text-muted); font-weight: 600; position: sticky; top: 0; z-index: 1;">
                                 <div class="mcol-partno" style="width: 85px; flex-shrink: 0; text-align: center;">품번</div>
                                 <div class="mcol-code" style="width: 200px; flex-shrink: 0;">코드명</div>
                                 <div class="mcol-part" style="width: 200px; flex-shrink: 0;">물품명</div>
@@ -245,20 +245,20 @@
                         </div>
                     </div>
 
-                    <div style="background: #161b22; padding: 10px; border-radius: 6px; border: 1px solid #30363d;">
-                        <div style="font-size: 12px; color: #8b949e; margin-bottom: 6px; font-weight: bold;">선택된 물품 정보</div>
+                    <div style="background: var(--c-surface); padding: 10px; border-radius: 6px; border: 1px solid var(--c-border);">
+                        <div style="font-size: 12px; color: var(--c-text-muted); margin-bottom: 6px; font-weight: bold;">선택된 물품 정보</div>
                         <div class="modal-selected-item-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px;">
-                            <div><span style="color: #6e7681;">품번:</span> <span id="modal-selected-partno" style="color: #e6edf3;">-</span></div>
-                            <div><span style="color: #6e7681;">코드명:</span> <strong id="modal-selected-code" style="color: #58a6ff;">-</strong></div>
-                            <div><span style="color: #6e7681;">물품명:</span> <strong id="modal-selected-part" style="color: #e6edf3;">-</strong></div>
-                            <div><span style="color: #6e7681;">세부규격:</span> <span id="modal-selected-spec" style="color: #e6edf3;">-</span></div>
+                            <div><span style="color: var(--c-text-faint);">품번:</span> <span id="modal-selected-partno" style="color: var(--c-text);">-</span></div>
+                            <div><span style="color: var(--c-text-faint);">코드명:</span> <strong id="modal-selected-code" style="color: var(--c-blue);">-</strong></div>
+                            <div><span style="color: var(--c-text-faint);">물품명:</span> <strong id="modal-selected-part" style="color: var(--c-text);">-</strong></div>
+                            <div><span style="color: var(--c-text-faint);">세부규격:</span> <span id="modal-selected-spec" style="color: var(--c-text);">-</span></div>
                             <span id="modal-selected-detail-type" style="display: none;">-</span>
                         </div>
                     </div>
 
                     <div style="display: flex; gap: 10px;">
                         <div class="form-group" style="width: 105px;">
-                            <label style="font-size: 12px; color: #8b949e; margin-bottom: 4px; display: block;">등급 (Grade)</label>
+                            <label style="font-size: 12px; color: var(--c-text-muted); margin-bottom: 4px; display: block;">등급 (Grade)</label>
                             <select id="modal-stock-grade" class="input-dark full-width" style="height: 34px; font-size: 13px;">
                                 <option value="B" selected>B 등급</option>
                                 <option value="C">C 등급</option>
@@ -266,16 +266,16 @@
                             </select>
                         </div>
                         <div class="form-group" style="flex: 1;">
-                            <label style="font-size: 12px; color: #8b949e; margin-bottom: 4px; display: block;">현재 수량 (Quantity)</label>
+                            <label style="font-size: 12px; color: var(--c-text-muted); margin-bottom: 4px; display: block;">현재 수량 (Quantity)</label>
                             <input type="number" id="modal-stock-quantity" class="input-dark full-width" min="0" value="0" style="height: 34px;">
                         </div>
                         <div class="form-group" style="flex: 1;">
-                            <label style="font-size: 12px; color: #8b949e; margin-bottom: 4px; display: block;">안전 재고 수량 (Safety)</label>
+                            <label style="font-size: 12px; color: var(--c-text-muted); margin-bottom: 4px; display: block;">안전 재고 수량 (Safety)</label>
                             <input type="number" id="modal-stock-safety-quantity" class="input-dark full-width" min="0" value="0" style="height: 34px;">
                         </div>
                     </div>
 
-                    <div class="form-actions" style="margin-top: 10px; display: flex; justify-content: flex-end; gap: 10px; padding-top: 12px; border-top: 1px solid #30363d;">
+                    <div class="form-actions" style="margin-top: 10px; display: flex; justify-content: flex-end; gap: 10px; padding-top: 12px; border-top: 1px solid var(--c-border);">
                         <button type="button" id="btn-cancel-item-stock-modal" class="btn-gray" style="padding: 8px 18px; font-size: 13px;">취소</button>
                         <button type="button" id="btn-confirm-item-stock-modal" class="btn-green" style="padding: 8px 24px; font-size: 13px; font-weight: bold; background: #238636; color: #fff; border: 1px solid rgba(240, 246, 252, 0.1); border-radius: 6px; cursor: pointer;">등록</button>
                     </div>
@@ -289,5 +289,5 @@
 {% block extra_js %}
 <!-- [요청] 물품 관리 현황 엑셀 내보내기 (2개 시트) -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
-<script src="{{ url_for('SettingDAO', filename='JavaScript/item.js') }}?v=45"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/item.js') }}?v=45-t4"></script>
 {% endblock %}

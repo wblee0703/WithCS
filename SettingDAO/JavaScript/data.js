@@ -245,7 +245,7 @@ function renderSiteList() {
     if (siteCountEl) siteCountEl.textContent = filteredSites.length;
 
     if (filteredSites.length === 0) {
-        siteListEl.innerHTML = '<li class="data-list-item" style="color:#8b949e; text-align:center; cursor:default;">사업장이 없습니다.</li>';
+        siteListEl.innerHTML = '<li class="data-list-item" style="color:var(--c-text-muted); text-align:center; cursor:default;">사업장이 없습니다.</li>';
         return;
     }
 
@@ -299,7 +299,7 @@ function renderEquipList() {
     equipListEl.innerHTML = '';
 
     if (!currentSelectedSite) {
-        equipListEl.innerHTML = '<li class="data-list-item" style="color:#8b949e; text-align:center; cursor:default;">사업장을 먼저 선택하세요.</li>';
+        equipListEl.innerHTML = '<li class="data-list-item" style="color:var(--c-text-muted); text-align:center; cursor:default;">사업장을 먼저 선택하세요.</li>';
         if (equipCountEl) equipCountEl.textContent = '0';
         return;
     }
@@ -338,7 +338,7 @@ function renderEquipList() {
     if (equipCountEl) equipCountEl.textContent = filteredItems.length;
 
     if (filteredItems.length === 0) {
-        equipListEl.innerHTML = '<li class="data-list-item" style="color:#8b949e; text-align:center; cursor:default;">장비가 없습니다.</li>';
+        equipListEl.innerHTML = '<li class="data-list-item" style="color:var(--c-text-muted); text-align:center; cursor:default;">장비가 없습니다.</li>';
         return;
     }
 
@@ -356,7 +356,7 @@ function renderEquipList() {
         li.innerHTML = `
             <div class="data-item-main">
                 <span style="font-weight:600;">${escapeHtml(item.displayName)}</span>
-                ${subText ? `<span style="color:#58a6ff; font-size:11px;">${subText}</span>` : ''}
+                ${subText ? `<span style="color:var(--c-blue); font-size:11px;">${subText}</span>` : ''}
             </div>
         `;
 
@@ -785,13 +785,13 @@ function saveCurrentSheetData(showIndicator = true, resetTable = false, immediat
                 }
             } else {
                 if (indicator) {
-                    indicator.innerHTML = '<span class="save-dot" style="background:#f85149;"></span> DB 저장 오류';
+                    indicator.innerHTML = '<span class="save-dot" style="background:var(--c-red);"></span> DB 저장 오류';
                 }
             }
         } catch (e) {
             console.error('DB 동기화 저장 실패:', e);
             if (indicator) {
-                indicator.innerHTML = '<span class="save-dot" style="background:#d29922;"></span> 로컬에 저장됨';
+                indicator.innerHTML = '<span class="save-dot" style="background:var(--c-yellow);"></span> 로컬에 저장됨';
             }
         }
     }, delay);
@@ -1011,7 +1011,7 @@ function renderParamView() {
     if (currentRows.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="8" class="sheet-empty-state" style="padding: 30px; text-align: center; color: #8b949e;">
+                <td colspan="8" class="sheet-empty-state" style="padding: 30px; text-align: center; color: var(--c-text-muted);">
                     선택된 일자(${currentParamDate})에 기록된 파라미터 항목이 없습니다.<br>
                     우측 상단의 <strong>[➕ 항목 추가]</strong> 버튼을 눌러 점검 항목을 추가하세요.
                 </td>
@@ -1037,7 +1037,7 @@ function renderParamView() {
 
         tbodyHtml += `
             <tr data-row-id="${row.id}">
-                <td style="text-align: center; color: #8b949e; user-select: none; font-size: 11px;">${idx + 1}</td>
+                <td style="text-align: center; color: var(--c-text-muted); user-select: none; font-size: 11px;">${idx + 1}</td>
                 <td>
                     <input type="text" class="data-param-input" value="${escapeHtml(paramName)}" 
                            placeholder="파라미터 항목명" onchange="updateParamCell('${row.id}', '파라미터 항목', this.value)">
@@ -2484,7 +2484,7 @@ function renderRawSheetTable() {
         bodyHtml += `<tr data-row-id="${row.id}">`;
 
         // No 컬럼 (좌우 스크롤 고정, 클릭 시 행 전체 선택)
-        bodyHtml += `<td class="sheet-td-no sheet-sticky-col sheet-sticky-no" data-row-idx="${rowIdx}" data-is-no="true" title="행 전체 선택 (클릭 후 Del 키로 행 삭제)" style="color:#8b949e; text-align:center; user-select:none; font-size:11px; cursor:pointer;">${rowIdx + 1}</td>`;
+        bodyHtml += `<td class="sheet-td-no sheet-sticky-col sheet-sticky-no" data-row-idx="${rowIdx}" data-is-no="true" title="행 전체 선택 (클릭 후 Del 키로 행 삭제)" style="color:var(--c-text-muted); text-align:center; user-select:none; font-size:11px; cursor:pointer;">${rowIdx + 1}</td>`;
 
         // 날짜 컬럼 (좌우 스크롤 고정, colIdx = 0)
         bodyHtml += `
@@ -4580,7 +4580,7 @@ function populateAnalysisColumnChips() {
     container.innerHTML = '';
 
     if (allCols.length === 0) {
-        container.innerHTML = '<span style="color: #8b949e; font-size: 12px; padding: 4px 0;">선택 가능한 데이터 컬럼이 없습니다.</span>';
+        container.innerHTML = '<span style="color: var(--c-text-muted); font-size: 12px; padding: 4px 0;">선택 가능한 데이터 컬럼이 없습니다.</span>';
         return;
     }
 
@@ -5047,7 +5047,7 @@ function renderAnalysisWorkTimeline(workLogs, filteredRows) {
     }
 
     if (!workLogs || workLogs.length === 0) {
-        container.innerHTML = '<div style="color: #8b949e; font-size: 12px; padding: 10px 4px;">해당 기간 내 등록된 장비 작업 이력이 없습니다.</div>';
+        container.innerHTML = '<div style="color: var(--c-text-muted); font-size: 12px; padding: 10px 4px;">해당 기간 내 등록된 장비 작업 이력이 없습니다.</div>';
         return;
     }
 
@@ -5208,7 +5208,7 @@ function renderAnalysisStatsCards(statsList) {
     if (!container) return;
 
     if (!statsList || statsList.length === 0) {
-        container.innerHTML = '<div style="color: #8b949e; font-size: 13px; grid-column: 1 / -1;">선택된 분석 항목이 없습니다.</div>';
+        container.innerHTML = '<div style="color: var(--c-text-muted); font-size: 13px; grid-column: 1 / -1;">선택된 분석 항목이 없습니다.</div>';
         return;
     }
 
@@ -5231,11 +5231,11 @@ function renderAnalysisStatsCards(statsList) {
                     </div>
                     <div class="analysis-stat-item">
                         <span class="analysis-stat-label">최댓값 (Max)</span>
-                        <span class="analysis-stat-val" style="color: #3fb950;">${stat.max}</span>
+                        <span class="analysis-stat-val" style="color: var(--c-green);">${stat.max}</span>
                     </div>
                     <div class="analysis-stat-item">
                         <span class="analysis-stat-label">최솟값 (Min)</span>
-                        <span class="analysis-stat-val" style="color: #f85149;">${stat.min}</span>
+                        <span class="analysis-stat-val" style="color: var(--c-red);">${stat.min}</span>
                     </div>
                     <div class="analysis-stat-item">
                         <span class="analysis-stat-label">표준편차 (Std Dev)</span>
@@ -5243,7 +5243,7 @@ function renderAnalysisStatsCards(statsList) {
                     </div>
                     <div class="analysis-stat-item">
                         <span class="analysis-stat-label">변동계수 (CV)</span>
-                        <span class="analysis-stat-val" style="color: #e3b341;">${stat.cv}</span>
+                        <span class="analysis-stat-val" style="color: var(--c-yellow-2);">${stat.cv}</span>
                     </div>
                 </div>
             </div>

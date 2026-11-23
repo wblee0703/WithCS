@@ -300,7 +300,7 @@ function renderTroubleEquips(siteGroup, model) {
         const subText = custEquipName ? ` [${custEquipName}]` : (serial ? ` [${serial}]` : '');
 
         // 사업장 구분이 켜진 상태이므로 장비별 실질 소속 사업장명을 아래에 상시 표기
-        const displayHtml = `<div style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 11px; color: #8b949e;">${escapeHtml(item.site)}</span><span>${escapeHtml(displayName)}${escapeHtml(subText)}</span></div>`;
+        const displayHtml = `<div style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 11px; color: var(--c-text-muted);">${escapeHtml(item.site)}</span><span>${escapeHtml(displayName)}${escapeHtml(subText)}</span></div>`;
 
         const searchText = `${item.site} ${displayName} ${serial} ${custEquipName}`.toLowerCase();
 
@@ -509,7 +509,7 @@ function setupTroubleLoadHistoryEvent() {
             if (!listEl) return;
 
             if (equipHistories.length === 0) {
-                listEl.innerHTML = '<li style="text-align: center; color: #8b949e; padding: 20px;">불러올 이전 작업 이력이 없습니다.</li>';
+                listEl.innerHTML = '<li style="text-align: center; color: var(--c-text-muted); padding: 20px;">불러올 이전 작업 이력이 없습니다.</li>';
             } else {
                 listEl.innerHTML = equipHistories.map(h => {
                     let displayContent = h.content || '-';
@@ -532,18 +532,18 @@ function setupTroubleLoadHistoryEvent() {
                         tooltipContent = '';
                     }
                     const dateStr = h.action_date || h.occur_date || '-';
-                    return `<li data-id="${h.id}" data-source="${h.source}" style="padding: 12px; border-bottom: 1px solid #30363d; cursor: pointer; display: flex; flex-direction: column; gap: 5px; background: #161b22; border-radius: 4px; margin-bottom: 8px; transition: background 0.2s;">
+                    return `<li data-id="${h.id}" data-source="${h.source}" style="padding: 12px; border-bottom: 1px solid var(--c-border); cursor: pointer; display: flex; flex-direction: column; gap: 5px; background: var(--c-surface); border-radius: 4px; margin-bottom: 8px; transition: background 0.2s;">
                         <div style="display: flex; justify-content: space-between;">
-                            <span style="color: #58a6ff; font-weight: bold; font-size: 13px;">${dateStr}</span>
-                            <span style="color: #8b949e; font-size: 11px; background: #21262d; padding: 2px 6px; border-radius: 4px;">${h.source === 'log' ? '점검이력' : 'Trouble'}</span>
+                            <span style="color: var(--c-blue); font-weight: bold; font-size: 13px;">${dateStr}</span>
+                            <span style="color: var(--c-text-muted); font-size: 11px; background: var(--c-surface-2); padding: 2px 6px; border-radius: 4px;">${h.source === 'log' ? '점검이력' : 'Trouble'}</span>
                         </div>
-                        <div title="${escapeHtml(tooltipContent)}" style="color: #e6edf3; font-size: 13px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;">${escapeHtml(displayContent)}</div>
+                        <div title="${escapeHtml(tooltipContent)}" style="color: var(--c-text); font-size: 13px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;">${escapeHtml(displayContent)}</div>
                     </li>`;
                 }).join('');
 
                 listEl.querySelectorAll('li').forEach(li => {
-                    li.addEventListener('mouseover', () => li.style.background = '#21262d');
-                    li.addEventListener('mouseout', () => li.style.background = '#161b22');
+                    li.addEventListener('mouseover', () => li.style.background = 'var(--c-surface-2)');
+                    li.addEventListener('mouseout', () => li.style.background = 'var(--c-surface)');
                     li.addEventListener('click', () => {
                         if (!confirm('선택한 작업내용과 사진을 현재 창에 불러오시겠습니까?\n(입력되어 있던 내용은 덮어씌워집니다.)')) return;
 
@@ -830,7 +830,7 @@ function renderDateFilterInputs() {
             const selected = (currentTroubleFilter.year === String(y) || (!currentTroubleFilter.year && y === currentYear)) ? 'selected' : '';
             options += `<option value="${y}" ${selected}>${y}년</option>`;
         }
-        container.innerHTML = `<select id="trouble-date-year-select" style="width: 80px; height: 32px; background-color: #0d1117; color: #ffffff; border: 1px solid #30363d; border-radius: 4px; padding: 0 8px; box-sizing: border-box; outline: none; cursor: pointer; font-size: 13px;">${options}</select>`;
+        container.innerHTML = `<select id="trouble-date-year-select" style="width: 80px; height: 32px; background-color: var(--c-bg); color: var(--c-heading); border: 1px solid var(--c-border); border-radius: 4px; padding: 0 8px; box-sizing: border-box; outline: none; cursor: pointer; font-size: 13px;">${options}</select>`;
         
         const yearSelect = document.getElementById('trouble-date-year-select');
         if (yearSelect) {
@@ -857,8 +857,8 @@ function renderDateFilterInputs() {
         }
 
         container.innerHTML = `
-            <select id="trouble-date-year-select" style="width: 80px; height: 32px; background-color: #0d1117; color: #ffffff; border: 1px solid #30363d; border-radius: 4px; padding: 0 8px; box-sizing: border-box; outline: none; cursor: pointer; font-size: 13px;">${yearOptions}</select>
-            <select id="trouble-date-month-select" style="width: 65px; height: 32px; background-color: #0d1117; color: #ffffff; border: 1px solid #30363d; border-radius: 4px; padding: 0 8px; box-sizing: border-box; outline: none; cursor: pointer; font-size: 13px;">${monthOptions}</select>
+            <select id="trouble-date-year-select" style="width: 80px; height: 32px; background-color: var(--c-bg); color: var(--c-heading); border: 1px solid var(--c-border); border-radius: 4px; padding: 0 8px; box-sizing: border-box; outline: none; cursor: pointer; font-size: 13px;">${yearOptions}</select>
+            <select id="trouble-date-month-select" style="width: 65px; height: 32px; background-color: var(--c-bg); color: var(--c-heading); border: 1px solid var(--c-border); border-radius: 4px; padding: 0 8px; box-sizing: border-box; outline: none; cursor: pointer; font-size: 13px;">${monthOptions}</select>
         `;
 
         const yearSelect = document.getElementById('trouble-date-year-select');
@@ -883,9 +883,9 @@ function renderDateFilterInputs() {
         const endVal = currentTroubleFilter.endDate || '';
 
         container.innerHTML = `
-            <input type="date" id="trouble-date-start" style="width: 120px; height: 32px; background-color: #0d1117; color: #ffffff; border: 1px solid #30363d; border-radius: 4px; padding: 0 8px; box-sizing: border-box; outline: none; font-size: 13px;" value="${startVal}">
-            <span style="color:#8b949e;">~</span>
-            <input type="date" id="trouble-date-end" style="width: 120px; height: 32px; background-color: #0d1117; color: #ffffff; border: 1px solid #30363d; border-radius: 4px; padding: 0 8px; box-sizing: border-box; outline: none; font-size: 13px;" value="${endVal}">
+            <input type="date" id="trouble-date-start" style="width: 120px; height: 32px; background-color: var(--c-bg); color: var(--c-heading); border: 1px solid var(--c-border); border-radius: 4px; padding: 0 8px; box-sizing: border-box; outline: none; font-size: 13px;" value="${startVal}">
+            <span style="color:var(--c-text-muted);">~</span>
+            <input type="date" id="trouble-date-end" style="width: 120px; height: 32px; background-color: var(--c-bg); color: var(--c-heading); border: 1px solid var(--c-border); border-radius: 4px; padding: 0 8px; box-sizing: border-box; outline: none; font-size: 13px;" value="${endVal}">
         `;
 
         const startInput = document.getElementById('trouble-date-start');
@@ -1028,6 +1028,12 @@ function bindTroubleContentAndImage(data, excludeMemo = false) {
     if (symptomEl) symptomEl.value = data.symptom || '';
     if (causeEl) causeEl.value = data.cause || '';
     if (actionEl) actionEl.value = data.measure || '';
+    // [추가] Trouble 증상·원인·조치사항이 모두 비어 있으면 작업 이력(작업 상세 정보)에 기록한 증상/원인/조치사항으로 자동 입력
+    if (!data.symptom && !data.cause && !data.measure && (data.log_symptom || data.log_cause || data.log_action)) {
+        if (symptomEl) symptomEl.value = data.log_symptom || '';
+        if (causeEl) causeEl.value = data.log_cause || '';
+        if (actionEl) actionEl.value = data.log_action || '';
+    }
     if (preventionEl) preventionEl.value = data.prevent || '';
 
     // [전용] trouble_details 멀티라인 포맷 텍스트를 세부사항(memoInput) 입력창에 가독성 높게 바인딩
@@ -1146,9 +1152,9 @@ function renderTroubleList(dataList = []) {
                 equipMain = escapeHtml(modelAbbr);
                 if (subVal) {
                     if (isCust) {
-                        equipSubHtml = `<div style="color: #58a6ff; font-size: 11px; margin-top: 2px;">[${escapeHtml(subVal)}]</div>`;
+                        equipSubHtml = `<div style="color: var(--c-blue); font-size: 11px; margin-top: 2px;">[${escapeHtml(subVal)}]</div>`;
                     } else {
-                        equipSubHtml = `<div style="color: #8b949e; font-size: 11px; margin-top: 2px;">(${escapeHtml(subVal)})</div>`;
+                        equipSubHtml = `<div style="color: var(--c-text-muted); font-size: 11px; margin-top: 2px;">(${escapeHtml(subVal)})</div>`;
                     }
                 }
             }
@@ -1189,8 +1195,8 @@ function renderTroubleList(dataList = []) {
             // [추가] 기록여부 판단 (status 또는 발생 일시 유무 기준)
             const isRecorded = (t.status === '기록완료') || (t.occur_date && String(t.occur_date).trim() !== '' && t.occur_date !== '-');
             const recordIcon = isRecorded
-                ? '<span style="color: #3fb950; font-size: 16px;" title="기록완료">●</span>'
-                : '<span style="color: #8b949e; font-size: 16px;" title="미기록">○</span>';
+                ? '<span style="color: var(--c-green); font-size: 16px;" title="기록완료">●</span>'
+                : '<span style="color: var(--c-text-muted); font-size: 16px;" title="미기록">○</span>';
 
             return `<tr data-id="${t.id}" data-source="${t.source || 'trouble'}" style="cursor: pointer;">
                 <td style="text-align: center;">${recordIcon}</td>

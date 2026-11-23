@@ -212,7 +212,7 @@ function setupMaintenanceEvents() {
             const historyBtn = document.createElement('button');
             historyBtn.id = 'btn-maint-history';
             historyBtn.className = 'btn-settings';
-            historyBtn.style.cssText = 'font-size: 12px; padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid #30363d; background: #21262d; color: #e6edf3; margin-right: 5px;';
+            historyBtn.style.cssText = 'font-size: 12px; padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid var(--c-border); background: var(--c-surface-2); color: var(--c-text); margin-right: 5px;';
             historyBtn.innerHTML = '📜 물품 이력';
             historyBtn.title = '해당 장비의 과거 유지관리 물품 변동(교체) 이력을 확인합니다.';
             historyBtn.addEventListener('click', openMaintHistoryModal);
@@ -349,7 +349,7 @@ function setupLogEvents() {
             div.querySelector('.worker-dept-pos').textContent = subInfoText ? ` ${subInfoText}` : '';
             listContainer.appendChild(div);
         });
-        if (displayWorkers.length === 0) listContainer.innerHTML = `<div class="log-select-empty-msg" style="padding:10px; color:#8b949e; text-align:center;">검색 결과가 없습니다.</div>`;
+        if (displayWorkers.length === 0) listContainer.innerHTML = `<div class="log-select-empty-msg" style="padding:10px; color:var(--c-text-muted); text-align:center;">검색 결과가 없습니다.</div>`;
         listContainer.querySelectorAll('.log-select-item').forEach(item => {
             item.onclick = (e) => { e.stopPropagation(); item.classList.toggle('selected'); updateWorkerSelection(); };
         });
@@ -830,11 +830,11 @@ window.renderMaintSuggestions = function (showAll = false, isInput = false) {
             moreLi.className = 'suggestion-item';
             moreLi.style.textAlign = 'center';
             moreLi.style.fontWeight = 'bold';
-            moreLi.style.color = '#58a6ff';
-            moreLi.style.borderTop = '1px solid #30363d';
+            moreLi.style.color = 'var(--c-blue)';
+            moreLi.style.borderTop = '1px solid var(--c-border)';
             moreLi.style.position = 'sticky';
             moreLi.style.bottom = '0';
-            moreLi.style.background = '#161b22';
+            moreLi.style.background = 'var(--c-surface)';
             moreLi.style.padding = '10px';
             moreLi.textContent = '⬇️ 더보기 (전체 물품)';
             moreLi.addEventListener('pointerdown', (ev) => {
@@ -1067,7 +1067,7 @@ function calculateAndDisplayDuration() {
 
         if (diffMs < 0) {
             durationDisplay.textContent = "(오류: 시작 일시가 종료 일시보다 늦습니다)";
-            durationDisplay.style.color = "#f85149";
+            durationDisplay.style.color = "var(--c-red)";
         } else {
             const diffMins = Math.floor(diffMs / 60000);
             const hours = Math.floor(diffMins / 60);
@@ -1078,7 +1078,7 @@ function calculateAndDisplayDuration() {
             if (mins > 0 || hours === 0) durationText += `${mins}분`;
 
             durationDisplay.textContent = `(작업시간: ${durationText.trim()})`;
-            durationDisplay.style.color = "#58a6ff";
+            durationDisplay.style.color = "var(--c-blue)";
         }
     } else {
         durationDisplay.textContent = "";
@@ -1398,19 +1398,19 @@ function selectLog(id, focus = true) {
             replacedPartsContainer.id = 'replaced-parts-container';
             replacedPartsContainer.style.display = 'flex';
             replacedPartsContainer.style.flexDirection = 'column';
-            replacedPartsContainer.style.background = '#161b22';
-            replacedPartsContainer.style.border = '1px solid #30363d';
+            replacedPartsContainer.style.background = 'var(--c-surface)';
+            replacedPartsContainer.style.border = '1px solid var(--c-border)';
             replacedPartsContainer.style.borderRadius = '6px';
             replacedPartsContainer.style.overflow = 'hidden';
             replacedPartsContainer.style.minHeight = '0';
 
             const partsTitle = document.createElement('div');
             partsTitle.style.padding = '8px 12px';
-            partsTitle.style.background = '#21262d';
-            partsTitle.style.borderBottom = '1px solid #30363d';
+            partsTitle.style.background = 'var(--c-surface-2)';
+            partsTitle.style.borderBottom = '1px solid var(--c-border)';
             partsTitle.style.fontWeight = 'bold';
             partsTitle.style.fontSize = '13px';
-            partsTitle.style.color = '#e6edf3';
+            partsTitle.style.color = 'var(--c-text)';
             partsTitle.textContent = '교체 물품';
             replacedPartsContainer.appendChild(partsTitle);
 
@@ -1449,6 +1449,9 @@ function selectLog(id, focus = true) {
             memoInput.style.overflowY = 'auto';
             memoInput.style.boxSizing = 'border-box';
         }
+
+        // [추가] 작업 상세 정보에서 기록한 증상/원인/조치사항 표시 (수정은 작업 상세 정보에서)
+        renderMaintMemoParts(logItem);
 
         const partsList = document.getElementById('replaced-parts-list');
         if (partsList) {
@@ -1535,9 +1538,9 @@ function selectLog(id, focus = true) {
                 replacedParts.forEach(part => {
                     const li = document.createElement('li');
                     li.style.padding = '10px';
-                    li.style.borderBottom = '1px solid #30363d';
+                    li.style.borderBottom = '1px solid var(--c-border)';
                     li.style.fontSize = '12px';
-                    li.style.color = '#c9d1d9';
+                    li.style.color = 'var(--c-text-2)';
                     li.style.display = 'flex';
                     li.style.flexDirection = 'column';
                     li.style.gap = '4px';
@@ -1547,12 +1550,12 @@ function selectLog(id, focus = true) {
                     let titleText = (part.code ? part.code : part.name) + specDisplay;
                     let titleHtml = `
                         <div style="display:flex; justify-content:space-between; align-items:center; min-width:0;">
-                            <span style="font-weight:bold; color:#58a6ff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(titleText)}">${escapeHtml(titleText)}</span>
-                            ${part.costType ? `<span style="font-size:10px; background:#30363d; padding:2px 6px; border-radius:4px; color:#e6edf3; flex-shrink:0; margin-left:5px;">${escapeHtml(part.costType)}</span>` : ''}
+                            <span style="font-weight:bold; color:var(--c-blue); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(titleText)}">${escapeHtml(titleText)}</span>
+                            ${part.costType ? `<span style="font-size:10px; background:var(--c-border); padding:2px 6px; border-radius:4px; color:var(--c-text); flex-shrink:0; margin-left:5px;">${escapeHtml(part.costType)}</span>` : ''}
                         </div>
                     `;
                     let descHtml = `
-                        <div style="display:flex; flex-direction:column; gap:2px; color:#8b949e; font-size:11px; margin-top: 2px; min-width:0;">
+                        <div style="display:flex; flex-direction:column; gap:2px; color:var(--c-text-muted); font-size:11px; margin-top: 2px; min-width:0;">
                             <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="품명: ${escapeHtml(part.name)}">품명: ${escapeHtml(part.name)}</span>
                             <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="규격: ${escapeHtml(part.masterSpec)}">규격: ${escapeHtml(part.masterSpec)}</span>
                         </div>
@@ -1562,7 +1565,7 @@ function selectLog(id, focus = true) {
                     partsList.appendChild(li);
                 });
             } else {
-                partsList.innerHTML = '<li style="padding:20px; text-align:center; color:#8b949e; font-size:12px;">교체(사용)된 등록 물품 없음</li>';
+                partsList.innerHTML = '<li style="padding:20px; text-align:center; color:var(--c-text-muted); font-size:12px;">교체(사용)된 등록 물품 없음</li>';
             }
         }
     }
@@ -2051,7 +2054,7 @@ window.renderSpecialNote = function () {
     const data = JSON.parse(localStorage.getItem(key)) || {};
     if (data.specialNote && data.specialNote.trim() !== '') {
         btn.textContent = '📝(V)';
-        btn.style.color = '#58a6ff';
+        btn.style.color = 'var(--c-blue)';
     } else {
         btn.textContent = '📝';
         btn.style.color = '';
@@ -2061,6 +2064,27 @@ window.renderSpecialNote = function () {
 /* ==========================================================================
    [추가] 메모/작업내용 필드 비활성화 제어 (Memo Fields State Control)
    ========================================================================== */
+// [추가] 장비 점검 이력 작업내용: 증상/원인/조치사항 (읽기 전용, 값이 있을 때만)
+function renderMaintMemoParts(logItem) {
+    const memoInput = document.getElementById('device-memo');
+    if (!memoInput) return;
+    let box = document.getElementById('device-memo-parts');
+    if (!box) {
+        box = document.createElement('div');
+        box.id = 'device-memo-parts';
+        box.className = 'device-memo-parts';
+    }
+    if (box.parentNode !== memoInput.parentNode || box.nextSibling !== memoInput) {
+        memoInput.parentNode.insertBefore(box, memoInput);
+    }
+    const it = logItem || {};
+    const secs = (window.WORK_MEMO_SECTIONS || []).filter(sec => String(it[sec.key] || '').trim());
+    if (!secs.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
+    const esc = (v) => String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    box.innerHTML = secs.map(sec => `<div class="device-memo-part"><span class="device-memo-part-label">${sec.label}</span><span class="device-memo-part-text">${esc(it[sec.key])}</span></div>`).join('');
+    box.style.display = '';
+}
+
 function setMemoFieldsDisabled(disabled) {
     const memoInput = document.getElementById('device-memo');
     if (memoInput) {
@@ -2341,7 +2365,7 @@ window.openMaintHistoryModal = function () {
                 let costColor = '#8b949e';
                 if (costMatch[1] === '유상') costColor = '#d29922';
                 else if (costMatch[1] === '무상') costColor = '#3fb950';
-                costTypeHtml = `<span style="font-size: 10px; background: #30363d; color: ${costColor}; padding: 2px 4px; border-radius: 4px; margin-right: 5px;">${costMatch[1]}</span>`;
+                costTypeHtml = `<span style="font-size: 10px; background: var(--c-border); color: ${costColor}; padding: 2px 4px; border-radius: 4px; margin-right: 5px;">${costMatch[1]}</span>`;
                 pureContent = costMatch[2].trim();
             }
 
@@ -2357,7 +2381,7 @@ window.openMaintHistoryModal = function () {
                         let costColor = '#8b949e';
                         if (innerCostMatch[1] === '유상') costColor = '#d29922';
                         else if (innerCostMatch[1] === '무상') costColor = '#3fb950';
-                        costTypeHtml = `<span style="font-size: 10px; background: #30363d; color: ${costColor}; padding: 2px 4px; border-radius: 4px; margin-right: 5px;">${innerCostMatch[1]}</span>`;
+                        costTypeHtml = `<span style="font-size: 10px; background: var(--c-border); color: ${costColor}; padding: 2px 4px; border-radius: 4px; margin-right: 5px;">${innerCostMatch[1]}</span>`;
                     }
                     pureContent = innerCostMatch[2].trim();
                 }
@@ -2398,7 +2422,7 @@ window.openMaintHistoryModal = function () {
         }
 
         if (filteredItems.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #8b949e; padding: 20px;">검색된 이력이 없습니다.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--c-text-muted); padding: 20px;">검색된 이력이 없습니다.</td></tr>';
         } else {
             filteredItems.forEach(item => {
                 const tr = document.createElement('tr');

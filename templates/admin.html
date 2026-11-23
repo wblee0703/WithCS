@@ -4,7 +4,7 @@
 {% block title %}Admin - WITH ON{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/admin.css') }}?v=75">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/admin.css') }}?v=75-t2">
 {% endblock %}
 
 {% block content %}
@@ -21,10 +21,10 @@
                 <li data-target="item-mgmt">물품 관리</li>
                 <li data-target="check-type-mgmt">점검 구분 관리</li>
                 <li data-target="setup-template-mgmt">셋업 일정 관리</li>
-                <li id="superadmin-maint-btn-item" style="display: none; margin-top: 20px; border-top: 1px solid #30363d; padding-top: 12px; background: transparent; cursor: default;">
+                <li id="superadmin-maint-btn-item" style="display: none; margin-top: 20px; border-top: 1px solid var(--c-border); padding-top: 12px; background: transparent; cursor: default;">
                     <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-                        <span style="font-size: 13px; font-weight: 700; color: #f85149;">🚨 서버 점검중</span>
-                        <button id="btn-toggle-server-maint" class="btn-gray" style="font-size: 11px; padding: 3px 8px; border-radius: 4px; background: #21262d; border: 1px solid #30363d;">OFF</button>
+                        <span style="font-size: 13px; font-weight: 700; color: var(--c-red);">🚨 서버 점검중</span>
+                        <button id="btn-toggle-server-maint" class="btn-gray" style="font-size: 11px; padding: 3px 8px; border-radius: 4px; background: var(--c-surface-2); border: 1px solid var(--c-border);">OFF</button>
                     </div>
                 </li>
             </ul>
@@ -50,7 +50,7 @@
                                     <span id="admin-site-count" class="badge">0</span>
                                 </div>
                                 <button id="btn-export-site-csv" class="btn-settings" title="CSV 내보내기"
-                                    style="font-size: 12px; padding: 2px 6px; border-radius: 4px; border: 1px solid #30363d; background: #21262d; color: #e6edf3;">CSV
+                                    style="font-size: 12px; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--c-border); background: var(--c-surface-2); color: var(--c-text);">CSV
                                     내보내기</button>
                             </div>
                             <input type="text" id="admin-site-search" class="input-dark full-width compact-select"
@@ -150,7 +150,7 @@
                                     <span id="admin-model-count" class="badge">0</span>
                                     <button id="btn-model-settings" class="btn-settings" title="관리 모드 토글">⚙️</button>
                                     <button id="btn-export-model-csv" class="btn-settings" title="CSV 내보내기"
-                                        style="font-size: 12px; padding: 2px 6px; border-radius: 4px; border: 1px solid #30363d; background: #21262d; color: #e6edf3;">CSV
+                                        style="font-size: 12px; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--c-border); background: var(--c-surface-2); color: var(--c-text);">CSV
                                         내보내기</button>
                                 </div>
                             </div>
@@ -215,7 +215,7 @@
                     <!-- 우측: 장비 상세 정보 -->
                     <div class="admin-col-detail">
                         <div class="detail-header">
-                            <h4>장비 상세 정보 <span id="equip-new-label" style="color: #3fb950; font-size: 13px; margin-left: 8px; font-weight: bold; display: none;">[신규 장비 등록]</span></h4>
+                            <h4>장비 상세 정보 <span id="equip-new-label" style="color: var(--c-green); font-size: 13px; margin-left: 8px; font-weight: bold; display: none;">[신규 장비 등록]</span></h4>
                             <p class="detail-desc">장비명(모델)과 시리얼 번호를 관리합니다.</p>
                         </div>
                         <div id="admin-equip-form" class="admin-form-container" style="display:none;">
@@ -474,7 +474,7 @@
                             <div style="display: flex; align-items: center; gap: 5px;">
                                 <span>등록된 물품 목록</span>
                                 <span id="admin-item-count" class="badge">0</span>
-                                <button type="button" id="btn-export-item-csv" class="btn-settings item-csv-export-btn" title="CSV 내보내기" style="font-size: 12px; padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid #30363d; background: #21262d; color: #e6edf3; margin-left: 5px;">내보내기</button>
+                                <button type="button" id="btn-export-item-csv" class="btn-settings item-csv-export-btn" title="CSV 내보내기" style="font-size: 12px; padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid var(--c-border); background: var(--c-surface-2); color: var(--c-text); margin-left: 5px;">내보내기</button>
                             </div>
                             <input type="text" id="admin-item-search"
                                 class="input-dark compact-select search-input-right" placeholder="전체 정보 검색"
@@ -777,7 +777,7 @@
                 <button type="button" id="btn-save-setup-template" class="btn-green" disabled
                     style="height: 30px; padding: 0 16px; font-size: 13px;">저장</button>
                 {% endif %}
-                <span id="setup-template-type-note" style="font-size: 12px; color: #8b949e;"></span>
+                <span id="setup-template-type-note" style="font-size: 12px; color: var(--c-text-muted);"></span>
             </div>
             <div class="card-body">
                 <div class="admin-split-view">
@@ -865,5 +865,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('SettingDAO', filename='JavaScript/admin.js') }}?v=55"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/admin.js') }}?v=55-t4"></script>
 {% endblock %}

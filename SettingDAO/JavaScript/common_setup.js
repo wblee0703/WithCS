@@ -485,15 +485,15 @@ window.renderSetupProgress = function (container, site, equip) {
 
     const esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const pct = (v) => Math.round(v);
-    const barColor = (v) => v >= 100 ? '#3fb950' : v > 0 ? '#d29922' : '#30363d';
-    const textColor = (v) => v > 0 ? barColor(v) : '#8b949e';
+    const barColor = (v) => v >= 100 ? 'var(--c-green)' : v > 0 ? 'var(--c-yellow)' : 'var(--c-border)';
+    const textColor = (v) => v > 0 ? barColor(v) : 'var(--c-text-muted)';
     const activeStages = stages.filter(s => !s.excluded && !s.noProgress);
     const doneStages = activeStages.filter(s => s.percent >= 100).length;
     const SUB_STYLE = {
-        '완료': 'color:#3fb950; border-color:#238636; background:rgba(35,134,54,0.15);',
-        '진행 중': 'color:#d29922; border-color:#9e6a03; background:rgba(158,106,3,0.15);',
-        '미착수': 'color:#8b949e; border-color:#30363d; background:transparent;',
-        '제외': 'color:#f85149; border-color:#da3633; border-style:dashed; background:rgba(218,54,51,0.10);'
+        '완료': 'color:var(--c-green); border-color:#238636; background:rgba(35,134,54,0.15);',
+        '진행 중': 'color:var(--c-yellow); border-color:#9e6a03; background:rgba(158,106,3,0.15);',
+        '미착수': 'color:var(--c-text-muted); border-color:var(--c-border); background:transparent;',
+        '제외': 'color:var(--c-red); border-color:#da3633; border-style:dashed; background:rgba(218,54,51,0.10);'
     };
     const SUB_MARK = { '완료': '✓ ', '진행 중': '● ', '미착수': '', '제외': '' };
 
@@ -507,7 +507,7 @@ window.renderSetupProgress = function (container, site, equip) {
     stages.forEach(stage => {
         // [추가] 세부 구분별 작업(일지) 등록 횟수 표시
         const countHtml = (sub) => sub.logCount > 0
-            ? ` <span class="setup-progress__sub-count" style="display:inline-block; min-width:16px; padding:0 5px; margin-left:3px; border-radius:8px; background:rgba(110,118,129,0.35); color:#e6edf3; font-size:10px; font-weight:700; line-height:15px; text-align:center;">${sub.logCount}</span>`
+            ? ` <span class="setup-progress__sub-count" style="display:inline-block; min-width:16px; padding:0 5px; margin-left:3px; border-radius:8px; background:rgba(110,118,129,0.35); color:var(--c-text); font-size:10px; font-weight:700; line-height:15px; text-align:center;">${sub.logCount}</span>`
             : '';
         const subsHtml = stage.subs.map(sub => `
             <button type="button" class="setup-progress__sub" style="${SUB_STYLE[sub.status]}"
@@ -516,7 +516,7 @@ window.renderSetupProgress = function (container, site, equip) {
             <div class="setup-progress__row${stage.excluded ? ' setup-progress__row--excluded' : ''}">
                 <div class="setup-progress__stage" title="${esc(stage.category)}">${esc(stage.category)}</div>
                 ${stage.noProgress ? '<div class="setup-progress__bar setup-progress__bar--none"></div>' : `<div class="setup-progress__bar"><div style="width:${stage.percent}%; background:${barColor(stage.percent)};"></div></div>`}
-                <div class="setup-progress__value">${stage.noProgress ? '' : stage.excluded ? '<strong style="color:#f85149;">전체 불필요</strong>' : `${stage.doneCount}/${stage.total} <strong style="color:${textColor(stage.percent)};">${pct(stage.percent)}%</strong>`}</div>
+                <div class="setup-progress__value">${stage.noProgress ? '' : stage.excluded ? '<strong style="color:var(--c-red);">전체 불필요</strong>' : `${stage.doneCount}/${stage.total} <strong style="color:${textColor(stage.percent)};">${pct(stage.percent)}%</strong>`}</div>
                 <div class="setup-progress__subs">${subsHtml}</div>
             </div>`;
     });
@@ -614,7 +614,7 @@ window.refreshSetupSubLogPopup = function () {
     const statusEl = modal.querySelector('.setup-sub-log-status');
     statusEl.innerHTML =
         `<span class="setup-sub-log-badge" style="color:${color}; border-color:${color};">${isExcluded ? '불필요 작업 (진행률 제외)' : status}</span>` +
-        `<span style="color:#8b949e; font-size:12px;">작업 기록 ${logs.length}건</span>` +
+        `<span style="color:var(--c-text-muted); font-size:12px;">작업 기록 ${logs.length}건</span>` +
         (canExclude ? '<button type="button" class="setup-sub-log-exclude" data-act="exclude">🚫 불필요 작업</button>' : '') +
         (isExcluded ? '<button type="button" class="btn-gray setup-sub-log-unexclude" data-act="unexclude">↺ 제외 취소</button>' : '');
     const toggleExclude = async (flag) => {
@@ -635,7 +635,7 @@ window.refreshSetupSubLogPopup = function () {
         let cust = '';
         try { cust = ((JSON.parse(localStorage.getItem(`details_${site}_${e}`)) || {}).setup || {}).custEquipName || ''; } catch (err) { }
         const parts = String(e).split('::');
-        return ` <span style="font-size:10px; color:#8b949e; border:1px solid #30363d; border-radius:8px; padding:0 5px;">${esc(cust || parts[1] || parts[0])}</span>`;
+        return ` <span style="font-size:10px; color:var(--c-text-muted); border:1px solid var(--c-border); border-radius:8px; padding:0 5px;">${esc(cust || parts[1] || parts[0])}</span>`;
     };
     const tbody = modal.querySelector('tbody');
     tbody.innerHTML = logs.length ? logs.map(l => `
@@ -643,9 +643,9 @@ window.refreshSetupSubLogPopup = function () {
             <td>${esc(l.date)}</td>
             <td style="text-align:left;">${esc(l.content || '-')}${equipLabel(l._equip)}</td>
             <td>${esc(l.worker)}</td>
-            <td style="color:#d29922; font-weight:bold;">${esc(l.md || '0')}</td>
+            <td style="color:var(--c-yellow); font-weight:bold;">${esc(l.md || '0')}</td>
         </tr>`).join('')
-        : '<tr><td colspan="4" style="padding:24px; text-align:center; color:#8b949e;">아직 작업 기록이 없습니다. [작업 추가]로 작성해주세요.</td></tr>';
+        : '<tr><td colspan="4" style="padding:24px; text-align:center; color:var(--c-text-muted);">아직 작업 기록이 없습니다. [작업 추가]로 작성해주세요.</td></tr>';
     tbody.querySelectorAll('tr[data-id]').forEach(tr => {
         tr.onclick = () => {
             if (typeof window.openLogForEditing === 'function') window.openLogForEditing(site, tr.dataset.equip, Number(tr.dataset.id));
@@ -943,7 +943,7 @@ function setupCategoryAndSubCategoryDropdowns(modalContext, selectedCategory = '
         if (kw) filtered = filtered.filter(c => c.toLowerCase().includes(kw.toLowerCase()));
 
         if (filtered.length === 0) {
-            catList.innerHTML = '<div class="log-select-empty-msg" style="padding:10px; text-align:center; color:#8b949e;">검색 결과가 없습니다.</div>';
+            catList.innerHTML = '<div class="log-select-empty-msg" style="padding:10px; text-align:center; color:var(--c-text-muted);">검색 결과가 없습니다.</div>';
             return;
         }
 
@@ -982,7 +982,7 @@ function setupCategoryAndSubCategoryDropdowns(modalContext, selectedCategory = '
         const currentTpl = getTemplatesData();
         const currentCat = catHidden.value;
         if (!currentCat) {
-            subcatList.innerHTML = '<div class="log-select-empty-msg" style="padding:10px; text-align:center; color:#8b949e;">구분을 먼저 선택해주세요.</div>';
+            subcatList.innerHTML = '<div class="log-select-empty-msg" style="padding:10px; text-align:center; color:var(--c-text-muted);">구분을 먼저 선택해주세요.</div>';
             return;
         }
 
@@ -995,7 +995,7 @@ function setupCategoryAndSubCategoryDropdowns(modalContext, selectedCategory = '
         }
 
         if (uniqueSubs.length === 0) {
-            subcatList.innerHTML = '<div class="log-select-empty-msg" style="padding:10px; text-align:center; color:#8b949e;">등록된 세부 구분이 없습니다.</div>';
+            subcatList.innerHTML = '<div class="log-select-empty-msg" style="padding:10px; text-align:center; color:var(--c-text-muted);">등록된 세부 구분이 없습니다.</div>';
             return;
         }
 
@@ -1131,7 +1131,7 @@ function setupSetupLogRegSiteAndEquipDropdowns(modalContext, initialSite = '', i
         }
         
         const plainText = subText ? `${modelName}${subText}` : modelName;
-        const subHtml = subText ? `<span style="color: #3fb950; font-weight: 500; display: inline;">${typeof escapeHtml === 'function' ? escapeHtml(subText) : subText}</span>` : '';
+        const subHtml = subText ? `<span style="color: var(--c-green); font-weight: 500; display: inline;">${typeof escapeHtml === 'function' ? escapeHtml(subText) : subText}</span>` : '';
         const html = `<span>${typeof escapeHtml === 'function' ? escapeHtml(modelName) : modelName}${subHtml}</span>`;
         
         return { text: plainText, html: html, modelName, subText };
@@ -1146,7 +1146,7 @@ function setupSetupLogRegSiteAndEquipDropdowns(modalContext, initialSite = '', i
         if (kw) sites = sites.filter(s => s.toLowerCase().includes(kw.toLowerCase()));
 
         if (sites.length === 0) {
-            siteList.innerHTML = '<div class="log-select-empty-msg" style="padding:10px; text-align:center; color:#8b949e;">검색 결과가 없습니다.</div>';
+            siteList.innerHTML = '<div class="log-select-empty-msg" style="padding:10px; text-align:center; color:var(--c-text-muted);">검색 결과가 없습니다.</div>';
             return;
         }
 
@@ -1191,7 +1191,7 @@ function setupSetupLogRegSiteAndEquipDropdowns(modalContext, initialSite = '', i
         const currentSite = siteHidden.value;
 
         if (!currentSite) {
-            equipList.innerHTML = '<div class="log-select-empty-msg" style="padding:10px; text-align:center; color:#8b949e;">사업장을 먼저 선택해주세요.</div>';
+            equipList.innerHTML = '<div class="log-select-empty-msg" style="padding:10px; text-align:center; color:var(--c-text-muted);">사업장을 먼저 선택해주세요.</div>';
             return;
         }
 
@@ -1213,7 +1213,7 @@ function setupSetupLogRegSiteAndEquipDropdowns(modalContext, initialSite = '', i
         }
 
         if (equips.length === 0) {
-            equipList.innerHTML = '<div class="log-select-empty-msg" style="padding:10px; text-align:center; color:#8b949e;">해당 사업장에 셋업 장비가 없습니다.</div>';
+            equipList.innerHTML = '<div class="log-select-empty-msg" style="padding:10px; text-align:center; color:var(--c-text-muted);">해당 사업장에 셋업 장비가 없습니다.</div>';
             return;
         }
 
@@ -1665,9 +1665,9 @@ function setupSetupLogRegPartDropdown(modalContext, site, equip, presetParts = '
         const selectedNames = Object.keys(currentSelections);
         displayBox.innerHTML = '';
         if (selectedNames.length === 0) {
-            displayBox.innerHTML = '<div style="color:#8b949e; font-size:12px; text-align:center; padding:10px;">선택된 물품이 없습니다.</div>';
+            displayBox.innerHTML = '<div style="color:var(--c-text-muted); font-size:12px; text-align:center; padding:10px;">선택된 물품이 없습니다.</div>';
             trigger.textContent = '물품 선택';
-            trigger.style.color = '#8b949e';
+            trigger.style.color = 'var(--c-text-muted)';
             hiddenInput.value = '';
             return;
         }
@@ -1680,19 +1680,19 @@ function setupSetupLogRegPartDropdown(modalContext, site, equip, presetParts = '
         } else {
             trigger.textContent = selectedNames[0];
         }
-        trigger.style.color = '#fff';
+        trigger.style.color = 'var(--c-heading)';
         trigger.title = partsArr.join('\n');
 
         selectedNames.forEach(name => {
             const cost = currentSelections[name];
             const div = document.createElement('div');
-            div.style.cssText = 'display:flex; align-items:center; justify-content:space-between; padding:4px 0; border-bottom:1px solid #30363d; font-size:12px; color:#e6edf3;';
+            div.style.cssText = 'display:flex; align-items:center; justify-content:space-between; padding:4px 0; border-bottom:1px solid var(--c-border); font-size:12px; color:var(--c-text);';
             div.innerHTML = `
                 <div style="display:flex; align-items:center; gap:8px; overflow:hidden;">
-                    <span style="background:#30363d; padding:2px 6px; border-radius:4px; font-size:10px; color:#e6edf3; flex-shrink:0;">${cost}</span>
+                    <span style="background:var(--c-border); padding:2px 6px; border-radius:4px; font-size:10px; color:var(--c-text); flex-shrink:0;">${cost}</span>
                     <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${name}">${name}</span>
                 </div>
-                <span style="color:#f85149; cursor:pointer; font-weight:bold; margin-left:10px; padding:0 5px;" title="삭제">✕</span>
+                <span style="color:var(--c-red); cursor:pointer; font-weight:bold; margin-left:10px; padding:0 5px;" title="삭제">✕</span>
             `;
             div.querySelector('span[title="삭제"]').onclick = (e) => {
                 e.stopPropagation();
@@ -1734,7 +1734,7 @@ function setupSetupLogRegPartDropdown(modalContext, site, equip, presetParts = '
 
         list.innerHTML = '';
         if (uniqueItems.length === 0) {
-            list.innerHTML = '<li style="padding:10px; color:#8b949e; text-align:center; font-size:12px;">검색 결과가 없습니다.</li>';
+            list.innerHTML = '<li style="padding:10px; color:var(--c-text-muted); text-align:center; font-size:12px;">검색 결과가 없습니다.</li>';
             return;
         }
 
@@ -1743,13 +1743,13 @@ function setupSetupLogRegPartDropdown(modalContext, site, equip, presetParts = '
             const isSelected = currentSelections.hasOwnProperty(val);
             const itemCost = isSelected ? currentSelections[val] : '무상(셋업)';
             const li = document.createElement('li');
-            li.style.cssText = `padding: 6px 8px; font-size: 12px; cursor: pointer; border-radius: 4px; margin-bottom: 2px; display: flex; align-items: center; justify-content: space-between; ${isSelected ? 'background: #1f6feb; color: #fff;' : 'color: #e6edf3;'}`;
+            li.style.cssText = `padding: 6px 8px; font-size: 12px; cursor: pointer; border-radius: 4px; margin-bottom: 2px; display: flex; align-items: center; justify-content: space-between; ${isSelected ? 'background: #1f6feb; color: #fff;' : 'color: var(--c-text);'}`;
             
             li.innerHTML = `
                 <div style="display:flex; align-items:center; gap:5px; flex:1; min-width:0;">
                     <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(val)}</span>
                 </div>
-                <select class="item-cost-select" style="background:#0d1117; border:1px solid #30363d; color:#fff; border-radius:3px; padding:2px; font-size:11px; margin-left:5px; pointer-events:auto;" onclick="event.stopPropagation();">
+                <select class="item-cost-select" style="background:var(--c-bg); border:1px solid var(--c-border); color: var(--c-heading); border-radius:3px; padding:2px; font-size:11px; margin-left:5px; pointer-events:auto;" onclick="event.stopPropagation();">
                     <option value="무상(셋업)" ${itemCost === '무상(셋업)' ? 'selected' : ''}>무상(셋업)</option>
                     <option value="무상(중고)" ${itemCost === '무상(중고)' ? 'selected' : ''}>무상(중고)</option>
                     <option value="유상" ${itemCost === '유상' ? 'selected' : ''}>유상</option>
@@ -2004,7 +2004,7 @@ window.openSetupCompleteModal = function(site, equip, readOnly = false) {
         infoEl.style.justifyContent = 'center';
         infoEl.style.gap = '10px';
         infoEl.innerHTML = `
-            <span>${info.mainInfo} <span style="color: #3fb950;">${info.subInfo}</span></span>
+            <span>${info.mainInfo} <span style="color: var(--c-green);">${info.subInfo}</span></span>
             <button id="btn-setup-complete-history" class="btn-shortcut" style="padding: 2px 8px; font-size: 11px;">이력</button>
         `;
         const historyBtn = infoEl.querySelector('#btn-setup-complete-history');
@@ -2331,12 +2331,12 @@ window.openSetupHistoryModal = function(site, equip) {
     
     tbody.innerHTML = '';
     memoEl.value = '';
-    partsList.innerHTML = '<li style="padding:20px; text-align:center; color:#8b949e; font-size:12px;">일지를 선택해주세요</li>';
+    partsList.innerHTML = '<li style="padding:20px; text-align:center; color:var(--c-text-muted); font-size:12px;">일지를 선택해주세요</li>';
     
     const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
     const info = window.formatEquipDisplayInfo(site, equip, equipmentModels);
     
-    titleEl.innerHTML = `셋업 이력 - ${info.mainInfo} <span style="color:#3fb950; font-size: 14px;">${info.subInfo}</span>`;
+    titleEl.innerHTML = `셋업 이력 - ${info.mainInfo} <span style="color:var(--c-green); font-size: 14px;">${info.subInfo}</span>`;
 
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
     const equipKey = `${site}::${equip}`;
@@ -2346,19 +2346,19 @@ window.openSetupHistoryModal = function(site, equip) {
     const sortedLogs = [...logs].sort((a, b) => new Date(b.date) - new Date(a.date));
 
     if (sortedLogs.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#8b949e;">셋업 일지 기록이 없습니다.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--c-text-muted);">셋업 일지 기록이 없습니다.</td></tr>';
     } else {
         sortedLogs.forEach(log => {
             const tr = document.createElement('tr');
             tr.style.cursor = 'pointer';
             
-            const contentHtml = (typeof escapeHtml === 'function' ? escapeHtml(log.content) || '-' : log.content || '-').replace(/\[지연\]/g, '<span class="tag-delayed" style="color: #f0883e; font-weight: bold;">[지연]</span>');
+            const contentHtml = (typeof escapeHtml === 'function' ? escapeHtml(log.content) || '-' : log.content || '-').replace(/\[지연\]/g, '<span class="tag-delayed" style="color: var(--c-orange); font-weight: bold;">[지연]</span>');
 
             tr.innerHTML = `
-                <td style="text-align:center; padding: 8px 10px; border-bottom: 1px solid #21262d;">${typeof escapeHtml === 'function' ? escapeHtml(log.date) : log.date}</td>
-                <td style="text-align:left; padding: 8px 10px; border-bottom: 1px solid #21262d;">${contentHtml}</td>
-                <td style="text-align:center; padding: 8px 10px; border-bottom: 1px solid #21262d;">${typeof escapeHtml === 'function' ? escapeHtml(log.worker) : log.worker}</td>
-                <td style="text-align:center; color:#d29922; font-weight:bold; padding: 8px 10px; border-bottom: 1px solid #21262d;">${typeof escapeHtml === 'function' ? escapeHtml(log.md || '0') : log.md || '0'}</td>
+                <td style="text-align:center; padding: 8px 10px; border-bottom: 1px solid var(--c-surface-2);">${typeof escapeHtml === 'function' ? escapeHtml(log.date) : log.date}</td>
+                <td style="text-align:left; padding: 8px 10px; border-bottom: 1px solid var(--c-surface-2);">${contentHtml}</td>
+                <td style="text-align:center; padding: 8px 10px; border-bottom: 1px solid var(--c-surface-2);">${typeof escapeHtml === 'function' ? escapeHtml(log.worker) : log.worker}</td>
+                <td style="text-align:center; color:var(--c-yellow); font-weight:bold; padding: 8px 10px; border-bottom: 1px solid var(--c-surface-2);">${typeof escapeHtml === 'function' ? escapeHtml(log.md || '0') : log.md || '0'}</td>
             `;
 
             tr.onclick = () => {
@@ -2377,15 +2377,15 @@ window.openSetupHistoryModal = function(site, equip) {
                         if (costMatch) { itemCost = costMatch[1]; pureContent = costMatch[2]; }
                         
                         const li = document.createElement('li');
-                        li.style.cssText = 'padding: 8px 10px; border-bottom: 1px solid #30363d; font-size: 12px; color: #c9d1d9; display: flex; justify-content: space-between; align-items: center;';
+                        li.style.cssText = 'padding: 8px 10px; border-bottom: 1px solid var(--c-border); font-size: 12px; color: var(--c-text-2); display: flex; justify-content: space-between; align-items: center;';
                         li.innerHTML = `
-                            <span style="font-weight:bold; color:#58a6ff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${typeof escapeHtml === 'function' ? escapeHtml(pureContent) : pureContent}">${typeof escapeHtml === 'function' ? escapeHtml(pureContent) : pureContent}</span>
-                            ${itemCost ? `<span style="font-size:10px; background:#30363d; padding:2px 6px; border-radius:4px; color:#e6edf3; flex-shrink:0;">${typeof escapeHtml === 'function' ? escapeHtml(itemCost) : itemCost}</span>` : ''}
+                            <span style="font-weight:bold; color:var(--c-blue); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${typeof escapeHtml === 'function' ? escapeHtml(pureContent) : pureContent}">${typeof escapeHtml === 'function' ? escapeHtml(pureContent) : pureContent}</span>
+                            ${itemCost ? `<span style="font-size:10px; background:var(--c-border); padding:2px 6px; border-radius:4px; color:var(--c-text); flex-shrink:0;">${typeof escapeHtml === 'function' ? escapeHtml(itemCost) : itemCost}</span>` : ''}
                         `;
                         partsList.appendChild(li);
                     });
                 } else {
-                    partsList.innerHTML = '<li style="padding:20px; text-align:center; color:#8b949e; font-size:12px;">선택된 물품 없음</li>';
+                    partsList.innerHTML = '<li style="padding:20px; text-align:center; color:var(--c-text-muted); font-size:12px;">선택된 물품 없음</li>';
                 }
             };
             tbody.appendChild(tr);
@@ -2786,7 +2786,7 @@ function setupSetupTaskScheduleModal() {
             checkFields.forEach(f => {
                 if (!f.val) {
                     if (f.el) {
-                        f.el.style.border = '1.5px solid #f85149';
+                        f.el.style.border = '1.5px solid var(--c-red)';
                         f.el.style.backgroundColor = 'rgba(248, 81, 73, 0.08)';
                     }
                     hasError = true;
@@ -2889,7 +2889,7 @@ function populateSetupSchedEquips(modal, selectedSite, targetEquip = '') {
         }
         
         const plainText = subText ? `${modelName} ${subText}` : modelName;
-        const subHtml = subText ? ` <span style="color: #3fb950; font-weight: 500; display: inline;">${typeof escapeHtml === 'function' ? escapeHtml(subText) : subText}</span>` : '';
+        const subHtml = subText ? ` <span style="color: var(--c-green); font-weight: 500; display: inline;">${typeof escapeHtml === 'function' ? escapeHtml(subText) : subText}</span>` : '';
         const html = `<span>${typeof escapeHtml === 'function' ? escapeHtml(modelName) : modelName}${subHtml}</span>`;
         
         return { text: plainText, html: html, modelName, subText };
@@ -2898,7 +2898,7 @@ function populateSetupSchedEquips(modal, selectedSite, targetEquip = '') {
     const renderEquips = (filter = '') => {
         equipList.innerHTML = '';
         if (!selectedSite) {
-            equipList.innerHTML = '<div class="log-select-empty" style="padding:10px; text-align:center; color:#8b949e;">사업장을 먼저 선택하세요</div>';
+            equipList.innerHTML = '<div class="log-select-empty" style="padding:10px; text-align:center; color:var(--c-text-muted);">사업장을 먼저 선택하세요</div>';
             return;
         }
 
@@ -2915,7 +2915,7 @@ function populateSetupSchedEquips(modal, selectedSite, targetEquip = '') {
         });
 
         if (setupEquips.length === 0) {
-            equipList.innerHTML = '<div class="log-select-empty" style="padding:10px; text-align:center; color:#8b949e;">해당 사업장에 셋업 장비가 없습니다.</div>';
+            equipList.innerHTML = '<div class="log-select-empty" style="padding:10px; text-align:center; color:var(--c-text-muted);">해당 사업장에 셋업 장비가 없습니다.</div>';
             return;
         }
 
@@ -3109,7 +3109,7 @@ function setupSetupSchedWorkerDropdown(modal) {
                 const isSelected = currentSelected.includes(w.name);
                 item.className = 'log-select-item' + (isSelected ? ' selected' : '');
                 item.dataset.value = w.name;
-                const pos = w.position ? ` <span style="font-size:11px; color:#8b949e;">${w.position}</span>` : '';
+                const pos = w.position ? ` <span style="font-size:11px; color:var(--c-text-muted);">${w.position}</span>` : '';
                 item.innerHTML = `<span>${w.name}${pos}</span>`;
                 item.onclick = (e) => {
                     e.stopPropagation();

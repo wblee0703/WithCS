@@ -732,9 +732,9 @@ function openCalendarPopup(dateStr, events) {
 
                 let subInfo = '';
                 if (custName) {
-                    subInfo = ` <span style="color:#3fb950;">[${escapeHtml(custName)}]</span>`;
+                    subInfo = ` <span style="color:var(--c-green);">[${escapeHtml(custName)}]</span>`;
                 } else if (serialNo) {
-                    subInfo = ` <span style="color:#3fb950;">[${escapeHtml(serialNo)}]</span>`;
+                    subInfo = ` <span style="color:var(--c-green);">[${escapeHtml(serialNo)}]</span>`;
                 }
 
                 const itemTextSpan = li.querySelector('.popup-item-text');
@@ -762,7 +762,7 @@ function openCalendarPopup(dateStr, events) {
                 } else if (group.isChanged) {
                     const changedSpan = document.createElement('span');
                     changedSpan.textContent = '<변동>';
-                    changedSpan.style.color = '#f0883e';
+                    changedSpan.style.color = 'var(--c-orange)';
                     changedSpan.style.fontWeight = 'bold';
                     changedSpan.style.fontSize = '12px';
                     rightContainer.appendChild(changedSpan);
@@ -961,14 +961,14 @@ function setupScheduleModal() {
         workerRow.style.gap = '10px';
         workerRow.style.marginBottom = '15px';
         workerRow.innerHTML = `
-                <label class="modal-label" style="width: 80px; flex-shrink: 0; color: #8b949e; font-size: 13px; font-weight: bold;">작업자</label>
+                <label class="modal-label" style="width: 80px; flex-shrink: 0; color: var(--c-text-muted); font-size: 13px; font-weight: bold;">작업자</label>
                 <div id="schedule-worker-wrapper" class="log-select-wrapper" style="flex: 1; width: 100%; min-width: 0; margin: 0; display: flex; align-items: center;">
                     <input type="hidden" id="schedule-worker-hidden">
-                    <div id="schedule-worker-trigger" class="log-select-trigger" style="width: 100%; box-sizing: border-box; min-height:34px; display:flex; align-items:center; background:#0d1117; color:#8b949e; border:1px solid #30363d; border-radius:4px; padding:8px 10px; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer;">작업자 선택</div>
-                    <div id="schedule-worker-dropdown" class="log-select-dropdown" style="width:100%; position:absolute; top:100%; left:0; z-index:1000; margin-top:4px; background:#161b22; border:1px solid #30363d; border-radius:4px; box-shadow:0 4px 12px rgba(0,0,0,0.5); box-sizing:border-box;">
-                        <input type="text" id="schedule-worker-search" class="dropdown-search-input" placeholder="작업자 검색..." style="width: calc(100% - 12px); margin: 5px 6px; padding: 6px 10px; background: #0d1117; border: 1px solid #30363d; color: #e6edf3; border-radius: 4px; box-sizing: border-box;" autocomplete="off">
+                    <div id="schedule-worker-trigger" class="log-select-trigger" style="width: 100%; box-sizing: border-box; min-height:34px; display:flex; align-items:center; background:var(--c-bg); color:var(--c-text-muted); border:1px solid var(--c-border); border-radius:4px; padding:8px 10px; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer;">작업자 선택</div>
+                    <div id="schedule-worker-dropdown" class="log-select-dropdown" style="width:100%; position:absolute; top:100%; left:0; z-index:1000; margin-top:4px; background:var(--c-surface); border:1px solid var(--c-border); border-radius:4px; box-shadow:0 4px 12px rgba(0,0,0,0.5); box-sizing:border-box;">
+                        <input type="text" id="schedule-worker-search" class="dropdown-search-input" placeholder="작업자 검색..." style="width: calc(100% - 12px); margin: 5px 6px; padding: 6px 10px; background: var(--c-bg); border: 1px solid var(--c-border); color: var(--c-text); border-radius: 4px; box-sizing: border-box;" autocomplete="off">
                         <div id="schedule-worker-list" class="log-select-list" style="max-height: 200px; overflow-y: auto; padding: 8px;"></div>
-                        <div class="log-select-footer" style="padding: 8px; border-top: 1px solid #30363d; background: #21262d; display: flex;">
+                        <div class="log-select-footer" style="padding: 8px; border-top: 1px solid var(--c-border); background: var(--c-surface-2); display: flex;">
                             <button type="button" id="btn-schedule-worker-confirm" class="btn-blue-sm" style="flex: 1; width: 100%;">선택 완료</button>
                         </div>
                     </div>
@@ -985,7 +985,7 @@ function setupScheduleModal() {
             mdRow.style.gap = '10px';
             mdRow.style.marginBottom = '20px';
             mdRow.innerHTML = `
-                    <label class="modal-label" style="width: 80px; flex-shrink: 0; color: #8b949e; font-size: 13px; font-weight: bold;">공수(M/D)</label>
+                    <label class="modal-label" style="width: 80px; flex-shrink: 0; color: var(--c-text-muted); font-size: 13px; font-weight: bold;">공수(M/D)</label>
                     <input type="number" id="schedule-md-input" class="input-dark" style="flex: 1; min-height: 34px; height: 34px; box-sizing: border-box; padding: 8px 10px;" min="0" step="0.1">
                 `;
             workerRow.parentNode.insertBefore(mdRow, workerRow.nextSibling);
@@ -1184,11 +1184,11 @@ function openScheduleModal(site, equip, id) {
         if (workerVal) {
             workerTrigger.textContent = workerVal;
             workerTrigger.title = workerVal;
-            workerTrigger.style.color = '#fff';
+            workerTrigger.style.color = 'var(--c-heading)';
         } else {
             workerTrigger.textContent = '작업자 선택';
             workerTrigger.title = '';
-            workerTrigger.style.color = '#8b949e';
+            workerTrigger.style.color = 'var(--c-text-muted)';
         }
     }
 
@@ -1229,7 +1229,7 @@ function setupSearchModal() {
         if (!document.getElementById('calendar-site-group-toggle-container')) {
             const siteGroups = ['SEC', 'SKH 이천', 'SKH 청주', '기타사업장', 'SCS 서안', 'SKH 우시', '기타 해외', '개발', '기타'];
             const btnsHtml = siteGroups.map(g => `<button type="button" class="btn-gray site-group-toggle-btn" data-group="${g}" style="padding: 2px 6px; font-size: 11px; margin-right: 4px; margin-bottom: 4px; cursor: pointer;">${g}</button>`).join('');
-            const extraHeader = `<div id="calendar-site-group-toggle-container" style="padding: 8px 8px 4px 8px; border-bottom: 1px solid #30363d; display: flex; flex-wrap: wrap;">${btnsHtml}</div>`;
+            const extraHeader = `<div id="calendar-site-group-toggle-container" style="padding: 8px 8px 4px 8px; border-bottom: 1px solid var(--c-border); display: flex; flex-wrap: wrap;">${btnsHtml}</div>`;
 
             siteDropdown.insertAdjacentHTML('afterbegin', extraHeader);
 
@@ -1391,7 +1391,7 @@ function openSearchModal() {
         if (isSelected) div.classList.add('selected');
         div.dataset.value = site;
         div.dataset.siteGroup = typeof window.getSiteGroupName === 'function' ? window.getSiteGroupName(site) : '기타사업장'; // [추가]
-        div.innerHTML = `<span class="check-icon" style="flex: 1; text-align: center; opacity:${isSelected ? '1' : '0'}; font-weight:bold; color:#58a6ff;">✓</span><span class="item-text" style="flex: 9; padding-left: 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(site)}</span>`;
+        div.innerHTML = `<span class="check-icon" style="flex: 1; text-align: center; opacity:${isSelected ? '1' : '0'}; font-weight:bold; color:var(--c-blue);">✓</span><span class="item-text" style="flex: 9; padding-left: 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(site)}</span>`;
 
         div.onclick = (e) => {
             e.stopPropagation();
@@ -1428,9 +1428,9 @@ function openSearchModal() {
             let displayValueHtml = escapeHtml(displayName);
             let subInfoHtml = '';
             if (custName) {
-                subInfoHtml = ` <span style="color:#3fb950;">[${escapeHtml(custName)}]</span>`;
+                subInfoHtml = ` <span style="color:var(--c-green);">[${escapeHtml(custName)}]</span>`;
             } else if (serial) {
-                subInfoHtml = ` <span style="color:#3fb950;">[${escapeHtml(serial)}]</span>`;
+                subInfoHtml = ` <span style="color:var(--c-green);">[${escapeHtml(serial)}]</span>`;
             }
             trigger.innerHTML = `${displayValueHtml}${subInfoHtml}`;
         }
@@ -1455,13 +1455,13 @@ function updateSiteTriggerText() {
 
     if (selected.length === total || selected.length === 0) {
         trigger.textContent = '전체 사업장';
-        trigger.style.color = '#e6edf3';
+        trigger.style.color = 'var(--c-text)';
     } else if (selected.length === 1) {
         trigger.textContent = selected[0].dataset.value;
-        trigger.style.color = '#e6edf3';
+        trigger.style.color = 'var(--c-text)';
     } else {
         trigger.textContent = `${selected[0].dataset.value} 외 ${selected.length - 1}개`;
-        trigger.style.color = '#e6edf3';
+        trigger.style.color = 'var(--c-text)';
     }
     trigger.title = selected.map(el => el.dataset.value).join('\n');
 }
@@ -1484,7 +1484,7 @@ function updateSearchEquipSelect(site) {
         if (siteArr.length === 0) {
             trigger.textContent = '사업장을 먼저 선택해주세요';
             trigger.classList.add('disabled');
-            trigger.style.color = '#8b949e';
+            trigger.style.color = 'var(--c-text-muted)';
             trigger.style.cursor = 'not-allowed';
             trigger.style.opacity = '0.5';
             if (searchInput) searchInput.value = '';
@@ -1493,7 +1493,7 @@ function updateSearchEquipSelect(site) {
         } else {
             trigger.textContent = '전체 장비';
             trigger.classList.remove('disabled');
-            trigger.style.color = '#fff';
+            trigger.style.color = 'var(--c-heading)';
             trigger.style.cursor = 'pointer';
             trigger.style.opacity = '1';
             if (searchInput) searchInput.value = '';
@@ -1549,7 +1549,7 @@ function updateSearchEquipSelect(site) {
                 if (equipSelect) equipSelect.value = '';
                 trigger.textContent = '전체 장비';
                 trigger.title = '전체 장비';
-                trigger.style.color = '#fff';
+                trigger.style.color = 'var(--c-heading)';
                 if (dropdown) dropdown.classList.remove('show');
             });
             list.appendChild(allLi);
@@ -1570,9 +1570,9 @@ function updateSearchEquipSelect(site) {
                 let displayValueHtml = escapeHtml(displayName);
                 let subInfoHtml = '';
                 if (custName) {
-                    subInfoHtml = ` <span style="color:#3fb950;">[${escapeHtml(custName)}]</span>`;
+                    subInfoHtml = ` <span style="color:var(--c-green);">[${escapeHtml(custName)}]</span>`;
                 } else if (serial) {
-                    subInfoHtml = ` <span style="color:#3fb950;">[${escapeHtml(serial)}]</span>`;
+                    subInfoHtml = ` <span style="color:var(--c-green);">[${escapeHtml(serial)}]</span>`;
                 }
 
                 let plainDisplayValue = displayName;
@@ -1594,7 +1594,7 @@ function updateSearchEquipSelect(site) {
                 list.appendChild(li);
             });
         } else {
-            list.innerHTML = '<div class="log-select-empty-msg" style="padding: 10px; color:#8b949e; text-align:center;">검색 결과가 없습니다.</div>';
+            list.innerHTML = '<div class="log-select-empty-msg" style="padding: 10px; color:var(--c-text-muted); text-align:center;">검색 결과가 없습니다.</div>';
         }
     };
 }

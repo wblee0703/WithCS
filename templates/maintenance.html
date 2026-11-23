@@ -2,8 +2,8 @@
 {% set active_page = 'maintenance' %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/maintenance.css') }}?v=1.1.0">
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/calendar.css') }}">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/maintenance.css') }}?v=1.1.0-c1">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/calendar.css') }}?v=t3">
 {% endblock %}
 
 {% block content %}
@@ -60,7 +60,7 @@
                             <button class="btn-gray" id="btn-load-maint-list"
                                 style="display: none; padding: 2px 10px; font-size: 12px; margin-left: auto; margin-right: 5px;">리스트
                                 불러오기</button>
-                            <span class="badge" id="maint-count" style="background: #30363d;">항목: 0건</span>
+                            <span class="badge" id="maint-count" style="background: var(--c-border);">항목: 0건</span>
                         </div>
                         <div class="card-body">
                             <div class="form-row">
@@ -125,7 +125,7 @@
                             </div>
                             <div id="memo-worker-wrapper" class="memo-worker-wrapper">
                                 <div class="memo-row-top">
-                                    <label for="memo-cost-type" style="color: #8b949e; font-size: 13px; min-width: 50px;">비용처리</label>
+                                    <label for="memo-cost-type" style="color: var(--c-text-muted); font-size: 13px; min-width: 50px;">비용처리</label>
                                     <select id="memo-cost-type" class="input-dark" style="width: 80px; height: 30px; font-size: 13px; padding: 0 4px; margin-right: 15px;">
                                         <option value="유상">유상</option>
                                         <option value="무상(보증)">무상(보증)</option>
@@ -134,9 +134,9 @@
                                     </select>
                                 </div>
                                 <div class="memo-row-bottom">
-                                    <label for="memo-md" style="color: #8b949e; font-size: 13px; min-width: 30px;">공수</label>
+                                    <label for="memo-md" style="color: var(--c-text-muted); font-size: 13px; min-width: 30px;">공수</label>
                                     <input type="number" id="memo-md" class="input-dark" style="width: 50px; height: 30px; font-size: 13px; padding: 0 8px; margin-right: 15px;" min="0" step="0.5">
-                                    <label style="color: #8b949e; font-size: 13px; min-width: 50px;">작업자 <span style="color:#f85149;">*</span></label>
+                                    <label style="color: var(--c-text-muted); font-size: 13px; min-width: 50px;">작업자 <span style="color:var(--c-red);">*</span></label>
                                     <div class="log-select-wrapper memo-worker-select" style="margin: 0; flex: none;">
                                         <div id="memo-worker-trigger" class="log-select-trigger" style="min-height: 30px; height: 30px; padding: 4px 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">작업자 선택</div>
                                         <div id="memo-worker-dropdown" class="log-select-dropdown">
@@ -151,18 +151,18 @@
                                 </div>
                                 <div class="memo-row-time" id="memo-time-inputs-wrapper" style="display: flex; align-items: center; gap: 8px; width: 100%; flex-wrap: nowrap;">
                                     <div class="memo-time-group" style="display: flex; align-items: center; gap: 4px; flex: 1; min-width: 0;">
-                                        <label style="min-width: 45px; font-size: 13px; color: #8b949e; white-space: nowrap;">시작일시</label>
+                                        <label style="min-width: 45px; font-size: 13px; color: var(--c-text-muted); white-space: nowrap;">시작일시</label>
                                         <input type="date" id="memo-start-date" class="input-dark" style="flex: 3; height: 30px; font-size: 13px; min-width: 80px;">
                                         <select id="memo-start-hour" class="input-dark" style="flex: 2; height: 30px; font-size: 13px; padding: 2px; min-width: 45px;"></select>
                                         <select id="memo-start-min" class="input-dark" style="flex: 2; height: 30px; font-size: 13px; padding: 2px; min-width: 45px;"></select>
                                     </div>
                                     <div class="memo-time-group" style="display: flex; align-items: center; gap: 4px; flex: 1; min-width: 0;">
-                                        <label style="min-width: 45px; font-size: 13px; color: #8b949e; white-space: nowrap;">종료일시</label>
+                                        <label style="min-width: 45px; font-size: 13px; color: var(--c-text-muted); white-space: nowrap;">종료일시</label>
                                         <input type="date" id="memo-end-date" class="input-dark" style="flex: 3; height: 30px; font-size: 13px; min-width: 80px;">
                                         <select id="memo-end-hour" class="input-dark" style="flex: 2; height: 30px; font-size: 13px; padding: 2px; min-width: 45px;"></select>
                                         <select id="memo-end-min" class="input-dark" style="flex: 2; height: 30px; font-size: 13px; padding: 2px; min-width: 45px;"></select>
                                     </div>
-                                    <span id="memo-time-duration" class="memo-time-duration" style="font-size: 13px; color: #58a6ff; white-space: nowrap; flex: none;"></span>
+                                    <span id="memo-time-duration" class="memo-time-duration" style="font-size: 13px; color: var(--c-blue); white-space: nowrap; flex: none;"></span>
                                 </div>
                             </div>
                             <textarea id="device-memo" placeholder="상세 내용을 입력하세요." class="memo-textarea"></textarea>
@@ -217,10 +217,10 @@
         </div>
         <div class="modal-body" style="padding: 15px; display: flex; flex-direction: column; overflow: hidden;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px;">
-                <div style="color: #58a6ff; font-weight: bold; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="maint-history-equip-info"></div>
+                <div style="color: var(--c-blue); font-weight: bold; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="maint-history-equip-info"></div>
                 <input type="text" id="maint-history-search" class="input-dark" placeholder="내역 검색..." style="width: 200px; padding: 4px 8px; font-size: 12px; height: 30px; flex-shrink: 0;" autocomplete="off">
             </div>
-            <div class="table-wrapper" style="flex: 1; overflow-y: auto; border: 1px solid #30363d; border-radius: 6px;">
+            <div class="table-wrapper" style="flex: 1; overflow-y: auto; border: 1px solid var(--c-border); border-radius: 6px;">
                 <table class="data-table maint-history-table" style="margin: 0; width: 100%;">
                     <thead>
                         <tr>
@@ -241,6 +241,6 @@
 {% endblock %}
 
 {% block extra_js %}    
-<script src="{{ url_for('SettingDAO', filename='JavaScript/maintenance.js') }}?v=1.1.2"></script>
-<script src="{{ url_for('SettingDAO', filename='JavaScript/calendar.js') }}?v=1.0.6"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/maintenance.js') }}?v=1.1.2-c1"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/calendar.js') }}?v=1.0.6-t4"></script>
 {% endblock %}

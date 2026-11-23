@@ -1357,7 +1357,7 @@ function renderInspectorSuggestions(filterKeyword = '') {
             <span>선택: <strong id="inspector-selected-count">${getSelectedInspectors().length}</strong>명</span>
             <div style="display: flex; gap: 6px;">
                 <button type="button" class="inspector-action-btn" id="btn-clear-inspectors">비우기</button>
-                <button type="button" class="inspector-action-btn" id="btn-done-inspectors" style="color: #58a6ff; font-weight: bold;">완료</button>
+                <button type="button" class="inspector-action-btn" id="btn-done-inspectors" style="color: var(--c-blue); font-weight: bold;">완료</button>
             </div>
         </div>
     `;
@@ -2668,11 +2668,11 @@ async function openDataParamsModal() {
                 <input type="checkbox" id="${chkId}" value="${escapeHtml(pName)}" ${isAlreadyAdded ? 'checked disabled' : ''}>
                 <label for="${chkId}" style="margin: 0; cursor: pointer; flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
                     <div>
-                        <strong style="color: #f0f6fc;">${escapeHtml(pName)}</strong>
+                        <strong style="color: var(--c-text-strong);">${escapeHtml(pName)}</strong>
                         <span style="color: var(--side-muted); font-size: 11px; margin-left: 6px;">(기준: ${escapeHtml(stdVal)})</span>
                         ${isAlreadyAdded ? '<span style="color: var(--side-accent); font-size: 11px; margin-left: 6px;">[이미 추가됨]</span>' : ''}
                     </div>
-                    ${measuredVal ? `<span style="color: #3fb950; font-weight: 600; font-size: 11px; background: rgba(63, 185, 80, 0.12); padding: 1px 6px; border-radius: 4px;">측정값: ${escapeHtml(measuredVal)}</span>` : ''}
+                    ${measuredVal ? `<span style="color: var(--c-green); font-weight: 600; font-size: 11px; background: rgba(63, 185, 80, 0.12); padding: 1px 6px; border-radius: 4px;">측정값: ${escapeHtml(measuredVal)}</span>` : ''}
                 </label>
             `;
 
@@ -2690,7 +2690,7 @@ async function openDataParamsModal() {
 
     } catch (err) {
         console.error('Failed to load data parameters:', err);
-        listEl.innerHTML = '<div style="padding: 24px; text-align: center; color: #f85149;">Parameter 목록을 불러오지 못했습니다.</div>';
+        listEl.innerHTML = '<div style="padding: 24px; text-align: center; color: var(--c-red);">Parameter 목록을 불러오지 못했습니다.</div>';
     }
 }
 

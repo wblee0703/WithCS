@@ -37,7 +37,7 @@
     flex: 0 0 300px; /* 고정 너비 */
     display: flex;
     flex-direction: column;
-    border-right: 1px solid #30363d;
+    border-right: 1px solid var(--c-border);
     padding-right: 15px;
     padding-left: 10px; /* [요청] 리스트 좌측 여백 추가 */
 }
@@ -62,14 +62,14 @@
     align-items: center;
     margin-bottom: 10px;
     font-weight: bold;
-    color: #c9d1d9;
+    color: var(--c-text-2);
     padding-top: 3px; /* 입력창 클릭 시 테두리(outline) 상단이 잘리는 현상 방지 */
 }
 
 /* 항목 카운팅 배지 텍스트 녹색 표시 */
 .list-header .badge {
-    color: #3fb950; /* 녹색 텍스트 */
-    background: #21262d;
+    color: var(--c-green); /* 녹색 텍스트 */
+    background: var(--c-surface-2);
     padding: 2px 8px;
     border-radius: 10px;
     font-size: 12px;
@@ -81,21 +81,21 @@
     padding: 0;
     margin: 0;
     overflow-y: auto;
-    border: 1px solid #30363d;
+    border: 1px solid var(--c-border);
     border-radius: 6px;
-    background: #0d1117;
+    background: var(--c-bg);
 }
 
 .admin-list-header {
     display: flex;
     padding: 0; /* [수정] 부모 패딩 제거 -> 내부 컬럼이 너비 제어 */
-    background: #21262d;
-    border: 1px solid #30363d;
+    background: var(--c-surface-2);
+    border: 1px solid var(--c-border);
     border-bottom: none;
     border-radius: 6px 6px 0 0;
     font-size: 12px;
     font-weight: bold;
-    color: #8b949e;
+    color: var(--c-text-muted);
 }
 
 /* [추가] 헤더 컬럼에 직접 패딩 적용 (리스트 아이템과 정렬 맞춤) */
@@ -124,7 +124,7 @@
 .btn-settings {
     background: none;
     border: none;
-    color: #8b949e;
+    color: var(--c-text-muted);
     cursor: pointer;
     padding: 0;
     font-size: 14px;
@@ -133,7 +133,7 @@
 
 .btn-settings:hover,
 .btn-settings.active {
-    color: #e6edf3;
+    color: var(--c-text);
 }
 
 /* 장비 모델 관리 기능 컬럼 제어 */
@@ -163,28 +163,28 @@
 
 .admin-list li {
     padding: 10px 12px;
-    border-bottom: 1px solid #21262d;
+    border-bottom: 1px solid var(--c-surface-2);
     cursor: pointer;
-    color: #e6edf3;
+    color: var(--c-text);
     font-size: 14px;
     transition: background 0.2s;
 }
 
 .admin-list li:hover {
-    background: #161b22;
+    background: var(--c-surface);
 }
 
 .admin-list li.active {
     background-color: rgba(35, 134, 54, 0.1);
     border-left: 4px solid #238636;
-    color: #e6edf3;
+    color: var(--c-text);
     font-weight: bold;
 }
 
 /* [추가] 드래그 중인 아이템 스타일 */
 .admin-list li.dragging {
     opacity: 0.5;
-    background-color: #21262d;
+    background-color: var(--c-surface-2);
 }
 
 .list-footer {
@@ -196,19 +196,19 @@
 
 /* 상세 정보 폼 스타일 */
 .detail-header {
-    border-bottom: 1px solid #30363d;
+    border-bottom: 1px solid var(--c-border);
     padding-bottom: 10px;
     margin-bottom: 20px;
 }
 
 .detail-header h4 {
-    color: #e6edf3;
+    color: var(--c-text);
     margin: 0 0 5px 0;
 }
 
 .detail-desc {
     font-size: 13px;
-    color: #8b949e;
+    color: var(--c-text-muted);
     margin: 0;
 }
 
@@ -227,7 +227,7 @@
 
 .form-group label {
     display: block;
-    color: #8b949e;
+    color: var(--c-text-muted);
     margin-bottom: 5px;
     font-size: 13px;
 }
@@ -237,7 +237,7 @@
     justify-content: space-between;
     margin-top: 30px;
     padding-top: 20px;
-    border-top: 1px solid #30363d;
+    border-top: 1px solid var(--c-border);
 }
 
 /* 입력창 그룹 유틸리티 */
@@ -279,7 +279,7 @@
     align-items: center;
     justify-content: center;
     height: 100%;
-    color: #8b949e;
+    color: var(--c-text-muted);
     font-size: 14px;
 }
 
@@ -296,7 +296,7 @@
 
 /* [추가] 컨텐츠 영역 플레이스홀더 텍스트 */
 .placeholder-text {
-    color: #8b949e;
+    color: var(--c-text-muted);
     text-align: center;
     margin-top: 50px;
     font-size: 14px;
@@ -306,12 +306,12 @@
 #admin-menu-list li.active {
     background-color: rgba(35, 134, 54, 0.1);
     border-left: 4px solid #238636;
-    color: #e6edf3;
+    color: var(--c-text);
     font-weight: bold;
 }
 
 #admin-menu-list li:hover:not(.active) {
-    background: #21262d;
+    background: var(--c-surface-2);
 }
 
 /* [추가] Admin 물품 관리 스크롤 래퍼 */
@@ -321,13 +321,13 @@
     flex: 1;
     min-height: 0;
     overflow-x: auto; /* [수정] 창이 좁아질 때 가로 스크롤 자동 생성 */
-    border: 1px solid #30363d;
+    border: 1px solid var(--c-border);
     border-radius: 6px;
 }
 
 .admin-item-scroll-wrapper .admin-list-header {
     border: none;
-    border-bottom: 1px solid #30363d;
+    border-bottom: 1px solid var(--c-border);
     border-radius: 0;
 }
 
@@ -390,17 +390,17 @@
     line-height: 1 !important;
     border-radius: 4px !important;
     cursor: pointer !important;
-    border: 1px solid #30363d !important;
-    background: #21262d !important;
-    color: #e6edf3 !important;
+    border: 1px solid var(--c-border) !important;
+    background: var(--c-surface-2) !important;
+    color: var(--c-text) !important;
     white-space: nowrap !important;
     flex-shrink: 0 !important;
 }
 
 .item-csv-export-btn:hover,
 .item-csv-import-btn:hover {
-    background: #30363d !important;
-    color: #ffffff !important;
+    background: var(--c-border) !important;
+    color: var(--c-heading) !important;
 }
 
 #admin-item-search {
@@ -487,21 +487,21 @@
 
 /* 드롭다운(select) 공통 디자인 적용 */
 select.input-dark {
-    background-color: #0d1117;
-    border: 1px solid #30363d;
-    color: #e6edf3;
+    background-color: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-text);
     cursor: pointer;
     outline: none;
     border-radius: 4px;
 }
 
 select.input-dark:focus {
-    border-color: #58a6ff;
+    border-color: var(--c-blue);
 }
 
 select.input-dark option {
-    background-color: #161b22;
-    color: #e6edf3;
+    background-color: var(--c-surface);
+    color: var(--c-text);
 }
 
 .input-item-part {
@@ -536,8 +536,8 @@ select.input-dark option {
     flex-wrap: wrap;
     align-items: center;
     gap: 5px;
-    background: #0d1117;
-    border: 1px solid #30363d;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
     border-radius: 4px;
     padding: 4px;
     min-height: 35px;
@@ -557,23 +557,23 @@ select.input-dark option {
     min-width: 150px;
     height: 24px;
     padding: 0 4px;
-    color: #e6edf3;
+    color: var(--c-text);
 }
 
 .tag-item {
     display: flex;
     align-items: center;
-    background: #21262d;
-    border: 1px solid #30363d;
+    background: var(--c-surface-2);
+    border: 1px solid var(--c-border);
     border-radius: 4px;
     padding: 2px 6px;
     font-size: 12px;
-    color: #e6edf3;
+    color: var(--c-text);
 }
 
 .tag-item .tag-remove {
     margin-left: 5px;
-    color: #f85149;
+    color: var(--c-red);
     cursor: pointer;
     font-weight: bold;
 }
@@ -607,9 +607,9 @@ select.input-dark option {
 .flex-14 { flex: 1.4; }
 .flex-30 { flex: 3; }
 
-.form-label-custom { display: block; color: #8b949e; margin-bottom: 5px; font-size: 13px; }
-.form-section-divider { border-top: 1px solid #30363d; padding-top: 15px; margin-bottom: 15px; }
-.section-subtitle { display: block; margin-bottom: 10px; color: #e6edf3; font-size: 13px; font-weight: bold; }
+.form-label-custom { display: block; color: var(--c-text-muted); margin-bottom: 5px; font-size: 13px; }
+.form-section-divider { border-top: 1px solid var(--c-border); padding-top: 15px; margin-bottom: 15px; }
+.section-subtitle { display: block; margin-bottom: 10px; color: var(--c-text); font-size: 13px; font-weight: bold; }
 
 .search-input-right { width: 240px; min-width: 200px; margin-left: auto; }
 .btn-green-micro { padding: 2px 8px; font-size: 11px; }
@@ -631,7 +631,7 @@ select.input-dark option {
 .btn-add-item { width: 60px; height: 35px; }
 
 .modal-load-setting { width: 450px; height: 350px; }
-.modal-desc { margin-bottom: 15px; color: #8b949e; font-size: 13px; }
+.modal-desc { margin-bottom: 15px; color: var(--c-text-muted); font-size: 13px; }
 .modal-select-lg { height: 30px; font-size: 14px; }
 
 .check-type-categories-wrapper {
@@ -645,7 +645,7 @@ select.input-dark option {
 .flex-gap-5 { display: flex; gap: 5px; }
 .input-edit-small { width: 100%; padding: 2px; }
 .check-item-row { cursor: default; font-size: 12px; }
-.check-item-col-1 { flex: 1; justify-content: center; align-items: center; text-align: center; color: #8b949e; }
+.check-item-col-1 { flex: 1; justify-content: center; align-items: center; text-align: center; color: var(--c-text-muted); }
 .check-item-col-3 { flex: 3; justify-content: center; align-items: center; text-align: center; white-space: normal; word-break: break-all; }
 .check-item-col-action { flex: 0 0 60px; justify-content: center; align-items: center; }
 .max-w-100 { max-width: 100%; }
@@ -693,14 +693,14 @@ body.role-admin .tag-remove {
 }
 /* admin.css 에 추가 */
 #section-setup-template-mgmt .category-header-row {
-    background-color: #21262d;
+    background-color: var(--c-surface-2);
 }
 #section-setup-template-mgmt .category-header {
     padding: 8px 10px;
     font-weight: bold;
-    color: #8b949e;
+    color: var(--c-text-muted);
     font-size: 13px;
-    border-bottom: 1px solid #30363d;
+    border-bottom: 1px solid var(--c-border);
     text-align: left;
 }
 #section-setup-template-mgmt .category-title {
@@ -708,7 +708,7 @@ body.role-admin .tag-remove {
 }
 #section-setup-template-mgmt .btn-add-category {
     background: transparent;
-    color: #3fb950;
+    color: var(--c-green);
     border: none;
     padding: 0 5px;
     font-size: 16px;
@@ -742,7 +742,7 @@ body.role-admin .tag-remove {
         max-width: 100% !important;
         min-width: 0 !important; /* 모바일에서는 고정 너비 해제 */
         border-right: none;
-        border-bottom: 1px solid #30363d;
+        border-bottom: 1px solid var(--c-border);
         padding-right: 0;
         padding-left: 0;
         padding-bottom: 15px;
@@ -767,7 +767,7 @@ body.role-admin .tag-remove {
         width: 100%;
         padding-bottom: 10px;
         margin-bottom: 15px;
-        border-bottom: 1px solid #30363d;
+        border-bottom: 1px solid var(--c-border);
     }
 
     .check-type-categories-wrapper .admin-col-list {
@@ -775,7 +775,7 @@ body.role-admin .tag-remove {
         width: auto !important;
         min-width: 130px !important;
         max-width: none !important;
-        border-right: 1px solid #30363d !important;
+        border-right: 1px solid var(--c-border) !important;
         border-bottom: none !important;
         padding-right: 10px !important;
         padding-bottom: 0 !important;
@@ -841,7 +841,7 @@ body.role-admin .tag-remove {
 }
 
 .error-border {
-    border: 1px solid #f85149 !important;
+    border: 1px solid var(--c-red) !important;
 }
 
 /* ==========================================================================
@@ -861,18 +861,18 @@ body.role-admin .tag-remove {
     font-size: 12px;
     font-weight: 600;
     border-radius: 6px;
-    border: 1px solid #30363d;
-    background: #21262d;
-    color: #c9d1d9;
+    border: 1px solid var(--c-border);
+    background: var(--c-surface-2);
+    color: var(--c-text-2);
     cursor: pointer;
     white-space: nowrap;
     transition: all 0.15s ease;
 }
 
 .item-stock-tab-btn:hover {
-    background: #30363d;
-    color: #f0f6fc;
-    border-color: #8b949e;
+    background: var(--c-border);
+    color: var(--c-text-strong);
+    border-color: var(--c-text-muted);
 }
 
 .item-stock-tab-btn.active {
@@ -887,8 +887,8 @@ body.role-admin .tag-remove {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: #0d1117;
-    border: 1px solid #30363d;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
     border-radius: 4px;
     padding: 0;
     width: 58px;
@@ -900,13 +900,13 @@ body.role-admin .tag-remove {
 
 .stock-qty-control:hover,
 .stock-qty-control:focus-within {
-    border-color: #58a6ff;
+    border-color: var(--c-blue);
     box-shadow: 0 0 0 1px rgba(88, 166, 255, 0.2);
 }
 
 .stock-qty-control.stock-safety-control:hover,
 .stock-qty-control.stock-safety-control:focus-within {
-    border-color: #d29922;
+    border-color: var(--c-yellow);
     box-shadow: 0 0 0 1px rgba(210, 153, 34, 0.2);
 }
 
@@ -917,7 +917,7 @@ body.role-admin .tag-remove {
     text-align: center;
     border: none;
     background: transparent;
-    color: #8b949e;
+    color: var(--c-text-muted);
     font-size: 14px;
     font-weight: bold;
     cursor: pointer;
@@ -931,8 +931,8 @@ body.role-admin .tag-remove {
 }
 
 .stock-qty-btn:hover {
-    background: #21262d;
-    color: #ffffff;
+    background: var(--c-surface-2);
+    color: var(--c-heading);
 }
 
 .stock-qty-btn:active {
@@ -941,7 +941,7 @@ body.role-admin .tag-remove {
 }
 
 /* [요청] 현재 수량은 숫자만 표시 */
-.stock-qty-text { color: #3fb950; font-size: 13px; font-weight: bold; }
+.stock-qty-text { color: var(--c-green); font-size: 13px; font-weight: bold; }
 
 .stock-qty-input {
     width: 28px;
@@ -952,7 +952,7 @@ body.role-admin .tag-remove {
     border-left: 1px solid rgba(48, 54, 61, 0.5);
     border-right: 1px solid rgba(48, 54, 61, 0.5);
     background: transparent;
-    color: #3fb950;
+    color: var(--c-green);
     font-size: 13px;
     font-weight: bold;
     padding: 0;
@@ -970,11 +970,11 @@ body.role-admin .tag-remove {
 
 .stock-qty-input:focus {
     outline: none;
-    background: #161b22;
+    background: var(--c-surface);
 }
 
 .stock-qty-input.stock-safety-input {
-    color: #e3b341;
+    color: var(--c-yellow-2);
 }
 
 .stock-memo-input {
@@ -982,31 +982,31 @@ body.role-admin .tag-remove {
     height: 28px;
     padding: 2px 8px;
     font-size: 12px;
-    background: #0d1117;
+    background: var(--c-bg);
     border: 1px solid transparent;
     border-radius: 4px;
-    color: #c9d1d9;
+    color: var(--c-text-2);
     box-sizing: border-box;
     transition: border-color 0.15s;
 }
 
 .stock-memo-input:hover {
-    border-color: #30363d;
+    border-color: var(--c-border);
 }
 
 .stock-memo-input:focus {
     outline: none;
-    border-color: #58a6ff;
-    background: #161b22;
+    border-color: var(--c-blue);
+    background: var(--c-surface);
 }
 
 .item-stock-table-wrapper {
     flex: 1;
     min-height: 0;
     overflow: auto;
-    border: 1px solid #30363d;
+    border: 1px solid var(--c-border);
     border-radius: 6px;
-    background: #0d1117;
+    background: var(--c-bg);
 }
 
 .item-stock-table {
@@ -1017,9 +1017,9 @@ body.role-admin .tag-remove {
 }
 
 .item-stock-table thead tr {
-    background: #21262d;
-    color: #8b949e;
-    border-bottom: 1px solid #30363d;
+    background: var(--c-surface-2);
+    color: var(--c-text-muted);
+    border-bottom: 1px solid var(--c-border);
     position: sticky;
     top: 0;
     z-index: 2;
@@ -1038,13 +1038,13 @@ body.role-admin .tag-remove {
 }
 
 .item-stock-table th[data-sort]:hover {
-    color: #58a6ff;
+    color: var(--c-blue);
     background-color: #1f242c;
 }
 
 .item-stock-table tbody tr {
     height: 52px; /* 2줄 들어가는 기본 크기 */
-    border-bottom: 1px solid #21262d;
+    border-bottom: 1px solid var(--c-surface-2);
     transition: background-color 0.15s ease;
 }
 
@@ -1066,7 +1066,7 @@ body.role-admin .tag-remove {
     padding: 8px 6px;
 }
 .item-stock-table td.col-no {
-    color: #8b949e;
+    color: var(--c-text-muted);
 }
 
 .item-stock-table .col-site {
@@ -1078,7 +1078,7 @@ body.role-admin .tag-remove {
 }
 .item-stock-table td.col-site {
     font-weight: bold;
-    color: #7ee787;
+    color: var(--c-green-2);
 }
 
 .item-stock-table .col-partno {
@@ -1089,7 +1089,7 @@ body.role-admin .tag-remove {
     word-break: break-all;
 }
 .item-stock-table td.col-partno {
-    color: #8b949e;
+    color: var(--c-text-muted);
 }
 
 .item-stock-table .col-code {
@@ -1100,7 +1100,7 @@ body.role-admin .tag-remove {
 }
 .item-stock-table td.col-code {
     font-weight: bold;
-    color: #58a6ff;
+    color: var(--c-blue);
 }
 
 .item-stock-table .col-part {
@@ -1111,7 +1111,7 @@ body.role-admin .tag-remove {
 }
 .item-stock-table td.col-part {
     font-weight: 600;
-    color: #e6edf3;
+    color: var(--c-text);
 }
 
 .item-stock-table .col-spec {
@@ -1121,7 +1121,7 @@ body.role-admin .tag-remove {
     word-break: break-word;
 }
 .item-stock-table td.col-spec {
-    color: #c9d1d9;
+    color: var(--c-text-2);
 }
 
 .item-stock-table .col-qty {
@@ -1177,28 +1177,28 @@ body.role-admin .tag-remove {
     white-space: nowrap;
 }
 .item-stock-table .badge-grade-a {
-    color: #3fb950;
+    color: var(--c-green);
 }
 .item-stock-table .badge-grade-b {
-    color: #d29922;
+    color: var(--c-yellow);
 }
 .item-stock-table .badge-grade-c {
-    color: #a371f7;
+    color: var(--c-purple);
 }
 .item-stock-table .badge-danger,
 .item-stock-table .badge-status-zero {
-    color: #f85149;
+    color: var(--c-red);
 }
 .item-stock-table .badge-warning,
 .item-stock-table .badge-status-shortage {
-    color: #d29922;
+    color: var(--c-yellow);
 }
 .item-stock-table .badge-success,
 .item-stock-table .badge-status-normal {
-    color: #3fb950;
+    color: var(--c-green);
 }
 .item-stock-table .badge-neutral {
-    color: #8b949e;
+    color: var(--c-text-muted);
 }
 .item-stock-table .stock-badge.clickable-grade {
     cursor: pointer;
@@ -1216,9 +1216,9 @@ body.role-admin .tag-remove {
     width: 22px;
     height: 22px;
     padding: 0;
-    background: #21262d;
+    background: var(--c-surface-2);
     border: 1px solid rgba(248, 81, 73, 0.5);
-    color: #f85149;
+    color: var(--c-red);
     cursor: pointer;
     font-size: 12px;
     border-radius: 4px;
@@ -1235,7 +1235,7 @@ body.role-admin .tag-remove {
     display: none;
     padding: 40px 20px;
     text-align: center;
-    color: #8b949e;
+    color: var(--c-text-muted);
 }
 .item-stock-empty .empty-title {
     font-size: 14px;
@@ -1243,7 +1243,7 @@ body.role-admin .tag-remove {
 }
 .item-stock-empty .empty-desc {
     font-size: 12px;
-    color: #6e7681;
+    color: var(--c-text-faint);
 }
 
 .stock-saved-flash {
@@ -1264,13 +1264,13 @@ body.role-admin .tag-remove {
     border-radius: 8px;
     font-size: 10px;
     font-weight: normal;
-    color: #3fb950;
+    color: var(--c-green);
     border: 1px solid rgba(63, 185, 80, 0.5);
     vertical-align: middle;
 }
 /* [요청] 수량 모드 표시는 노란 계열 */
 .unit-managed-badge.unit-qty-badge {
-    color: #d29922;
+    color: var(--c-yellow);
     border-color: rgba(210, 153, 34, 0.5);
 }
 /* [요청] 구분 열 (품번·코드명 사이) */
@@ -1298,9 +1298,9 @@ body.role-admin .tag-remove {
     flex-wrap: wrap;
     gap: 6px 14px;
     font-size: 12px;
-    color: #8b949e;
+    color: var(--c-text-muted);
 }
-.stock-unit-summary strong { color: #e6edf3; }
+.stock-unit-summary strong { color: var(--c-text); }
 .stock-unit-summary .btn-stock-outline { height: 30px; }
 .stock-unit-summary .stock-unit-mode-btn { margin-left: auto; } /* [요청] S/N 상세 켜기/끄기 */
 .stock-unit-mode-btn.on { background: rgba(210, 168, 255, 0.18); }
@@ -1313,7 +1313,7 @@ body.role-admin .tag-remove {
     flex-wrap: wrap;
     gap: 6px 10px;
     font-size: 12px;
-    color: #8b949e;
+    color: var(--c-text-muted);
 }
 .stock-unit-add label { display: flex; align-items: center; gap: 6px; }
 .stock-unit-add .input-dark { height: 30px; padding: 0 6px; box-sizing: border-box; }
@@ -1331,13 +1331,13 @@ body.role-admin .tag-remove {
     #stock-unit-add-serial { width: 100px; }
     .stock-unit-add .btn-stock-outline { flex-shrink: 0; padding: 0 8px; white-space: nowrap; }
 }
-.stock-unit-table td { color: #c9d1d9; }
+.stock-unit-table td { color: var(--c-text-2); }
 .stock-unit-table th,
 .stock-unit-table td { text-align: center; } /* [요청] 물품 상세 리스트 가운데 정렬 */
 .stock-unit-table .su-mid { text-align: center; }
 .stock-unit-table .su-equip-text { max-width: 280px; overflow: hidden; text-overflow: ellipsis; font-size: 15px; } /* [요청] 사업장·장비명 글자 확대 */
-#stock-unit-meta { font-size: 14px; color: #c9d1d9; } /* [요청] 사업장 구분·사업장 글자 확대 */
-.stock-unit-table .su-empty { color: #484f58; }
+#stock-unit-meta { font-size: 14px; color: var(--c-text-2); } /* [요청] 사업장 구분·사업장 글자 확대 */
+.stock-unit-table .su-empty { color: var(--c-border-2); }
 .su-kind {
     display: inline-block;
     padding: 0 6px;
@@ -1345,16 +1345,16 @@ body.role-admin .tag-remove {
     font-size: 11px;
     border: 1px solid;
 }
-.su-kind.kind-regular { color: #58a6ff; border-color: rgba(88, 166, 255, 0.5); }
-.su-kind.kind-irregular { color: #d29922; border-color: rgba(210, 153, 34, 0.5); }
-.stock-unit-hint { margin: 0; font-size: 12px; color: #8b949e; }
+.su-kind.kind-regular { color: var(--c-blue); border-color: rgba(88, 166, 255, 0.5); }
+.su-kind.kind-irregular { color: var(--c-yellow); border-color: rgba(210, 153, 34, 0.5); }
+.stock-unit-hint { margin: 0; font-size: 12px; color: var(--c-text-muted); }
 .stock-unit-scroll {
     max-height: calc(90vh - 170px);
     overflow: auto !important;
 }
 .stock-unit-table th,
 .stock-unit-table td { padding: 6px 4px; white-space: nowrap; }
-.stock-unit-table .su-no { text-align: center; color: #8b949e; width: 1%; }
+.stock-unit-table .su-no { text-align: center; color: var(--c-text-muted); width: 1%; }
 .stock-unit-table .su-input {
     height: 30px;
     font-size: 12px;
@@ -1376,7 +1376,7 @@ body.role-admin .tag-remove {
     overflow-y: auto;
     max-height: calc(90vh - 60px);
 }
-.usage-pick-summary { font-size: 12px; color: #e6edf3; font-weight: bold; }
+.usage-pick-summary { font-size: 12px; color: var(--c-text); font-weight: bold; }
 .usage-pick-list { display: flex; flex-direction: column; gap: 8px; }
 /* [요청] 공통 사용 정보(맨 위) + 물품별 한 줄 선택 */
 .usage-pick-common {
@@ -1384,13 +1384,13 @@ body.role-admin .tag-remove {
     flex-wrap: wrap;
     gap: 6px 18px;
     padding: 8px 10px;
-    border: 1px solid #30363d;
+    border: 1px solid var(--c-border);
     border-radius: 6px;
-    background: #161b22;
+    background: var(--c-surface);
     font-size: 12px;
-    color: #e6edf3;
+    color: var(--c-text);
 }
-.usage-pick-common .up-common-label { color: #8b949e; margin-right: 6px; }
+.usage-pick-common .up-common-label { color: var(--c-text-muted); margin-right: 6px; }
 /* [요청] 모바일: 공통 정보 1줄에 2개씩 */
 @media (max-width: 950px) {
     .usage-pick-common {
@@ -1404,21 +1404,21 @@ body.role-admin .tag-remove {
 .usage-pick-list .up-group .up-title { flex: 1; min-width: 0; margin-bottom: 0; }
 .usage-pick-list .up-group .up-unit { flex: 0 0 260px; max-width: 60%; height: 32px; font-size: 12px; }
 /* [요청] 현재 수량 → 반영 후 수량 */
-.up-qty { display: block; margin-top: 3px; font-size: 11px; color: #8b949e; }
-.up-qty b { color: #e6edf3; }
-.up-qty b.zero { color: #f85149; }
-.up-qty .up-mode { color: #3fb950; margin-right: 8px; }
-.up-qty-none { color: #d29922; }
+.up-qty { display: block; margin-top: 3px; font-size: 11px; color: var(--c-text-muted); }
+.up-qty b { color: var(--c-text); }
+.up-qty b.zero { color: var(--c-red); }
+.up-qty .up-mode { color: var(--c-green); margin-right: 8px; }
+.up-qty-none { color: var(--c-yellow); }
 .up-group {
     padding: 10px 12px;
-    background: #161b22;
-    border: 1px solid #30363d;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
     border-radius: 6px;
 }
 .up-title { font-size: 13px; margin-bottom: 8px; }
-.up-title strong { color: #58a6ff; }
-.up-title .usage-cost { color: #d2a8ff; }
-.up-title .usage-spec { color: #8b949e; }
+.up-title strong { color: var(--c-blue); }
+.up-title .usage-cost { color: var(--c-purple-2); }
+.up-title .usage-spec { color: var(--c-text-muted); }
 .up-fields {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr)); /* [요청] 한 줄에 2개씩 (PC·모바일 공통) */
@@ -1429,16 +1429,16 @@ body.role-admin .tag-remove {
     flex-direction: column;
     gap: 3px;
     font-size: 11px;
-    color: #8b949e;
+    color: var(--c-text-muted);
 }
 .up-fields .input-dark { height: 32px; font-size: 12px; padding: 2px 6px; width: 100%; box-sizing: border-box; }
-.up-none { font-size: 12px; color: #d29922; }
+.up-none { font-size: 12px; color: var(--c-yellow); }
 .usage-pick-actions {
     display: flex;
     justify-content: flex-end;
     gap: 8px;
     padding-top: 10px;
-    border-top: 1px solid #30363d;
+    border-top: 1px solid var(--c-border);
 }
 
 /* [요청] 재고 관리 모달: 리스트 영역만 스크롤 (팝업 제목·안내문은 고정) */
@@ -1468,10 +1468,10 @@ body.role-admin .tag-remove {
 .stock-manage-table td {
     padding: 8px 6px;
 }
-.stock-manage-table .sm-code { color: #58a6ff; font-weight: bold; word-break: break-all; }
+.stock-manage-table .sm-code { color: var(--c-blue); font-weight: bold; word-break: break-all; }
 .stock-manage-table th.sm-code { color: inherit; }
-.stock-manage-table .sm-site { font-size: 11px; color: #7ee787; font-weight: normal; margin-top: 2px; }
-.stock-manage-table .sm-spec { color: #8b949e; word-break: break-all; }
+.stock-manage-table .sm-site { font-size: 11px; color: var(--c-green-2); font-weight: normal; margin-top: 2px; }
+.stock-manage-table .sm-spec { color: var(--c-text-muted); word-break: break-all; }
 .stock-manage-table .sm-qty,
 .stock-manage-table .sm-safety,
 .stock-manage-table .sm-status { text-align: center; white-space: nowrap; width: 1%; }
@@ -1514,7 +1514,7 @@ body.role-admin .tag-remove {
 
 /* [요청] 물품 관리 현황 버튼 공통 디자인 (어두운 바탕 + 색 테두리·글자, 높이 통일) */
 .btn-stock-outline {
-    --btn-c: #58a6ff;
+    --btn-c: var(--c-blue);
     --btn-c-rgb: 56, 139, 253;
     display: inline-flex;
     align-items: center;
@@ -1529,7 +1529,7 @@ body.role-admin .tag-remove {
     box-sizing: border-box;
     border-radius: 6px;
     border: 1px solid rgba(var(--btn-c-rgb), 0.5);
-    background: #21262d;
+    background: var(--c-surface-2);
     color: var(--btn-c);
     cursor: pointer;
     transition: background 0.15s ease;
@@ -1537,11 +1537,11 @@ body.role-admin .tag-remove {
 .btn-stock-outline:hover {
     background: rgba(var(--btn-c-rgb), 0.15);
 }
-.btn-stock-outline.outline-blue   { --btn-c: #58a6ff; --btn-c-rgb: 56, 139, 253; }   /* 사용 이력 */
-.btn-stock-outline.outline-yellow { --btn-c: #d29922; --btn-c-rgb: 210, 153, 34; }   /* 재고 관리 */
-.btn-stock-outline.outline-green  { --btn-c: #3fb950; --btn-c-rgb: 63, 185, 80; }    /* 물품 등록 */
-.btn-stock-outline.outline-purple { --btn-c: #d2a8ff; --btn-c-rgb: 210, 168, 255; }  /* 물품 불러오기 */
-.btn-stock-outline.outline-red    { --btn-c: #f85149; --btn-c-rgb: 248, 81, 73; }    /* 전체 삭제 */
+.btn-stock-outline.outline-blue   { --btn-c: var(--c-blue); --btn-c-rgb: 56, 139, 253; }   /* 사용 이력 */
+.btn-stock-outline.outline-yellow { --btn-c: var(--c-yellow); --btn-c-rgb: 210, 153, 34; }   /* 재고 관리 */
+.btn-stock-outline.outline-green  { --btn-c: var(--c-green); --btn-c-rgb: 63, 185, 80; }    /* 물품 등록 */
+.btn-stock-outline.outline-purple { --btn-c: var(--c-purple-2); --btn-c-rgb: 210, 168, 255; }  /* 물품 불러오기 */
+.btn-stock-outline.outline-red    { --btn-c: var(--c-red); --btn-c-rgb: 248, 81, 73; }    /* 전체 삭제 */
 
 /* [추가] 사용 이력 모달 */
 /* [요청] 사용 이력 창 글자 크기 확대 (+2px) */
@@ -1553,7 +1553,7 @@ body.role-admin .tag-remove {
 .usage-empty {
     padding: 30px 10px;
     text-align: center;
-    color: #8b949e;
+    color: var(--c-text-muted);
     font-size: 15px;
 }
 .usage-work-row {
@@ -1561,8 +1561,8 @@ body.role-admin .tag-remove {
     flex-direction: column; /* [요청] 날짜·사업장·장비명 줄은 카드 전체 너비 */
     gap: 2px;
     padding: 10px 12px;
-    background: #161b22;
-    border: 1px solid #30363d;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
     border-radius: 6px;
 }
 .usage-work-body {
@@ -1595,22 +1595,22 @@ body.role-admin .tag-remove {
     align-items: center;
     gap: 6px 10px;
     font-size: 14px;
-    color: #8b949e;
+    color: var(--c-text-muted);
 }
-.usage-work-head .usage-date { color: #e6edf3; font-weight: bold; }
-.usage-work-head .usage-group { color: #7ee787; font-weight: bold; }
-.usage-work-head .usage-equip { color: #e6edf3; }
+.usage-work-head .usage-date { color: var(--c-text); font-weight: bold; }
+.usage-work-head .usage-group { color: var(--c-green-2); font-weight: bold; }
+.usage-work-head .usage-equip { color: var(--c-text); }
 /* [요청] 작업 구분은 작업자와 색 구분 (배지) */
 .usage-work-sub .usage-type {
     padding: 1px 7px;
     border-radius: 10px;
     background: rgba(56, 139, 253, 0.15);
     border: 1px solid rgba(56, 139, 253, 0.4);
-    color: #58a6ff;
+    color: var(--c-blue);
     font-size: 13px;
 }
 .usage-work-sub .usage-worker {
-    color: #c9d1d9;
+    color: var(--c-text-2);
 }
 /* [요청] 작업 구분·작업자는 다음 줄 */
 .usage-work-sub {
@@ -1619,7 +1619,7 @@ body.role-admin .tag-remove {
     gap: 6px 10px;
     margin-top: 3px;
     font-size: 14px;
-    color: #8b949e;
+    color: var(--c-text-muted);
 }
 .usage-items {
     list-style: none;
@@ -1629,17 +1629,17 @@ body.role-admin .tag-remove {
     flex-direction: column;
     gap: 3px;
     font-size: 14px;
-    color: #c9d1d9;
+    color: var(--c-text-2);
 }
-.usage-items strong { color: #58a6ff; }
-.usage-items .usage-spec { color: #8b949e; }
-.usage-items .usage-stock { margin-left: 6px; color: #8b949e; font-size: 13px; }
-.usage-items .usage-stock-none { color: #d29922; }
+.usage-items strong { color: var(--c-blue); }
+.usage-items .usage-spec { color: var(--c-text-muted); }
+.usage-items .usage-stock { margin-left: 6px; color: var(--c-text-muted); font-size: 13px; }
+.usage-items .usage-stock-none { color: var(--c-yellow); }
 /* [요청] 비용처리 표시 / 무상(중고) 반영 제외 */
-.usage-items .usage-cost { color: #d2a8ff; }
+.usage-items .usage-cost { color: var(--c-purple-2); }
 .usage-items .usage-item-excluded { opacity: 0.55; }
 .usage-items .usage-item-excluded strong { text-decoration: line-through; }
-.usage-items .usage-stock-excluded { color: #8b949e; }
+.usage-items .usage-stock-excluded { color: var(--c-text-muted); }
 /* [요청] 모바일 사용 이력: 비용처리 라벨·물품명·재고 표시 글자 1px 축소 */
 @media (max-width: 950px) {
     .usage-items { font-size: 13px; }
@@ -1660,17 +1660,17 @@ body.role-admin .tag-remove {
     white-space: nowrap;
 }
 .btn-usage-apply:disabled {
-    background: #21262d;
-    color: #6e7681;
-    border-color: #30363d;
+    background: var(--c-surface-2);
+    color: var(--c-text-faint);
+    border-color: var(--c-border);
     cursor: not-allowed;
 }
 .btn-usage-apply.applied {
-    color: #7ee787;
+    color: var(--c-green-2);
 }
 /* [요청] 반영됨 버튼: 누르면 반영 수정 */
 .btn-usage-apply.applied:not(:disabled) {
-    background: #21262d;
+    background: var(--c-surface-2);
     border-color: rgba(63, 185, 80, 0.5);
 }
 .btn-usage-apply.applied:not(:disabled):hover {
@@ -1688,14 +1688,14 @@ body.role-admin .tag-remove {
     font-size: 12px;
     white-space: nowrap;
     border-radius: 6px;
-    border: 1px solid #30363d;
-    background: #21262d;
-    color: #e6edf3;
+    border: 1px solid var(--c-border);
+    background: var(--c-surface-2);
+    color: var(--c-text);
     cursor: pointer;
 }
 .item-stock-compact .btn-stock-compact-toggle {
     border-color: rgba(56, 139, 253, 0.5);
-    color: #58a6ff;
+    color: var(--c-blue);
 }
 
 @media (max-width: 950px) {
@@ -1990,7 +1990,7 @@ body:not(.role-admin):not(.role-superadmin) .stock-qty-input {
     background: transparent !important;
     border: none !important;
     cursor: default !important;
-    color: #e6edf3 !important;
+    color: var(--c-text) !important;
 }
 
 body.admin-readonly-mode .stock-badge.clickable-grade,
@@ -2022,20 +2022,20 @@ body:not(.role-admin):not(.role-superadmin) .item-days-input {
     font-size: 13px;
     table-layout: fixed;
     min-width: 780px;
-    background: #161b22;
+    background: var(--c-surface);
 }
 
 #admin-equip-param-view .data-param-table th,
 #section-equip-param-mgmt .data-param-table th {
     position: sticky;
     top: 0;
-    background: #21262d;
-    color: #e6edf3;
+    background: var(--c-surface-2);
+    color: var(--c-text);
     font-weight: 700;
     padding: 8px 10px;
     text-align: center;
-    border-bottom: 2px solid #30363d;
-    border-right: 1px solid #30363d;
+    border-bottom: 2px solid var(--c-border);
+    border-right: 1px solid var(--c-border);
     z-index: 10;
     user-select: none;
 }
@@ -2048,9 +2048,9 @@ body:not(.role-admin):not(.role-superadmin) .item-days-input {
 #admin-equip-param-view .data-param-table td,
 #section-equip-param-mgmt .data-param-table td {
     padding: 0;
-    border-bottom: 1px solid #21262d;
-    border-right: 1px solid #21262d;
-    background: #161b22;
+    border-bottom: 1px solid var(--c-surface-2);
+    border-right: 1px solid var(--c-surface-2);
+    background: var(--c-surface);
     height: 34px;
     vertical-align: middle;
 }
@@ -2062,7 +2062,7 @@ body:not(.role-admin):not(.role-superadmin) .item-days-input {
 
 #admin-equip-param-view .data-param-table tr:hover td,
 #section-equip-param-mgmt .data-param-table tr:hover td {
-    background: #1c2128;
+    background: var(--c-surface-3);
 }
 
 #admin-equip-param-view .data-param-input,
@@ -2072,7 +2072,7 @@ body:not(.role-admin):not(.role-superadmin) .item-days-input {
     min-height: 34px;
     background: transparent;
     border: none;
-    color: #e6edf3;
+    color: var(--c-text);
     padding: 6px 10px;
     box-sizing: border-box;
     font-size: 13px;
@@ -2082,8 +2082,8 @@ body:not(.role-admin):not(.role-superadmin) .item-days-input {
 
 #admin-equip-param-view .data-param-input:focus,
 #section-equip-param-mgmt .data-param-input:focus {
-    background: #0d1117;
-    box-shadow: inset 0 0 0 1px #58a6ff;
+    background: var(--c-bg);
+    box-shadow: inset 0 0 0 1px var(--c-blue);
 }
 
 #admin-equip-param-view .data-param-unit-cell,
@@ -2104,7 +2104,7 @@ body:not(.role-admin):not(.role-superadmin) .item-days-input {
     min-height: 34px;
     background: transparent;
     border: none;
-    color: #58a6ff;
+    color: var(--c-blue);
     font-size: 12px;
     font-weight: 600;
     padding: 4px 6px;
@@ -2116,14 +2116,14 @@ body:not(.role-admin):not(.role-superadmin) .item-days-input {
 
 #admin-equip-param-view .data-param-unit-select:focus,
 #section-equip-param-mgmt .data-param-unit-select:focus {
-    background: #0d1117;
-    box-shadow: inset 0 0 0 1px #58a6ff;
+    background: var(--c-bg);
+    box-shadow: inset 0 0 0 1px var(--c-blue);
 }
 
 #admin-equip-param-view .data-param-unit-select option,
 #section-equip-param-mgmt .data-param-unit-select option {
-    background: #161b22;
-    color: #e6edf3;
+    background: var(--c-surface);
+    color: var(--c-text);
     font-weight: 500;
     text-align: left;
 }
@@ -2144,7 +2144,7 @@ body:not(.role-admin):not(.role-superadmin) .item-days-input {
     height: 100%;
     min-height: 34px;
     font-size: 12px;
-    color: #58a6ff;
+    color: var(--c-blue);
     font-weight: 600;
     text-align: center;
     padding: 4px 4px;
@@ -2155,8 +2155,8 @@ body:not(.role-admin):not(.role-superadmin) .item-days-input {
 
 #admin-equip-param-view .data-param-unit-custom-input:focus,
 #section-equip-param-mgmt .data-param-unit-custom-input:focus {
-    background: #0d1117;
-    box-shadow: inset 0 0 0 1px #58a6ff;
+    background: var(--c-bg);
+    box-shadow: inset 0 0 0 1px var(--c-blue);
 }
 
 #admin-equip-param-view .btn-unit-preset-toggle,
@@ -2165,10 +2165,10 @@ body:not(.role-admin):not(.role-superadmin) .item-days-input {
     min-width: 22px;
     height: 100%;
     min-height: 34px;
-    background: #21262d;
+    background: var(--c-surface-2);
     border: none;
-    border-left: 1px solid #30363d;
-    color: #8b949e;
+    border-left: 1px solid var(--c-border);
+    color: var(--c-text-muted);
     font-size: 10px;
     cursor: pointer;
     display: flex;
@@ -2180,8 +2180,8 @@ body:not(.role-admin):not(.role-superadmin) .item-days-input {
 
 #admin-equip-param-view .btn-unit-preset-toggle:hover,
 #section-equip-param-mgmt .btn-unit-preset-toggle:hover {
-    background: #30363d;
-    color: #58a6ff;
+    background: var(--c-border);
+    color: var(--c-blue);
 }
 
 #admin-equip-param-view .data-param-spec-cell,
@@ -2211,10 +2211,10 @@ body:not(.role-admin):not(.role-superadmin) .item-days-input {
     min-width: 48px;
     height: 100%;
     min-height: 34px;
-    background: #1c2128;
+    background: var(--c-surface-3);
     border: none;
-    border-right: 1px solid #30363d;
-    color: #58a6ff;
+    border-right: 1px solid var(--c-border);
+    color: var(--c-blue);
     font-weight: 700;
     font-size: 13px;
     text-align: center;
@@ -2229,19 +2229,19 @@ body:not(.role-admin):not(.role-superadmin) .item-days-input {
 #admin-equip-param-view .data-param-op-select:hover,
 #section-equip-param-mgmt .data-param-op-select:hover {
     background: #262c36;
-    color: #79c0ff;
+    color: var(--c-blue-2);
 }
 
 #admin-equip-param-view .data-param-op-select:focus,
 #section-equip-param-mgmt .data-param-op-select:focus {
-    background: #0d1117;
-    box-shadow: inset 0 0 0 1px #58a6ff;
+    background: var(--c-bg);
+    box-shadow: inset 0 0 0 1px var(--c-blue);
 }
 
 #admin-equip-param-view .data-param-op-select option,
 #section-equip-param-mgmt .data-param-op-select option {
-    background: #161b22;
-    color: #e6edf3;
+    background: var(--c-surface);
+    color: var(--c-text);
     font-weight: 600;
     text-align: center;
 }
@@ -2277,7 +2277,7 @@ body:not(.role-admin):not(.role-superadmin) .item-days-input {
     background: transparent;
     border: none;
     outline: none;
-    color: #e6edf3;
+    color: var(--c-text);
 }
 
 #admin-equip-param-view .data-param-spec-center:focus,
@@ -2288,8 +2288,8 @@ body:not(.role-admin):not(.role-superadmin) .item-days-input {
 #section-equip-param-mgmt .data-param-spec-tol:focus,
 #section-equip-param-mgmt .data-param-spec-min:focus,
 #section-equip-param-mgmt .data-param-spec-max:focus {
-    background: #0d1117;
-    box-shadow: inset 0 0 0 1px #58a6ff;
+    background: var(--c-bg);
+    box-shadow: inset 0 0 0 1px var(--c-blue);
 }
 
 #admin-equip-param-view .data-param-pm-divider,
@@ -2299,7 +2299,7 @@ body:not(.role-admin):not(.role-superadmin) .item-days-input {
     width: 18px;
     min-width: 18px;
     text-align: center;
-    color: #58a6ff;
+    color: var(--c-blue);
     font-weight: 700;
     font-size: 14px;
     user-select: none;
@@ -2347,7 +2347,7 @@ body:not(.role-admin):not(.role-superadmin) .item-days-input {
 
 .admin-param-drag-handle {
     cursor: grab;
-    color: #58a6ff;
+    color: var(--c-blue);
     opacity: 0.75;
     font-size: 14px;
     line-height: 1;
@@ -2368,7 +2368,7 @@ body:not(.role-admin):not(.role-superadmin) .item-days-input {
 
 .admin-param-row-num {
     font-size: 11px;
-    color: #8b949e;
+    color: var(--c-text-muted);
     font-weight: 600;
     min-width: 16px;
     text-align: center;
@@ -2384,7 +2384,7 @@ body:not(.role-admin):not(.role-superadmin) .item-days-input {
 .admin-param-order-btn {
     background: transparent;
     border: none;
-    color: #484f58;
+    color: var(--c-border-2);
     font-size: 8px;
     line-height: 1;
     padding: 1px 2px;
@@ -2394,8 +2394,8 @@ body:not(.role-admin):not(.role-superadmin) .item-days-input {
 }
 
 .admin-param-order-btn:hover {
-    color: #58a6ff;
-    background: #21262d;
+    color: var(--c-blue);
+    background: var(--c-surface-2);
 }
 
 .admin-param-row.admin-param-dragging {
@@ -2404,19 +2404,19 @@ body:not(.role-admin):not(.role-superadmin) .item-days-input {
 }
 
 .admin-param-row.admin-param-drag-over-top td {
-    box-shadow: inset 0 3px 0 0 #58a6ff !important;
+    box-shadow: inset 0 3px 0 0 var(--c-blue) !important;
 }
 
 .admin-param-row.admin-param-drag-over-bottom td {
-    box-shadow: inset 0 -3px 0 0 #58a6ff !important;
+    box-shadow: inset 0 -3px 0 0 var(--c-blue) !important;
 }
 
 /* 장비관리 상단 헤더 서브 탭 버튼 그룹 */
 .admin-equip-header-tabs {
     display: inline-flex;
     align-items: center;
-    background: #161b22;
-    border: 1px solid #30363d;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
     border-radius: 6px;
     padding: 2px;
     gap: 2px;
@@ -2425,7 +2425,7 @@ body:not(.role-admin):not(.role-superadmin) .item-days-input {
 .admin-equip-tab-btn {
     background: transparent;
     border: none;
-    color: #8b949e;
+    color: var(--c-text-muted);
     font-size: 13px;
     font-weight: 500;
     padding: 5px 12px;
@@ -2439,7 +2439,7 @@ body:not(.role-admin):not(.role-superadmin) .item-days-input {
 }
 
 .admin-equip-tab-btn:hover {
-    color: #c9d1d9;
+    color: var(--c-text-2);
     background: rgba(255, 255, 255, 0.05);
 }
 
@@ -2454,7 +2454,7 @@ body:not(.role-admin):not(.role-superadmin) .item-days-input {
 #section-equip-param-mgmt .data-param-row-del-btn {
     background: transparent;
     border: none;
-    color: #8b949e;
+    color: var(--c-text-muted);
     font-size: 16px;
     cursor: pointer;
     width: 100%;
@@ -2467,14 +2467,14 @@ body:not(.role-admin):not(.role-superadmin) .item-days-input {
 
 #admin-equip-param-view .data-param-row-del-btn:hover,
 #section-equip-param-mgmt .data-param-row-del-btn:hover {
-    color: #f85149;
+    color: var(--c-red);
     background: rgba(248, 81, 73, 0.1);
 }
 
 .btn-gray-sm {
-    background: #21262d;
-    border: 1px solid #30363d;
-    color: #e6edf3;
+    background: var(--c-surface-2);
+    border: 1px solid var(--c-border);
+    color: var(--c-text);
     padding: 5px 12px;
     font-size: 12px;
     border-radius: 4px;
@@ -2487,9 +2487,9 @@ body:not(.role-admin):not(.role-superadmin) .item-days-input {
 }
 
 .btn-gray-sm:hover {
-    background: #30363d;
-    color: #58a6ff;
-    border-color: #58a6ff;
+    background: var(--c-border);
+    color: var(--c-blue);
+    border-color: var(--c-blue);
 }
 
 body.admin-readonly-mode #btn-import-model-param-csv,
@@ -2515,9 +2515,9 @@ body:not(.role-admin):not(.role-superadmin) #section-equip-param-mgmt .data-para
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: #21262d;
-    border: 1px solid #30363d;
-    color: #8b949e;
+    background: var(--c-surface-2);
+    border: 1px solid var(--c-border);
+    color: var(--c-text-muted);
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.15s ease;
@@ -2525,9 +2525,9 @@ body:not(.role-admin):not(.role-superadmin) #section-equip-param-mgmt .data-para
 }
 
 #btn-revert-model-params.btn-icon-only:hover {
-    background: #30363d;
-    color: #58a6ff;
-    border-color: #58a6ff;
+    background: var(--c-border);
+    color: var(--c-blue);
+    border-color: var(--c-blue);
 }
 
 #btn-revert-model-params.btn-icon-only svg {
@@ -2550,9 +2550,9 @@ body:not(.role-admin):not(.role-superadmin) #section-equip-param-mgmt .data-para
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: #0d1117;
-    color: #e6edf3;
-    border: 1px solid #30363d;
+    background: var(--c-bg);
+    color: var(--c-text);
+    border: 1px solid var(--c-border);
     border-radius: 4px;
     padding: 0 10px;
     font-size: 13px;
@@ -2566,13 +2566,13 @@ body:not(.role-admin):not(.role-superadmin) #section-equip-param-mgmt .data-para
 }
 
 .admin-site-filter-trigger:hover {
-    border-color: #58a6ff;
+    border-color: var(--c-blue);
 }
 
 .admin-site-filter-trigger::after {
     content: "▼";
     font-size: 9px;
-    color: #8b949e;
+    color: var(--c-text-muted);
     margin-left: 6px;
     flex-shrink: 0;
 }
@@ -2586,8 +2586,8 @@ body:not(.role-admin):not(.role-superadmin) #section-equip-param-mgmt .data-para
     left: 0;
     z-index: 1050;
     margin-top: 4px;
-    background: #161b22;
-    border: 1px solid #30363d;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
     border-radius: 6px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
     box-sizing: border-box;
@@ -2599,11 +2599,11 @@ body:not(.role-admin):not(.role-superadmin) #section-equip-param-mgmt .data-para
 
 .admin-site-filter-dropdown .sort-group-filter-container {
     padding: 8px;
-    border-bottom: 1px solid #30363d;
+    border-bottom: 1px solid var(--c-border);
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
-    background: #21262d;
+    background: var(--c-surface-2);
     border-radius: 6px 6px 0 0;
 }
 
@@ -2613,17 +2613,17 @@ body:not(.role-admin):not(.role-superadmin) #section-equip-param-mgmt .data-para
     flex-shrink: 0;
     white-space: nowrap;
     border-radius: 4px;
-    border: 1px solid #30363d;
-    background: #161b22;
-    color: #c9d1d9;
+    border: 1px solid var(--c-border);
+    background: var(--c-surface);
+    color: var(--c-text-2);
     cursor: pointer;
     transition: all 0.15s ease;
 }
 
 .admin-site-filter-dropdown .sort-filter-btn:hover {
-    background: #30363d;
-    color: #58a6ff;
-    border-color: #58a6ff;
+    background: var(--c-border);
+    color: var(--c-blue);
+    border-color: var(--c-blue);
 }
 
 .admin-site-filter-dropdown .sort-filter-btn.btn-blue-sm {
@@ -2647,25 +2647,25 @@ body:not(.role-admin):not(.role-superadmin) #section-equip-param-mgmt .data-para
     cursor: pointer;
     border-radius: 4px;
     font-size: 13px;
-    color: #c9d1d9;
+    color: var(--c-text-2);
     user-select: none;
     transition: background 0.15s;
 }
 
 .admin-site-filter-dropdown .log-select-item:hover {
-    background: #21262d;
+    background: var(--c-surface-2);
 }
 
 .admin-site-filter-dropdown .log-select-item.selected {
     background: #1f293d;
-    color: #58a6ff;
+    color: var(--c-blue);
 }
 
 .admin-site-filter-dropdown .sort-check-icon {
     flex: 0 0 16px;
     text-align: center;
     font-weight: bold;
-    color: #58a6ff;
+    color: var(--c-blue);
     opacity: 0;
     font-size: 13px;
 }
@@ -2685,8 +2685,8 @@ body:not(.role-admin):not(.role-superadmin) #section-equip-param-mgmt .data-para
 
 .admin-site-filter-dropdown .sort-footer {
     padding: 8px;
-    border-top: 1px solid #30363d;
-    background: #21262d;
+    border-top: 1px solid var(--c-border);
+    background: var(--c-surface-2);
     display: flex;
     gap: 6px;
     border-radius: 0 0 6px 6px;

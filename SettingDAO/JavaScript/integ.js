@@ -499,7 +499,7 @@ function renderIntegSetupSiteStats() {
         } else {
             const completeRate = (completedCount / totalForRate) * 100;
             const completeDeg = (completedCount / totalForRate) * 360;
-            completeChartEl.style.background = `conic-gradient(#238636 0deg ${completeDeg}deg, #30363d ${completeDeg}deg 360deg)`;
+            completeChartEl.style.background = `conic-gradient(#238636 0deg ${completeDeg}deg, var(--c-border) ${completeDeg}deg 360deg)`;
             completeCenterText.innerHTML = `<div class="chart-center-label">Complete Rate</div><div class="chart-center-value">${Math.round(completeRate)}%</div>`;
         }
     }
@@ -1125,7 +1125,7 @@ function renderChartWithAxis(container, dataCounts, colorMapOrArray, onClickHand
         const maxBarHeight = 180;
         const barHeight = yAxisMax > 0 ? (count / yAxisMax) * maxBarHeight : 0;
 
-        let bgStyle = '#30363d';
+        let bgStyle = 'var(--c-border)';
         if (Array.isArray(colorMapOrArray)) bgStyle = colorMapOrArray[index % colorMapOrArray.length];
         else if (colorMapOrArray[key]) bgStyle = colorMapOrArray[key];
 
@@ -1145,7 +1145,7 @@ function renderChartWithAxis(container, dataCounts, colorMapOrArray, onClickHand
             barContent = `
                 <div class="bar-value">
                     ${count}
-                    <span style="font-size:11px; color:#d29922; margin-left:2px;">(${setupCount})</span>
+                    <span style="font-size:11px; color:var(--c-yellow); margin-left:2px;">(${setupCount})</span>
                 </div>
                 <div class="bar ${activeClass}" style="height: ${barHeight}px; background: ${bgStyle}; position: relative; overflow: hidden;">
                     ${setupOverlay}

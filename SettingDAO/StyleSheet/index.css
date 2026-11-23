@@ -10,7 +10,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    background: #0d1117;
+    background: var(--c-bg);
     padding: 0;
 }
 
@@ -28,7 +28,7 @@ body {
 .logo-text {
     letter-spacing: 10px;
     color: #222;
-    font-weight: 100;
+    font-weight: 700; /* [요청] 굵게 (기존 100) */
     font-size: 12px;
 }
 
@@ -36,10 +36,10 @@ body {
    2. 로그인 박스 (Login Box)
    ========================================================================== */
 .login-box {
-    background: #161b22;
+    background: var(--c-surface);
     padding: 40px;
     border-radius: 8px;
-    border: 1px solid #30363d;
+    border: 1px solid var(--c-border);
     width: 350px;
     display: flex;
     flex-direction: column;
@@ -49,7 +49,7 @@ body {
 }
 
 .login-box h3 {
-    color: #fff;
+    color: var(--c-heading);
     margin-bottom: 10px;
     letter-spacing: 2px;
 }
@@ -57,9 +57,9 @@ body {
 .login-box input {
     width: 100%;
     padding: 12px;
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #fff;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-heading);
 }
 
 .login-box button {
@@ -95,7 +95,7 @@ body {
     height: 280px;
     border-radius: 20px;
     border: 1px solid rgba(255, 255, 255, 0.05);
-    background: linear-gradient(145deg, #1c2128, #161b22);
+    background: linear-gradient(145deg, var(--c-surface-3), var(--c-surface));
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
     display: flex;
     flex-direction: column;
@@ -146,7 +146,7 @@ body {
 
 .home-big-btn h3 {
     font-size: 28px;
-    color: #e6edf3;
+    color: var(--c-text);
     margin-bottom: 10px;
     font-weight: 800;
     letter-spacing: 0.5px;
@@ -161,7 +161,7 @@ body {
 
 .home-big-btn p {
     font-size: 14px;
-    color: #8b949e;
+    color: var(--c-text-muted);
     font-weight: 500;
     transition: opacity 0.3s ease;
 }
@@ -172,7 +172,7 @@ body {
 }
 
 .btn-setup:hover h3 {
-    color: #58a6ff;
+    color: var(--c-blue);
 }
 
 .btn-setup:hover .icon {
@@ -180,7 +180,7 @@ body {
 }
 
 .btn-maint:hover h3 {
-    color: #3fb950;
+    color: var(--c-green);
 }
 
 .btn-maint:hover .icon {
@@ -196,7 +196,7 @@ body {
 }
 
 .btn-admin:hover h3 {
-    color: #f85149;
+    color: var(--c-red);
 }
 
 .btn-admin:hover .icon {
@@ -205,7 +205,7 @@ body {
 
 /* Active State (Selected) */
 .home-big-btn.active {
-    background: #21262d;
+    background: var(--c-surface-2);
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
@@ -217,19 +217,19 @@ body {
 }
 
 .btn-setup.active {
-    border: 1px solid #58a6ff;
+    border: 1px solid var(--c-blue);
 }
 
 .btn-setup.active h3 {
-    color: #58a6ff;
+    color: var(--c-blue);
 }
 
 .btn-maint.active {
-    border: 1px solid #3fb950;
+    border: 1px solid var(--c-green);
 }
 
 .btn-maint.active h3 {
-    color: #3fb950;
+    color: var(--c-green);
 }
 
 .btn-integrated.active {
@@ -241,11 +241,11 @@ body {
 }
 
 .btn-admin.active {
-    border: 1px solid #f85149;
+    border: 1px solid var(--c-red);
 }
 
 .btn-admin.active h3 {
-    color: #f85149;
+    color: var(--c-red);
 }
 
 /* ==========================================================================
@@ -274,7 +274,7 @@ body {
 
 .dashboard-col {
     flex: 1;
-    background: #0d1117;
+    background: var(--c-bg);
     border: none;
     border-radius: 6px;
     padding: 20px;
@@ -296,7 +296,7 @@ body {
     justify-content: center;
     align-items: center;
     width: 100%;
-    border-bottom: 1px solid #30363d;
+    border-bottom: 1px solid var(--c-border);
     padding-bottom: 10px;
     margin-bottom: 10px;
     position: relative;
@@ -304,18 +304,18 @@ body {
 }
 
 .section-title {
-    color: #c9d1d9;
+    color: var(--c-text-2);
     font-size: 20px;
     margin: 0;
     font-weight: bold;
 }
 
 .col-title {
-    color: #c9d1d9;
+    color: var(--c-text-2);
     font-size: 14px;
     font-weight: bold;
     margin-bottom: 5px;
-    border-bottom: 1px solid #30363d;
+    border-bottom: 1px solid var(--c-border);
     width: 100%;
     text-align: center;
     padding-bottom: 10px;
@@ -336,7 +336,7 @@ body {
 
 .btn-move {
     background: none;
-    color: #62a16a;
+    color: var(--c-green-3);
     font-size: 12px;
     font-weight: bold;
     padding: 0;
@@ -344,7 +344,7 @@ body {
 }
 
 .btn-move:hover {
-    color: #fff;
+    color: var(--c-heading);
 }
 
 /* ==========================================================================
@@ -381,8 +381,8 @@ body {
 }
 
 .status-group.card-like {
-    background: #161b22;
-    border: 1px solid #30363d;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
     border-radius: 8px;
     padding: 15px;
     box-sizing: border-box;
@@ -438,7 +438,7 @@ body {
     width: 100%;
     height: 100%;
     border-radius: 50%;
-    background: #30363d;
+    background: var(--c-border);
     /* 데이터 없을 때 기본색 */
 }
 
@@ -449,7 +449,7 @@ body {
     transform: translate(-50%, -50%);
     width: 150px;
     height: 150px;
-    background: #161b22;
+    background: var(--c-surface);
     /* 배경색과 동일하게 하여 도넛 모양 생성 */
     border-radius: 50%;
     display: flex;
@@ -480,7 +480,7 @@ body {
     display: flex;
     flex-direction: column;
     height: 225px;
-    border: 1px solid #30363d;
+    border: 1px solid var(--c-border);
     border-radius: 6px;
     overflow: hidden;
     width: 100%;
@@ -516,10 +516,10 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 8px 12px;
-    border-bottom: 1px solid #30363d;
-    background-color: #21262d;
+    border-bottom: 1px solid var(--c-border);
+    background-color: var(--c-surface-2);
     font-size: 12px;
-    color: #e6edf3;
+    color: var(--c-text);
     font-weight: bold;
 }
 
@@ -539,7 +539,7 @@ body {
     align-items: center;
     margin-bottom: 6px;
     font-size: 13px;
-    color: #e6edf3;
+    color: var(--c-text);
     cursor: pointer;
     padding: 4px 8px;
     border-radius: 4px;
@@ -547,12 +547,12 @@ body {
 }
 
 .status-list-item:hover {
-    background-color: #21262d;
+    background-color: var(--c-surface-2);
 }
 
 .status-list-item.active {
-    background-color: #30363d;
-    border: 1px solid #8b949e;
+    background-color: var(--c-border);
+    border: 1px solid var(--c-text-muted);
 }
 
 #equip-detail-list .status-list-item,
@@ -562,13 +562,13 @@ body {
 
 /* 셋업 관리 프로젝트 목록: 항목마다 테두리·배경으로 구분 (선택 항목은 아래 .active 로 더 진하게) */
 #setup-equip-detail-list .status-list-item {
-    border: 1px solid #30363d;
-    background-color: #161b22;
+    border: 1px solid var(--c-border);
+    background-color: var(--c-surface);
     padding: 6px 8px;
 }
 #setup-equip-detail-list .status-list-item:hover {
-    background-color: #21262d;
-    border-color: #484f58;
+    background-color: var(--c-surface-2);
+    border-color: var(--c-border-2);
 }
 #setup-equip-detail-list .status-list-item.active {
     background-color: rgba(31, 111, 235, .15);
@@ -604,18 +604,18 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    background: #161b22;
+    background: var(--c-surface);
     border-radius: 8px;
-    border: 1px solid #30363d;
+    border: 1px solid var(--c-border);
     padding: 15px;
     box-sizing: border-box;
 }
 
 .upcoming-title {
-    color: #d29922;
+    color: var(--c-yellow);
     font-size: 14px;
     margin-bottom: 10px;
-    border-bottom: 1px solid #30363d;
+    border-bottom: 1px solid var(--c-border);
     padding-bottom: 5px;
     font-weight: bold;
 }
@@ -629,8 +629,8 @@ body {
 }
 
 .upcoming-item {
-    background: #0d1117;
-    border: 1px solid #30363d;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
     border-radius: 4px;
     padding: 10px;
     margin-bottom: 8px;
@@ -643,8 +643,8 @@ body {
 }
 
 .upcoming-item:hover {
-    background: #21262d;
-    border-color: #8b949e;
+    background: var(--c-surface-2);
+    border-color: var(--c-text-muted);
     transform: translateX(2px);
 }
 
@@ -652,9 +652,9 @@ body {
    9. 유틸리티 버튼 (Utility Buttons)
    ========================================================================== */
 .btn-shortcut {
-    background: #21262d;
-    border: 1px solid #30363d;
-    color: #62a16a;
+    background: var(--c-surface-2);
+    border: 1px solid var(--c-border);
+    color: var(--c-green-3);
     width: 50px;
     text-align: center;
     padding: 2px 0;
@@ -662,9 +662,9 @@ body {
 }
 
 .btn-shortcut:hover {
-    background: #62a16a;
+    background: var(--c-green-3);
     color: #fff;
-    border-color: #62a16a;
+    border-color: var(--c-green-3);
 }
 
 .btn-text-sm {
@@ -695,12 +695,12 @@ body {
 }
 
 .modal-section-title {
-    color: #e6edf3;
+    color: var(--c-text);
     margin-bottom: 10px;
 }
 
 .modal-section-title-blue {
-    color: #58a6ff;
+    color: var(--c-blue);
     margin-bottom: 10px;
 }
 
@@ -713,7 +713,7 @@ body {
 /* --- Forms & Inputs --- */
 .form-label {
     width: 60px;
-    color: #8b949e;
+    color: var(--c-text-muted);
     font-size: 13px;
 }
 
@@ -723,9 +723,9 @@ body {
 }
 
 .input-date-dark {
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #fff;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-heading);
     padding: 5px;
     border-radius: 4px;
     flex: 1;
@@ -746,9 +746,9 @@ body {
 
 .input-search-dark {
     width: 200px;
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #fff;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-heading);
     padding: 5px 10px;
     border-radius: 4px;
 }
@@ -756,7 +756,7 @@ body {
 .filter-status-text {
     margin-left: 8px;
     font-size: 12px;
-    color: #3fb950;
+    color: var(--c-green);
     font-weight: bold;
 }
 
@@ -764,7 +764,7 @@ body {
    12. JS 동적 생성 요소 스타일 (Dynamic Elements)
    ========================================================================== */
 .equip-bar {
-    background-color: #3fb950;
+    background-color: var(--c-green);
     /* 녹색 */
     width: 4px !important;
     /* 얇게 */
@@ -777,7 +777,7 @@ body {
 }
 
 .equip-serial {
-    color: #3fb950;
+    color: var(--c-green);
     /* 녹색 */
     font-weight: bold;
     margin-left: 5px;
@@ -785,12 +785,12 @@ body {
 }
 
 .scheduled-item {
-    border-left: 4px solid #3fb950 !important;
+    border-left: 4px solid var(--c-green) !important;
     /* 녹색 테두리 */
 }
 
 .scheduled-date-text {
-    color: #3fb950;
+    color: var(--c-green);
     /* 녹색 텍스트 */
     font-size: 0.9em;
 }
@@ -803,43 +803,43 @@ body {
 /* 차트 중앙 텍스트 */
 .chart-center-label {
     font-size: 11px;
-    color: #8b949e;
+    color: var(--c-text-muted);
 }
 
 .chart-center-value {
     font-size: 16px;
     font-weight: bold;
-    color: #e6edf3;
+    color: var(--c-text);
 }
 
 .list-empty-msg {
     justify-content: center;
-    color: #8b949e;
+    color: var(--c-text-muted);
     display: flex;
     padding: 10px;
 }
 
 /* 점검 임박 리스트 */
 .upcoming-empty-msg {
-    color: #8b949e;
+    color: var(--c-text-muted);
     text-align: center;
     padding: 20px;
 }
 
 .upcoming-info-site {
-    color: #8b949e;
+    color: var(--c-text-muted);
     font-size: 11px;
     margin-bottom: 2px;
 }
 
 .upcoming-info-content {
-    color: #e6edf3;
+    color: var(--c-text);
     font-weight: bold;
     font-size: 13px;
 }
 
 .upcoming-info-sn {
-    color: #3fb950;
+    color: var(--c-green);
     /* 녹색 */
     font-weight: bold;
 }
@@ -863,8 +863,8 @@ body {
 }
 
 .d-day-badge.warning {
-    background: #d29922;
-    border: 1px solid #d29922;
+    background: var(--c-yellow);
+    border: 1px solid var(--c-yellow);
 }
 
 .d-day-badge.danger {
@@ -874,7 +874,7 @@ body {
 
 /* Status List 'All' item color */
 .status-color-all {
-    background-color: #e6edf3;
+    background-color: var(--c-text);
 }
 
 .mb-0 {
@@ -888,12 +888,12 @@ body {
 
 .integ-summary-text {
     font-size: 16px;
-    color: #e6edf3;
+    color: var(--c-text);
     font-weight: bold;
 }
 
 .integ-tilde {
-    color: #e6edf3;
+    color: var(--c-text);
     align-self: center;
     margin: 0 5px;
 }
@@ -934,7 +934,7 @@ body {
 }
 
 .btn-purple-sm:hover {
-    background-color: #a371f7;
+    background-color: var(--c-purple);
 }
 
 /* ==========================================================

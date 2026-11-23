@@ -1,0 +1,131 @@
+/* ==========================================================================
+   화면 테마 (블랙 / 화이트)
+   - 기본 배경·테두리·글자 색은 아래 변수로 관리 (다른 CSS 파일은 var(--c-...) 로 사용)
+   - 블랙 값은 기존 색과 동일, 화이트 값은 html[data-theme="light"] 에서 덮어씀
+   - 모드 전환: theme.js (localStorage 'ui_theme')
+   ========================================================================== */
+:root {
+    color-scheme: dark;
+    --c-bg: #0d1117;          /* 페이지 배경, 입력창·리스트 항목 배경 */
+    --c-surface: #161b22;     /* 카드·모달 배경 */
+    --c-surface-2: #21262d;   /* 버튼·hover·헤더 줄 배경 */
+    --c-surface-3: #1c2128;   /* 카드 안 구역 배경 */
+    --c-border: #30363d;      /* 테두리 */
+    --c-border-2: #484f58;    /* 진한 테두리 */
+    --c-text: #e6edf3;        /* 기본 글자 */
+    --c-text-2: #c9d1d9;      /* 보조 글자 */
+    --c-text-strong: #f0f6fc; /* 강조 글자 */
+    --c-text-muted: #8b949e;  /* 흐린 글자 */
+    --c-text-faint: #6e7681;  /* 더 흐린 글자 */
+    --c-header-bg: #000;      /* 상단 헤더 배경 */
+    --c-heading: #fff;        /* 제목·선택된 메뉴 글자 (블랙 모드 흰색) */
+
+    /* 강조색 (글자·테두리·상태 표시) */
+    --c-blue: #58a6ff;
+    --c-blue-2: #79c0ff;
+    --c-green: #3fb950;
+    --c-green-2: #7ee787;
+    --c-green-3: #62a16a;
+    --c-yellow: #d29922;
+    --c-yellow-2: #e3b341;
+    --c-red: #f85149;
+    --c-red-2: #ff7b72;
+    --c-orange: #f0883e;
+    --c-purple: #a371f7;
+    --c-purple-2: #d2a8ff;
+
+    /* 카드 테두리·그림자 */
+    --c-card-border: #30363d;
+    --c-card-shadow: none;
+}
+
+html[data-theme="light"] {
+    color-scheme: light;
+    --c-bg: #f6f8fa;
+    --c-surface: #ffffff;
+    --c-surface-2: #eaeef2;
+    --c-surface-3: #f6f8fa;
+    --c-border: #d0d7de;
+    --c-border-2: #afb8c1;
+    --c-text: #1f2328;
+    --c-text-2: #24292f;
+    --c-text-strong: #1f2328;
+    --c-text-muted: #656d76;
+    --c-text-faint: #8c959f;
+    --c-header-bg: #ffffff;
+    --c-heading: #1f2328;
+
+    /* 흰 배경에서 잘 보이도록 진하게 */
+    --c-blue: #0969da;
+    --c-blue-2: #0550ae;
+    --c-green: #1a7f37;
+    --c-green-2: #116329;
+    --c-green-3: #2d7a3a;
+    --c-yellow: #9a6700;
+    --c-yellow-2: #7d4e00;
+    --c-red: #cf222e;
+    --c-red-2: #a40e26;
+    --c-orange: #bc4c00;
+    --c-purple: #8250df;
+    --c-purple-2: #6639ba;
+
+    /* [요청] 화이트 모드 카드 테두리 진하게 + 옅은 그림자 */
+    --c-card-border: #b6bfc9;
+    --c-card-shadow: 0 1px 3px rgba(31, 35, 40, 0.10);
+}
+
+/* 화이트 모드: 카드·모달·사이드바 구역 테두리 강조 */
+html[data-theme="light"] :is(
+    .status-group.card-like, .upcoming-container, .setup-card, .sidebar-group, .modal-window,
+    .calendar-container, .gantt, .card, .login-box, .setup-progress__overall,
+    .data-sheet-card, .data-sheet-header-card, .data-sidebar, .data-modal-box,
+    .analysis-chart-card, .analysis-control-card, .analysis-stat-card, .analysis-work-section,
+    .data-param-content-card, .data-param-date-sidebar, .report-modal-card,
+    .sort-report-chart-card, .sort-report-insight-card, .sort-report-kpi-card, .sort-report-rank-box,
+    .tracking-summary-card, .trouble-container, .trouble-sidebar-group, .edu-vmenu, .chatbot-guide-card
+) {
+    border-color: var(--c-card-border) !important;
+    box-shadow: var(--c-card-shadow);
+}
+
+/* 모드 전환 버튼: [요청] 옆 버튼(시스템 로그·설정·로그아웃)과 같은 크기 → .btn-gray 스타일 그대로 사용 */
+
+/* [요청] 화이트 모드 캘린더: 날짜 칸 테두리가 배경과 비슷해 구분이 안 되므로 진하게 */
+html[data-theme="light"] .date-cell {
+    border-color: #c4ccd5;
+}
+html[data-theme="light"] .date-cell:hover {
+    border-color: var(--c-border-2);
+}
+
+/* [요청] 화이트 모드 HOME 장비 이관·작업 검색·작업 등록 버튼: 채도 낮은 연한 배경 + 검은 글씨 */
+html[data-theme="light"] .mobile-only-btn-group .btn-blue-sm {
+    background: #ddf4ff;
+    border: 1px solid #80ccff;
+    color: #1f2328;
+}
+html[data-theme="light"] .mobile-only-btn-group .btn-green-sm {
+    background: #dafbe1;
+    border: 1px solid #8ddb9e;
+    color: #1f2328;
+}
+html[data-theme="light"] .mobile-only-btn-group .btn-purple-sm {
+    background: #f3e8ff;
+    border: 1px solid #d0b4f8;
+    color: #1f2328;
+}
+html[data-theme="light"] .mobile-only-btn-group .btn-blue-sm:hover { background: #b6e3ff; }
+html[data-theme="light"] .mobile-only-btn-group .btn-green-sm:hover { background: #aceebb; }
+html[data-theme="light"] .mobile-only-btn-group .btn-purple-sm:hover { background: #e4d1fd; }
+
+/* [요청] 화이트 모드 셋업 일지·장비 점검 이력: 선택한 행을 확실하게 표시
+   (블랙 모드의 연한 초록은 흰 배경에서 거의 안 보임 → 진한 연두 배경, 왼쪽 막대는 기존 것 사용) */
+html[data-theme="light"] .active-log,
+html[data-theme="light"] .active-log > td {
+    background-color: #ccefd6 !important;
+}
+
+/* [요청] 화이트 모드 왼쪽 사업장·장비 선택 구역(사이드바): 원래 테두리가 없어 흰 배경과 구분이 안 됨 → 카드 테두리 추가 */
+html[data-theme="light"] .sidebar-group {
+    border: 1px solid var(--c-card-border);
+}

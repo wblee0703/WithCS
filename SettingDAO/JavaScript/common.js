@@ -2177,7 +2177,7 @@ function setupCollapsibleCards() {
                 btn.innerHTML = '▲'; // 초기 상태: 펼쳐짐
             }
 
-            btn.style.cssText = 'float: right; background: none; border: none; color: #8b949e; cursor: pointer; font-size: 14px; line-height: 1;';
+            btn.style.cssText = 'float: right; background: none; border: none; color: var(--c-text-muted); cursor: pointer; font-size: 14px; line-height: 1;';
 
             btn.onclick = (e) => {
                 e.stopPropagation();
@@ -2767,7 +2767,7 @@ function openAddUserModal() {
             siteInput.parentNode.replaceChild(newSiteInput, siteInput);
             siteInput = newSiteInput;
 
-            siteInput.style.color = '#e6edf3';
+            siteInput.style.color = 'var(--c-text)';
             siteSuggestions.style.zIndex = '99999'; // 혹시 모를 가림 현상 완벽 차단
 
             const renderAddUserSites = () => {
@@ -2802,7 +2802,7 @@ function openAddUserModal() {
                 if (!query) {
                     const defLi = document.createElement('li');
                     defLi.className = 'user-suggestion-item';
-                    defLi.innerHTML = `<span style="color: #e6edf3;">사업장 미지정 (전체)</span>`;
+                    defLi.innerHTML = `<span style="color: var(--c-text);">사업장 미지정 (전체)</span>`;
                     defLi.addEventListener('click', (e) => {
                         siteInput.value = '';
                         siteSelect.value = '';
@@ -2816,7 +2816,7 @@ function openAddUserModal() {
                     matches.forEach(site => {
                         const li = document.createElement('li');
                         li.className = 'user-suggestion-item';
-                        li.innerHTML = `<span style="color: #e6edf3;">${escapeHtml(site)}</span>`;
+                        li.innerHTML = `<span style="color: var(--c-text);">${escapeHtml(site)}</span>`;
                         li.addEventListener('click', (e) => {
                             siteInput.value = site;
                             siteSelect.value = site;
@@ -2828,7 +2828,7 @@ function openAddUserModal() {
                 } else {
                     const emptyLi = document.createElement('li');
                     emptyLi.className = 'user-suggestion-item';
-                    emptyLi.style.cssText = 'color:#8b949e; cursor:default; justify-content:center;';
+                    emptyLi.style.cssText = 'color:var(--c-text-muted); cursor:default; justify-content:center;';
                     emptyLi.innerHTML = `<span>검색 결과 없음</span>`;
                     siteSuggestions.appendChild(emptyLi);
                 }
@@ -2974,10 +2974,10 @@ function openUserModal() {
                             li.className = 'user-suggestion-item';
                             let roleDisplay = '';
                             if (u.role === 'admin') {
-                                roleDisplay = ' <span style="color: #f85149; font-weight: bold;">[관리자]</span>';
+                                roleDisplay = ' <span style="color: var(--c-red); font-weight: bold;">[관리자]</span>';
                             }
                             const namePart = u.name ? `${escapeHtml(u.name)} (${escapeHtml(u.department)} ${escapeHtml(u.position)})` : '이름 없음';
-                            li.innerHTML = `<span style="color: #e6edf3;">${namePart}${roleDisplay}</span><span class="user-id" style="color: #8b949e;">${escapeHtml(u.id)}</span>`;
+                            li.innerHTML = `<span style="color: var(--c-text);">${namePart}${roleDisplay}</span><span class="user-id" style="color: var(--c-text-muted);">${escapeHtml(u.id)}</span>`;
                             li.addEventListener('click', (e) => {
                                 searchInput.value = u.name ? `${u.name} (${u.department} ${u.position}) - ${u.id}` : u.id;
                                 searchInput.dataset.selectedId = u.id;
@@ -2986,7 +2986,7 @@ function openUserModal() {
                             suggestionList.appendChild(li);
                         });
                     } else {
-                        suggestionList.innerHTML = '<li class="user-suggestion-item" style="color:#8b949e; cursor:default; justify-content:center;">검색 결과 없음</li>';
+                        suggestionList.innerHTML = '<li class="user-suggestion-item" style="color:var(--c-text-muted); cursor:default; justify-content:center;">검색 결과 없음</li>';
                     }
                     suggestionList.style.display = 'block';
                 };
@@ -2999,7 +2999,7 @@ function openUserModal() {
                 suggestionList.addEventListener('touchend', () => setTimeout(() => isSuggestionActive = false, 500));
 
                 if (searchInput) {
-                    searchInput.style.color = '#e6edf3';
+                    searchInput.style.color = 'var(--c-text)';
                     searchInput.addEventListener('click', (e) => {
                         e.stopPropagation();
                         showSuggestions();
@@ -3620,7 +3620,7 @@ function fillSetupProjectItem(li, p, state) {
     li.innerHTML = `
         <div class="item-wrapper sp-wrap">
             <div class="sp-top">
-                <span class="item-text" title="${escapeHtml(title)}"${p.projectNo ? '' : ' style="color:#8b949e;"'}>${escapeHtml(title)}</span>${badge}
+                <span class="item-text" title="${escapeHtml(title)}"${p.projectNo ? '' : ' style="color:var(--c-text-muted);"'}>${escapeHtml(title)}</span>${badge}
             </div>
             ${sub ? `<span class="item-subtext">${escapeHtml(sub)}</span>` : ''}
             ${progress}
@@ -4153,7 +4153,7 @@ async function renderSystemLogs() {
         });
 
         if (filteredLogs.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color: #8b949e;">로그 내역이 없습니다.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color: var(--c-text-muted);">로그 내역이 없습니다.</td></tr>';
             return;
         }
 
@@ -4182,7 +4182,7 @@ async function renderSystemLogs() {
                 if (custName) subInfo = `[${escapeHtml(custName)}]`;
                 else if (serial) subInfo = `[${escapeHtml(serial)}]`;
 
-                if (subInfo) displayTarget = `<div>${escapeHtml(displayModel)}</div><div style="font-size: 11px; color: #3fb950; margin-top: 2px; font-weight: bold;">${subInfo}</div>`;
+                if (subInfo) displayTarget = `<div>${escapeHtml(displayModel)}</div><div style="font-size: 11px; color: var(--c-green); margin-top: 2px; font-weight: bold;">${subInfo}</div>`;
                 else displayTarget = escapeHtml(displayModel);
             }
 
@@ -4190,19 +4190,19 @@ async function renderSystemLogs() {
             const logDateObj = new Date(log.timestamp);
             const dateStr = logDateObj.toLocaleDateString('ko-KR');
             const timeStr = logDateObj.toLocaleTimeString('en-GB', { hour12: false, hour: '2-digit', minute: '2-digit' });
-            const displayTimestamp = `<div>${dateStr}</div><div style="font-size: 11px; color: #8b949e; margin-top: 2px;">${timeStr}</div>`;
+            const displayTimestamp = `<div>${dateStr}</div><div style="font-size: 11px; color: var(--c-text-muted); margin-top: 2px;">${timeStr}</div>`;
 
             return `<tr>
                 <td>${displayTimestamp}</td>
                 <td style="text-align: center;">${escapeHtml(log.worker)}</td>
-                <td><span class="badge pm" style="background: #30363d;">${log.action}</span></td>
+                <td><span class="badge pm" style="background: var(--c-border);">${log.action}</span></td>
                 <td>${displayTarget}</td>
                 <td style="text-align: left; white-space: pre-line;">${log.details}</td>
             </tr>`;
         }).join('');
     } catch (err) {
         console.error(err);
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color: #f85149;">로그를 불러오는데 실패했습니다.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color: var(--c-red);">로그를 불러오는데 실패했습니다.</td></tr>';
     }
 }
 
@@ -4632,9 +4632,9 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
     const resetSaveButton = () => {
         if (saveBtn) {
             saveBtn.disabled = true;
-            saveBtn.style.backgroundColor = '#30363d';
-            saveBtn.style.border = '1px solid #8b949e';
-            saveBtn.style.color = '#8b949e';
+            saveBtn.style.backgroundColor = 'var(--c-border)';
+            saveBtn.style.border = '1px solid var(--c-text-muted)';
+            saveBtn.style.color = 'var(--c-text-muted)';
             saveBtn.style.cursor = 'not-allowed';
         }
     };
@@ -4643,7 +4643,7 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
         if (saveBtn) {
             saveBtn.disabled = false;
             saveBtn.style.backgroundColor = '#f0b400';
-            saveBtn.style.border = '1px solid #d29922';
+            saveBtn.style.border = '1px solid var(--c-yellow)';
             saveBtn.style.color = '#000';
             saveBtn.style.fontWeight = 'bold';
             saveBtn.style.cursor = 'pointer';
@@ -4987,7 +4987,7 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
         tr.innerHTML = `
             <td><span class="badge" style="background:${badgeColor}; display: inline-block; width: 45px; text-align: center; padding: 3px 0; font-size: 11px; border-radius: 4px; color: #fff; font-weight: bold;">${badgeText}</span></td>
             <td>${displayDate}</td>
-            <td style="text-align: left; padding-left: 10px; font-weight: bold; color: #58a6ff;">${escapeHtml(sub3Text)}</td>
+            <td style="text-align: left; padding-left: 10px; font-weight: bold; color: var(--c-blue);">${escapeHtml(sub3Text)}</td>
             <td style="text-align: left; padding-left: 10px; line-height: 1.4;">${tableContent}</td>
         `;
 
@@ -5019,7 +5019,7 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
     childMaints.forEach((maint, idx) => {
         const tr = createRow(maint, `예정 ${idx + 1}`, '#d29922', false);
         const dateCell = tr.querySelector('td:nth-child(2)');
-        if (dateCell) dateCell.innerHTML = `${escapeHtml(maint.scheduledDate || '-')} <span style="color:#d29922; font-size:10px; font-weight:bold;">(예정)</span>`;
+        if (dateCell) dateCell.innerHTML = `${escapeHtml(maint.scheduledDate || '-')} <span style="color:var(--c-yellow); font-size:10px; font-weight:bold;">(예정)</span>`;
 
         // [추가] 예정된 추가 작업 삭제 버튼
         const contentCell = tr.querySelector('td:nth-child(3)');
@@ -5298,7 +5298,7 @@ window.fetchWorkerNames = async function (site = null) {
 window.renderWorkerListItems = function (listContainer, displayWorkers, currentSelected, onClickCallback) {
     listContainer.innerHTML = '';
     if (displayWorkers.length === 0) {
-        listContainer.innerHTML = `<div class="log-select-empty-msg" style="padding:10px; color:#8b949e; text-align:center;">검색 결과가 없습니다.</div>`;
+        listContainer.innerHTML = `<div class="log-select-empty-msg" style="padding:10px; color:var(--c-text-muted); text-align:center;">검색 결과가 없습니다.</div>`;
         return;
     }
     displayWorkers.forEach(w => {
@@ -5548,7 +5548,7 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
                 const addSpecBtn = document.createElement('button');
                 addSpecBtn.innerHTML = '＋';
                 addSpecBtn.type = 'button';
-                addSpecBtn.style.cssText = 'margin-left: 5px; background: #0d1117; border: 1px solid #3fb950; color: #3fb950; border-radius: 4px; padding: 0 4px; font-size: 12px; font-weight: bold; cursor: pointer; flex-shrink: 0; line-height: 1; position: relative; z-index: 20; -webkit-tap-highlight-color: rgba(0,0,0,0);';
+                addSpecBtn.style.cssText = 'margin-left: 5px; background: var(--c-bg); border: 1px solid var(--c-green); color: var(--c-green); border-radius: 4px; padding: 0 4px; font-size: 12px; font-weight: bold; cursor: pointer; flex-shrink: 0; line-height: 1; position: relative; z-index: 20; -webkit-tap-highlight-color: rgba(0,0,0,0);';
                 addSpecBtn.title = '물품 상세 추가';
 
                 let lastBtnTouch = 0;
@@ -5613,15 +5613,15 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
             if (selsRaw.length > 1) {
                 trigger.textContent = `${selsWithCost[0]} 외 ${selsRaw.length - 1}개`;
                 trigger.classList.remove('multi-line');
-                trigger.style.color = '#fff'; // 선택된 내용 글자 색상 흰색
+                trigger.style.color = 'var(--c-heading)'; // 선택된 내용 글자 색상 (블랙 모드 흰색, 화이트 모드 검은색)
             } else if (selsRaw.length === 1) {
                 trigger.textContent = selsWithCost[0];
                 trigger.classList.remove('multi-line');
-                trigger.style.color = '#fff'; // 선택된 내용 글자 색상 흰색
+                trigger.style.color = 'var(--c-heading)'; // 선택된 내용 글자 색상 (블랙 모드 흰색, 화이트 모드 검은색)
             } else {
                 trigger.textContent = '물품 선택';
                 trigger.classList.remove('multi-line');
-                trigger.style.color = '#8b949e'; // 기본 텍스트 회색
+                trigger.style.color = 'var(--c-text-muted)'; // 기본 텍스트 회색
             }
             trigger.title = selsWithCost.join('\n');
             trigger.classList.remove('error-border');
@@ -5699,23 +5699,23 @@ window.openAddPartSpecModal = function (site, equip, itemObj, onAddCallback) {
             <div class="modal-window" style="width: 400px; height: auto; display: flex; flex-direction: column;">
                 <div class="modal-header">
                     <h3>물품 추가</h3>
-                    <button id="btn-close-add-part-spec" style="background: none; border: none; color: #8b949e; cursor: pointer; font-size: 16px;">✕</button>
+                    <button id="btn-close-add-part-spec" style="background: none; border: none; color: var(--c-text-muted); cursor: pointer; font-size: 16px;">✕</button>
                 </div>
                 <div class="modal-body" style="padding: 15px; display: flex; flex-direction: column; gap: 10px;">
                     <div class="form-row" style="margin-bottom: 0;">
-                        <label class="modal-label" style="width: 80px; flex-shrink: 0; color: #8b949e; font-size: 13px;">코드명</label>
+                        <label class="modal-label" style="width: 80px; flex-shrink: 0; color: var(--c-text-muted); font-size: 13px;">코드명</label>
                         <input type="text" id="add-part-spec-code" class="input-dark" readonly style="opacity: 0.6; cursor: not-allowed; font-size: 13px;">
                     </div>
                     <div class="form-row" style="margin-bottom: 0;">
-                        <label class="modal-label" style="width: 80px; flex-shrink: 0; color: #8b949e; font-size: 13px;">물품명</label>
+                        <label class="modal-label" style="width: 80px; flex-shrink: 0; color: var(--c-text-muted); font-size: 13px;">물품명</label>
                         <input type="text" id="add-part-spec-part" class="input-dark" readonly style="opacity: 0.6; cursor: not-allowed; font-size: 13px;">
                     </div>
                     <div class="form-row" style="margin-bottom: 0;">
-                        <label class="modal-label" style="width: 80px; flex-shrink: 0; color: #8b949e; font-size: 13px;">규격</label>
+                        <label class="modal-label" style="width: 80px; flex-shrink: 0; color: var(--c-text-muted); font-size: 13px;">규격</label>
                         <input type="text" id="add-part-spec-master" class="input-dark" readonly style="opacity: 0.6; cursor: not-allowed; font-size: 13px;">
                     </div>
                     <div class="form-row" style="margin-bottom: 0;">
-                        <label class="modal-label" style="width: 80px; flex-shrink: 0; color: #8b949e; font-size: 13px;">물품 상세</label>
+                        <label class="modal-label" style="width: 80px; flex-shrink: 0; color: var(--c-text-muted); font-size: 13px;">물품 상세</label>
                         <input type="text" id="add-part-spec-input" class="input-dark" placeholder="물품 상세 입력 (예: 100ml)" style="font-size: 13px;">
                     </div>
                     <div style="margin-top: 15px;">
@@ -5882,13 +5882,13 @@ function attachPickList(inputEl, getItems, onPick, emptyMsg) {
             const li = document.createElement('li');
             li.className = 'user-suggestion-item suggestion-item';
             li.style.cursor = 'default';
-            li.innerHTML = `<span style="color: #8b949e;">${escapeHtml(emptyMsg || '선택할 항목이 없습니다.')}</span>`;
+            li.innerHTML = `<span style="color: var(--c-text-muted);">${escapeHtml(emptyMsg || '선택할 항목이 없습니다.')}</span>`;
             suggestionList.appendChild(li);
         }
         items.forEach(item => {
             const li = document.createElement('li');
             li.className = 'user-suggestion-item suggestion-item';
-            li.innerHTML = `<span style="color: #e6edf3;">${escapeHtml(item)}</span>`;
+            li.innerHTML = `<span style="color: var(--c-text);">${escapeHtml(item)}</span>`;
             li.addEventListener('pointerdown', (e) => {
                 e.preventDefault();
                 const prev = inputEl.value;
@@ -5996,7 +5996,7 @@ function setupPositionSuggestion(inputEl) {
         positions.forEach(pos => {
             const li = document.createElement('li');
             li.className = 'user-suggestion-item suggestion-item';
-            li.innerHTML = `<span style="color: #e6edf3;">${escapeHtml(pos)}</span>`;
+            li.innerHTML = `<span style="color: var(--c-text);">${escapeHtml(pos)}</span>`;
             li.addEventListener('pointerdown', (e) => {
                 e.preventDefault();
                 if (pos === '직접 입력') {
@@ -6224,15 +6224,15 @@ window.loadAllUsersList = function () {
                     if (isRetired) li.style.opacity = '0.55';
 
                     let roleBadge = '';
-                    if (u.role === 'superadmin') roleBadge = '<span class="badge" style="background: #f85149; font-size: 12px; padding: 4px 8px;">최종 관리자</span>';
-                    else if (u.role === 'admin') roleBadge = '<span class="badge" style="background: #d29922; font-size: 12px; padding: 4px 8px;">관리자</span>';
-                    else if (isRetired) roleBadge = '<span class="badge" style="background: transparent; border: 1px solid #6e7681; color: #8b949e; font-size: 12px; padding: 3px 7px;">퇴사</span>';
-                    else roleBadge = '<span class="badge" style="background: #30363d; font-size: 12px; padding: 4px 8px;">일반</span>';
+                    if (u.role === 'superadmin') roleBadge = '<span class="badge" style="background: var(--c-red); font-size: 12px; padding: 4px 8px;">최종 관리자</span>';
+                    else if (u.role === 'admin') roleBadge = '<span class="badge" style="background: var(--c-yellow); font-size: 12px; padding: 4px 8px;">관리자</span>';
+                    else if (isRetired) roleBadge = '<span class="badge" style="background: transparent; border: 1px solid var(--c-text-faint); color: var(--c-text-muted); font-size: 12px; padding: 3px 7px;">퇴사</span>';
+                    else roleBadge = '<span class="badge" style="background: var(--c-border); font-size: 12px; padding: 4px 8px;">일반</span>';
 
                     li.innerHTML = `
                         <div style="display:flex; flex-direction:column; gap:4px; min-width:0;">
-                            <strong style="color:#e6edf3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(u.name || '이름 없음')} <span style="color:#8b949e; font-weight:normal;">(${escapeHtml(u.id)})</span></strong>
-                            <span style="font-size:11px; color:#8b949e; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${u.division ? escapeHtml(u.division) + ' · ' : '<span style="color:#d29922;">사업부 미지정</span> · '}${escapeHtml(u.department || '-')} ${escapeHtml(u.position || '-')}</span>
+                            <strong style="color:var(--c-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(u.name || '이름 없음')} <span style="color:var(--c-text-muted); font-weight:normal;">(${escapeHtml(u.id)})</span></strong>
+                            <span style="font-size:11px; color:var(--c-text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${u.division ? escapeHtml(u.division) + ' · ' : '<span style="color:var(--c-yellow);">사업부 미지정</span> · '}${escapeHtml(u.department || '-')} ${escapeHtml(u.position || '-')}</span>
                         </div>
                         <div style="flex-shrink:0; margin-left:10px;">${roleBadge}</div>
                     `;
@@ -6598,9 +6598,9 @@ function doTaskSearch() {
 
             let subInfo = '';
             if (custEquipName) {
-                subInfo = ` <span style="color:#3fb950;">[${escapeHtml(custEquipName)}]</span>`;
+                subInfo = ` <span style="color:var(--c-green);">[${escapeHtml(custEquipName)}]</span>`;
             } else if (serialNo) {
-                subInfo = ` <span style="color:#3fb950;">${escapeHtml(serialNo)}</span>`;
+                subInfo = ` <span style="color:var(--c-green);">${escapeHtml(serialNo)}</span>`;
             }
             li.querySelector('.equip-name').innerHTML = `${escapeHtml(site)} > ${escapeHtml(equipName)}${subInfo}`;
 

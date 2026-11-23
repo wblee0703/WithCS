@@ -4,7 +4,7 @@
 {% block title %}설비 Working Report 작성 및 관리 - WITH ON{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/report.css') }}">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/report.css') }}?v=t3">
 {% endblock %}
 
 {% block content %}
@@ -497,5 +497,5 @@
 
 {% block extra_js %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="{{ url_for('SettingDAO', filename='JavaScript/report.js') }}"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/report.js') }}?v=t4"></script>
 {% endblock %}

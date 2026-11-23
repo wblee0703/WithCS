@@ -16,6 +16,99 @@ window.removeCostLabels = function (content) {
     return cleanedItems.join(', ');
 };
 
+/* --------------------------------------------------------------------------
+   [추가] 점검 결과: 내용(memo) / 증상 / 원인 / 조치사항
+   - DB maint_log 의 memo, symptom, cause, action 컬럼에 각각 저장
+   - 작업 상세 정보 창에서 버튼으로 [내용] ↔ [증상·원인·조치사항] 입력 화면 전환 (값은 서로 덮어쓰지 않음)
+   - Trouble 상세 정보·Tracking 레포트가 이 값으로 자동 입력
+   -------------------------------------------------------------------------- */
+window.WORK_MEMO_SECTIONS = [
+    { key: 'symptom', label: '증상' },
+    { key: 'cause', label: '원인' },
+    { key: 'action', label: '조치사항' },
+];
+// 작업 상세 정보 창의 증상/원인/조치사항 입력값
+window.getDetailMemoParts = function () {
+    const out = {};
+    const box = document.getElementById('detail-work-memo-structured');
+    if (!box) return out;
+    box.querySelectorAll('textarea[data-key]').forEach(t => { out[t.dataset.key] = t.value.trim(); });
+    return out;
+};
+
+// 작업 상세 정보 창: 입력 화면 구성 + 열 때 값 채우기
+window.setupWorkMemoStructured = function (item) {
+    const memoInput = document.getElementById('detail-work-memo');
+    if (!memoInput) return;
+    let box = document.getElementById('detail-work-memo-structured');
+    let toggleBtn = document.getElementById('btn-toggle-work-memo-mode');
+
+    const applyMode = (structured) => {
+        box.style.display = structured ? 'flex' : 'none';
+        memoInput.style.display = structured ? 'none' : '';
+        box.querySelectorAll('textarea').forEach(t => { t.disabled = memoInput.disabled; });
+        if (toggleBtn) toggleBtn.textContent = structured ? '내용 입력' : '증상·원인·조치 입력';
+        const label = document.querySelector('#event-detail-modal .work-memo-head .detail-label');
+        if (label) label.textContent = structured ? '점검 결과 (증상 / 원인 / 조치사항)' : '점검 결과 / 메모';
+    };
+
+    if (!box) {
+        box = document.createElement('div');
+        box.id = 'detail-work-memo-structured';
+        box.style.display = 'none';
+        box.innerHTML = window.WORK_MEMO_SECTIONS.map(sec => `
+            <div class="work-memo-section">
+                <span class="work-memo-section-label">${sec.label}</span>
+                <textarea data-key="${sec.key}" class="work-memo-section-input" rows="3" spellcheck="false" placeholder="${sec.label} 입력"></textarea>
+            </div>`).join('');
+        memoInput.parentNode.insertBefore(box, memoInput);
+        // 메모 칸이 잠기면(완료 후 보기 등) 증상/원인/조치사항 칸도 함께 잠금
+        new MutationObserver(() => {
+            box.querySelectorAll('textarea').forEach(t => { t.disabled = memoInput.disabled; });
+        }).observe(memoInput, { attributes: true, attributeFilter: ['disabled'] });
+    }
+
+    if (!toggleBtn) {
+        const row = memoInput.closest('.detail-row');
+        const label = row ? row.querySelector('.detail-label') : null;
+        if (label) {
+            const head = document.createElement('div');
+            head.className = 'work-memo-head';
+            label.parentNode.insertBefore(head, label);
+            head.appendChild(label);
+            toggleBtn = document.createElement('button');
+            toggleBtn.type = 'button';
+            toggleBtn.id = 'btn-toggle-work-memo-mode';
+            toggleBtn.className = 'btn-shortcut';
+            head.appendChild(toggleBtn);
+            toggleBtn.addEventListener('click', () => {
+                const toStructured = box.style.display === 'none';
+                applyMode(toStructured);
+                try { localStorage.setItem('workMemoMode', toStructured ? 'structured' : 'free'); } catch (e) { }
+            });
+        }
+    }
+
+    // 창을 열 때 메모 라벨에 width:100% 가 지정되므로, 전환 버튼과 한 줄에 있도록 라벨 너비를 되돌림
+    const headLabel = document.querySelector('#event-detail-modal .work-memo-head .detail-label');
+    if (headLabel) {
+        headLabel.style.setProperty('width', 'auto', 'important');
+        headLabel.style.marginBottom = '0';
+    }
+
+    // 값 채우기
+    const it = item || {};
+    box.querySelectorAll('textarea[data-key]').forEach(t => { t.value = it[t.dataset.key] || ''; });
+
+    // 화면: 증상/원인/조치사항이 있으면 그 화면, 내용만 있으면 내용 화면, 둘 다 비면 마지막으로 쓴 화면
+    const hasParts = window.WORK_MEMO_SECTIONS.some(sec => String(it[sec.key] || '').trim());
+    let pref = 'free';
+    try { pref = localStorage.getItem('workMemoMode') || 'free'; } catch (e) { }
+    if (hasParts) applyMode(true);
+    else if (String(memoInput.value || '').trim()) applyMode(false);
+    else applyMode(pref === 'structured');
+};
+
 window.restoreTaskSearchModal = function () {
     if (typeof cameFromTaskSearch !== 'undefined' && cameFromTaskSearch) {
         const searchModal = document.getElementById('task-search-modal');
@@ -33,12 +126,12 @@ function showSaveCloseConfirmModal(onSave, onClose) {
 
     const confirmModalHtml = `
         <div id="save-close-confirm-modal" class="modal-overlay" style="display: flex; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.6); z-index: 20000; align-items: center; justify-content: center;">
-            <div class="modal-content" style="background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 24px; max-width: 420px; width: 90%; color: #e6edf3; box-shadow: 0 8px 24px rgba(0,0,0,0.5); text-align: center;">
-                <h3 style="margin-top: 0; margin-bottom: 16px; font-size: 16px; font-weight: 600; color: #f0f6fc;">수정사항 저장 안내</h3>
-                <p style="margin-bottom: 24px; font-size: 14px; color: #8b949e; line-height: 1.5;">수정된 내용이 있습니다.<br>저장 후 닫으시겠습니까, 아니면 저장하지 않고 닫으시겠습니까?</p>
+            <div class="modal-content" style="background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 8px; padding: 24px; max-width: 420px; width: 90%; color: var(--c-text); box-shadow: 0 8px 24px rgba(0,0,0,0.5); text-align: center;">
+                <h3 style="margin-top: 0; margin-bottom: 16px; font-size: 16px; font-weight: 600; color: var(--c-text-strong);">수정사항 저장 안내</h3>
+                <p style="margin-bottom: 24px; font-size: 14px; color: var(--c-text-muted); line-height: 1.5;">수정된 내용이 있습니다.<br>저장 후 닫으시겠습니까, 아니면 저장하지 않고 닫으시겠습니까?</p>
                 <div style="display: flex; gap: 12px; justify-content: center;">
                     <button id="btn-confirm-save-and-close" class="btn-blue" style="padding: 8px 20px; font-size: 14px; font-weight: bold; border-radius: 6px; cursor: pointer; border: none; background: #238636; color: #ffffff;">저장</button>
-                    <button id="btn-confirm-close-without-save" class="btn-gray" style="padding: 8px 20px; font-size: 14px; border-radius: 6px; cursor: pointer; background: #30363d; color: #c9d1d9; border: 1px solid #8b949e;">닫기</button>
+                    <button id="btn-confirm-close-without-save" class="btn-gray" style="padding: 8px 20px; font-size: 14px; border-radius: 6px; cursor: pointer; background: var(--c-border); color: var(--c-text-2); border: 1px solid var(--c-text-muted);">닫기</button>
                 </div>
             </div>
         </div>
@@ -598,11 +691,11 @@ function openEventDetailModal(site, equip, id, isCompleted, options = {}) {
         displayListWrapper.id = 'detail-display-list-wrapper';
         displayListWrapper.style.marginTop = '0px';
         displayListWrapper.style.padding = '10px';
-        displayListWrapper.style.background = '#161b22';
-        displayListWrapper.style.border = '1px solid #30363d';
+        displayListWrapper.style.background = 'var(--c-surface)';
+        displayListWrapper.style.border = '1px solid var(--c-border)';
         displayListWrapper.style.borderRadius = '4px';
         displayListWrapper.style.fontSize = '13px';
-        displayListWrapper.style.color = '#c9d1d9';
+        displayListWrapper.style.color = 'var(--c-text-2)';
         displayListWrapper.style.minHeight = '40px';
         displayListWrapper.style.maxHeight = '250px';
         displayListWrapper.style.overflowY = 'auto';
@@ -776,7 +869,7 @@ function openEventDetailModal(site, equip, id, isCompleted, options = {}) {
             issueShareWrapper.appendChild(templateContent);
         } else {
             issueShareWrapper.innerHTML = `
-                    <label class="modal-checkbox-label" style="font-size: 13px; font-weight: bold; color: #f0883e; display: flex; align-items: center; cursor: pointer;">
+                    <label class="modal-checkbox-label" style="font-size: 13px; font-weight: bold; color: var(--c-orange); display: flex; align-items: center; cursor: pointer;">
                         <input type="checkbox" id="detail-issue-share-checkbox" class="modal-checkbox-input" style="margin-right: 5px; transform: scale(1.2);">
                         Tracking (정상화 미완료)
                     </label>
@@ -836,6 +929,7 @@ function openEventDetailModal(site, equip, id, isCompleted, options = {}) {
         memoInput.value = lastMemo;
     }
     memoInput.disabled = false;
+    if (typeof window.setupWorkMemoStructured === 'function') window.setupWorkMemoStructured(item); // [추가] 증상/원인/조치사항 입력
 
     if (mdInput) {
         let displayMd = item.md || '';
@@ -1682,13 +1776,13 @@ function buildDetailDropdown(item, site, equip) {
         if (currentValues.length > 1) {
             initialText = `${currentValues[0]} 외 ${currentValues.length - 1}개`;
             trigger.classList.remove('multi-line');
-            trigger.style.color = '#fff';
+            trigger.style.color = 'var(--c-heading)';
         } else if (currentValues.length === 1) {
             initialText = currentValues[0];
             trigger.classList.remove('multi-line');
-            trigger.style.color = '#fff';
+            trigger.style.color = 'var(--c-heading)';
         } else {
-            trigger.style.color = '#8b949e';
+            trigger.style.color = 'var(--c-text-muted)';
         }
         trigger.innerText = initialText;
         trigger.title = currentValues.join('\n');
@@ -1872,7 +1966,7 @@ function buildDetailDropdown(item, site, equip) {
 
             list.innerHTML = '';
             if (displayItems.length === 0) {
-                list.innerHTML = '<div class="log-select-empty-msg" style="padding: 10px; color:#8b949e; text-align:center;">검색 결과가 없습니다.</div>';
+                list.innerHTML = '<div class="log-select-empty-msg" style="padding: 10px; color:var(--c-text-muted); text-align:center;">검색 결과가 없습니다.</div>';
             } else {
                 displayItems.forEach(item => {
                     const val = item.displayValue;
@@ -1897,7 +1991,7 @@ function buildDetailDropdown(item, site, equip) {
                             const addSpecBtn = document.createElement('button');
                             addSpecBtn.innerHTML = '＋';
                             addSpecBtn.type = 'button';
-                            addSpecBtn.style.cssText = 'margin-left: 5px; background: #0d1117; border: 1px solid #3fb950; color: #3fb950; border-radius: 4px; padding: 0 4px; font-size: 12px; font-weight: bold; cursor: pointer; flex-shrink: 0; line-height: 1; position: relative; z-index: 20; -webkit-tap-highlight-color: rgba(0,0,0,0);';
+                            addSpecBtn.style.cssText = 'margin-left: 5px; background: var(--c-bg); border: 1px solid var(--c-green); color: var(--c-green); border-radius: 4px; padding: 0 4px; font-size: 12px; font-weight: bold; cursor: pointer; flex-shrink: 0; line-height: 1; position: relative; z-index: 20; -webkit-tap-highlight-color: rgba(0,0,0,0);';
                             addSpecBtn.title = '물품 상세 추가';
 
                             let lastBtnTouch = 0;
@@ -2054,15 +2148,15 @@ function buildDetailDropdown(item, site, equip) {
                 if (values.length > 1) {
                     trigger.innerText = `${values[0]} 외 ${values.length - 1}개`;
                     trigger.classList.remove('multi-line');
-                    trigger.style.color = '#fff';
+                    trigger.style.color = 'var(--c-heading)';
                 } else if (values.length === 1) {
                     trigger.innerText = values[0];
                     trigger.classList.remove('multi-line');
-                    trigger.style.color = '#fff';
+                    trigger.style.color = 'var(--c-heading)';
                 } else {
                     trigger.innerText = '항목 선택';
                     trigger.classList.remove('multi-line');
-                    trigger.style.color = '#8b949e';
+                    trigger.style.color = 'var(--c-text-muted)';
                 }
                 trigger.title = values.join('\n');
                 if (typeof window.updateDetailDisplayList === 'function') window.updateDetailDisplayList();
@@ -2103,7 +2197,7 @@ function buildDetailDropdown(item, site, equip) {
         const pLabel = document.createElement('div');
         pLabel.className = 'modal-label';
         pLabel.textContent = '세부 내용';
-        pLabel.style.color = '#8b949e'; // 다른 라벨과 동일한 회색 계열 적용
+        pLabel.style.color = 'var(--c-text-muted)'; // 다른 라벨과 동일한 회색 계열 적용
         pWrapper.appendChild(pLabel);
 
         const pInner = document.createElement('div');
@@ -2116,11 +2210,11 @@ function buildDetailDropdown(item, site, equip) {
             // [추가] 템플릿 로드 실패 시 강제 생성 (세부 내용 드롭다운 안 나오는 버그 완벽 해결)
             pInner.innerHTML = `
                 <div class="log-select-wrapper" style="width: 100%; margin: 0; position: relative;">
-                    <div id="detail-edit-part-trigger" class="log-select-trigger" style="min-height:34px; display:flex; align-items:center; background:#0d1117; color:#8b949e; border:1px solid #30363d; border-radius:4px; padding:6px 10px; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer;">물품 선택</div>
-                    <div id="detail-edit-part-dropdown" class="log-select-dropdown" style="width:100%; position:absolute; top:100%; left:0; z-index:1000; margin-top:4px; background:#161b22; border:1px solid #30363d; border-radius:4px; box-shadow:0 4px 12px rgba(0,0,0,0.5); box-sizing:border-box;">
-                        <input type="text" id="detail-edit-part-search" class="dropdown-search-input" placeholder="검색..." style="width: calc(100% - 12px); margin: 5px 6px; padding: 6px 10px; background: #0d1117; border: 1px solid #30363d; color: #e6edf3; border-radius: 4px; box-sizing: border-box;" autocomplete="off">
+                    <div id="detail-edit-part-trigger" class="log-select-trigger" style="min-height:34px; display:flex; align-items:center; background:var(--c-bg); color:var(--c-text-muted); border:1px solid var(--c-border); border-radius:4px; padding:6px 10px; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer;">물품 선택</div>
+                    <div id="detail-edit-part-dropdown" class="log-select-dropdown" style="width:100%; position:absolute; top:100%; left:0; z-index:1000; margin-top:4px; background:var(--c-surface); border:1px solid var(--c-border); border-radius:4px; box-shadow:0 4px 12px rgba(0,0,0,0.5); box-sizing:border-box;">
+                        <input type="text" id="detail-edit-part-search" class="dropdown-search-input" placeholder="검색..." style="width: calc(100% - 12px); margin: 5px 6px; padding: 6px 10px; background: var(--c-bg); border: 1px solid var(--c-border); color: var(--c-text); border-radius: 4px; box-sizing: border-box;" autocomplete="off">
                         <div id="detail-edit-part-list" class="log-select-list" style="max-height: 200px; overflow-y: auto; padding: 8px;"></div>
-                        <div class="log-select-footer" style="padding: 8px; border-top: 1px solid #30363d; background: #21262d; display: flex;">
+                        <div class="log-select-footer" style="padding: 8px; border-top: 1px solid var(--c-border); background: var(--c-surface-2); display: flex;">
                             <button type="button" id="btn-detail-edit-part-add" class="btn-blue-sm" style="flex: 1; width: 100%;">선택 완료</button>
                         </div>
                     </div>
@@ -2185,11 +2279,11 @@ function buildDetailDropdown(item, site, equip) {
         displayListWrapper.id = 'detail-display-list-wrapper';
         displayListWrapper.style.marginTop = '0px';
         displayListWrapper.style.padding = '10px';
-        displayListWrapper.style.background = '#161b22';
-        displayListWrapper.style.border = '1px solid #30363d';
+        displayListWrapper.style.background = 'var(--c-surface)';
+        displayListWrapper.style.border = '1px solid var(--c-border)';
         displayListWrapper.style.borderRadius = '4px';
         displayListWrapper.style.fontSize = '13px';
-        displayListWrapper.style.color = '#c9d1d9';
+        displayListWrapper.style.color = 'var(--c-text-2)';
 
         const parentContainer = contentInput.closest('.form-row') || contentInput.closest('.detail-row') || contentInput.parentNode;
         const partWrapper = document.getElementById('detail-edit-part-wrapper');
@@ -2412,6 +2506,7 @@ function getDetailSnapshot() {
         worker,
         md,
         memo,
+        memoParts: JSON.stringify(window.getDetailMemoParts ? window.getDetailMemoParts() : {}), // [추가]
         date,
         costType,
         issueShared,
@@ -2432,6 +2527,7 @@ function hasDetailUnsavedChanges() {
     return current.worker !== initial.worker ||
         current.md !== initial.md ||
         current.memo !== initial.memo ||
+        (initial.memoParts !== undefined && current.memoParts !== initial.memoParts) ||
         current.date !== initial.date ||
         current.content !== initial.content ||
         current.issueShared !== initial.issueShared ||
@@ -2459,6 +2555,7 @@ async function saveDetailChanges() {
     const newWorker = document.getElementById('detail-worker').value.trim();
     const newMd = document.getElementById('detail-md').value.trim();
     const newMemo = document.getElementById('detail-work-memo').value.trim();
+    const detailMemoParts = window.getDetailMemoParts ? window.getDetailMemoParts() : {}; // [추가] 증상/원인/조치사항
     const newDate = document.getElementById('detail-scheduled-date').value;
     const newStart = getSplitDateTimeValue('detail-start');
     const newEnd = getSplitDateTimeValue('detail-end');
@@ -2688,6 +2785,7 @@ async function saveDetailChanges() {
         item.date = targetDate;
         item.worker = newWorker;
         item.memo = finalMemo;
+        Object.assign(item, detailMemoParts);
         item.md = newMd;
         item.content = finalContentStr;
         item.costType = newCostType;
@@ -2705,6 +2803,7 @@ async function saveDetailChanges() {
                 l.date = targetDate;
                 l.worker = newWorker;
                 l.memo = finalMemo;
+                Object.assign(l, detailMemoParts);
                 l.md = newMd;
                 l.content = finalContentStr;
                 l.costType = newCostType;
@@ -2804,6 +2903,7 @@ async function saveDetailChanges() {
                 existingItem.scheduledDate = targetDate;
                 existingItem.worker = newWorker;
                 existingItem.memo = newMemo;
+                Object.assign(existingItem, detailMemoParts);
                 existingItem.md = newMd;
                 existingItem.costType = newCostType;
                 existingItem.itemCost = finalItemCost;
@@ -2829,6 +2929,7 @@ async function saveDetailChanges() {
                     scheduledDate: targetDate,
                     worker: newWorker,
                     memo: newMemo,
+                    ...detailMemoParts,
                     md: newMd,
                     itemCost: finalItemCost,
                     costType: newCostType,
@@ -2864,6 +2965,7 @@ async function saveDetailChanges() {
                     existing.detailType3 = newDetailType3;
                     existing.worker = newWorker;
                     existing.memo = newMemo;
+                    Object.assign(existing, detailMemoParts);
                     existing.md = newMd;
                     existing.costType = newCostType;
                     existing.content = finalContent;
@@ -2872,7 +2974,7 @@ async function saveDetailChanges() {
                     generateDateChangeLog(existing, oldDate, 0);
                 } else {
                     const newId = Date.now() + Math.floor(Math.random() * 10000);
-                    const newItem = { id: newId, type: newType, detailType: newDetailType, detailType2: newDetailType2, detailType3: newDetailType3, code: '', content: finalContent, date: "", scheduledDate: targetDate, worker: newWorker, memo: newMemo, md: newMd, itemCost: '', costType: newCostType, originalLogId: item.originalLogId };
+                    const newItem = { id: newId, type: newType, detailType: newDetailType, detailType2: newDetailType2, detailType3: newDetailType3, code: '', content: finalContent, date: "", scheduledDate: targetDate, worker: newWorker, memo: newMemo, ...detailMemoParts, md: newMd, itemCost: '', costType: newCostType, originalLogId: item.originalLogId };
                     data.maint.push(newItem);
                     remainingIds.push(newId);
                     payload.maint_upserts.push(newItem);
@@ -2916,6 +3018,7 @@ async function saveDetailChanges() {
                     existing.detailType3 = newDetailType3;
                     existing.worker = newWorker;
                     existing.memo = newMemo;
+                    Object.assign(existing, detailMemoParts);
                     existing.md = newMd;
                     existing.costType = newCostType;
                     existing.content = finalContent;
@@ -2926,7 +3029,7 @@ async function saveDetailChanges() {
                     generateDateChangeLog(existing, oldDate, 0);
                 } else {
                     const newId = Date.now() + Math.floor(Math.random() * 10000);
-                    const newItem = { id: newId, type: newType, detailType: newDetailType, detailType2: newDetailType2, detailType3: newDetailType3, code: '', content: finalContent, date: "", scheduledDate: targetDate, worker: newWorker, memo: newMemo, md: newMd, costType: newCostType, originalLogId: item.originalLogId };
+                    const newItem = { id: newId, type: newType, detailType: newDetailType, detailType2: newDetailType2, detailType3: newDetailType3, code: '', content: finalContent, date: "", scheduledDate: targetDate, worker: newWorker, memo: newMemo, ...detailMemoParts, md: newMd, costType: newCostType, originalLogId: item.originalLogId };
                     data.maint.push(newItem);
                     remainingIds.push(newId);
                     payload.maint_upserts.push(newItem);
@@ -3010,6 +3113,7 @@ async function saveDetailChanges() {
         worker: newWorker,
         md: newMd,
         memo: newMemo,
+        memoParts: JSON.stringify(detailMemoParts),
         date: targetDate,
         issueShared: issueShareCb ? issueShareCb.checked : false,
         content: savedContentStr,
@@ -3086,6 +3190,7 @@ async function completeScheduleWork() {
     const mdInput = document.getElementById('detail-md');
     const md = mdInput ? mdInput.value.trim() : '';
     const memo = document.getElementById('detail-work-memo').value.trim();
+    const completeMemoParts = window.getDetailMemoParts ? window.getDetailMemoParts() : {}; // [추가] 증상/원인/조치사항
     const issueShareCb = document.getElementById('detail-issue-share-checkbox');
     const isIssueShared = issueShareCb ? issueShareCb.checked : false;
     const costTypeInput = document.getElementById('detail-cost-type');
@@ -3248,7 +3353,8 @@ async function completeScheduleWork() {
     }
 
     if (taskType !== '정기') {
-        if (!memo) return alert('점검 결과 / 메모를 입력해주세요.');
+        // [수정] 내용 또는 증상/원인/조치사항 중 하나는 입력
+        if (!memo && !Object.values(completeMemoParts).some(Boolean)) return alert('점검 결과 / 메모를 입력해주세요.');
     }
 
     const workerCount = worker.split(',').map(s => s.trim()).filter(Boolean).length;
@@ -3286,6 +3392,7 @@ async function completeScheduleWork() {
         md: md,
         worker: worker,
         memo: finalMemo,
+        ...completeMemoParts,
         isIssueShared: isIssueShared,
         startTime: startTime,
         endTime: endTime
@@ -3955,11 +4062,11 @@ function setupRegisterScheduleModal() {
                 partRow.innerHTML = `
                     <label class="form-label" style="width: 80px; flex-shrink: 0;">세부 내용</label>
                     <div id="register-part-wrapper" class="log-select-wrapper" style="flex: 1; min-width: 0; position: relative; margin: 0;">
-                        <div id="register-part-trigger" class="log-select-trigger" style="min-height:30px; display:flex; align-items:center; background:#0d1117; color:#8b949e; border:1px solid #30363d; border-radius:4px; padding:6px 10px; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer;">물품 선택</div>
-                        <div id="register-part-dropdown" class="log-select-dropdown" style="width:100%; position:absolute; top:100%; left:0; z-index:1000; margin-top:4px; background:#161b22; border:1px solid #30363d; border-radius:4px; box-shadow:0 4px 12px rgba(0,0,0,0.5); box-sizing:border-box;">
-                            <input type="text" id="register-part-search" class="dropdown-search-input" placeholder="검색..." style="width: calc(100% - 12px); margin: 5px 6px; padding: 6px 10px; background: #0d1117; border: 1px solid #30363d; color: #e6edf3; border-radius: 4px; box-sizing: border-box;" autocomplete="off">
+                        <div id="register-part-trigger" class="log-select-trigger" style="min-height:30px; display:flex; align-items:center; background:var(--c-bg); color:var(--c-text-muted); border:1px solid var(--c-border); border-radius:4px; padding:6px 10px; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer;">물품 선택</div>
+                        <div id="register-part-dropdown" class="log-select-dropdown" style="width:100%; position:absolute; top:100%; left:0; z-index:1000; margin-top:4px; background:var(--c-surface); border:1px solid var(--c-border); border-radius:4px; box-shadow:0 4px 12px rgba(0,0,0,0.5); box-sizing:border-box;">
+                            <input type="text" id="register-part-search" class="dropdown-search-input" placeholder="검색..." style="width: calc(100% - 12px); margin: 5px 6px; padding: 6px 10px; background: var(--c-bg); border: 1px solid var(--c-border); color: var(--c-text); border-radius: 4px; box-sizing: border-box;" autocomplete="off">
                             <div id="register-part-list" class="log-select-list" style="max-height: 200px; overflow-y: auto; padding: 8px;"></div>
-                            <div class="log-select-footer" style="padding: 8px; border-top: 1px solid #30363d; background: #21262d; display: flex;">
+                            <div class="log-select-footer" style="padding: 8px; border-top: 1px solid var(--c-border); background: var(--c-surface-2); display: flex;">
                                 <button type="button" id="btn-register-part-add" class="btn-blue-sm" style="flex: 1; width: 100%;">선택 완료</button>
                             </div>
                         </div>
@@ -4274,7 +4381,7 @@ function openRegisterScheduleModal(dateStr, presetData = null) {
 
                     equipTrigger.textContent = displayValue;
                     equipTrigger.title = displayValue;
-                    equipTrigger.style.color = '#fff';
+                    equipTrigger.style.color = 'var(--c-heading)';
                     equipTrigger.classList.add('has-value');
                 }
             }
@@ -4467,7 +4574,7 @@ function updateRegisterEquipSelect(site) {
             equipTrigger.textContent = '사업장을 먼저 선택해주세요';
             equipTrigger.title = '';
             equipTrigger.classList.add('disabled');
-            equipTrigger.style.color = '#8b949e';
+            equipTrigger.style.color = 'var(--c-text-muted)';
             equipTrigger.style.cursor = 'not-allowed';
             equipTrigger.style.opacity = '0.5';
             if (equipSearch) equipSearch.value = '';
@@ -4475,7 +4582,7 @@ function updateRegisterEquipSelect(site) {
             equipTrigger.textContent = '장비 선택';
             equipTrigger.title = '';
             equipTrigger.classList.remove('disabled');
-            equipTrigger.style.color = '#fff';
+            equipTrigger.style.color = 'var(--c-heading)';
             equipTrigger.style.cursor = 'pointer';
             equipTrigger.style.opacity = '1';
             if (equipSearch) equipSearch.value = '';
@@ -4558,9 +4665,9 @@ function updateRegisterEquipSelect(site) {
 
                         let displayValueHtml = escapeHtml(displayName);
                         if (custName) {
-                            displayValueHtml += ` <span style="color:#3fb950;">[${escapeHtml(custName)}]</span>`;
+                            displayValueHtml += ` <span style="color:var(--c-green);">[${escapeHtml(custName)}]</span>`;
                         } else if (serial) {
-                            displayValueHtml += ` <span style="color:#3fb950;">[${escapeHtml(serial)}]</span>`;
+                            displayValueHtml += ` <span style="color:var(--c-green);">[${escapeHtml(serial)}]</span>`;
                         }
 
                         // 기존 템플릿의 분리된 구조를 무시하고 자연스럽게 한 줄에 표시
@@ -5276,7 +5383,7 @@ window.updateRegisterContentOptions = function () {
 
             list.innerHTML = '';
             if (displayItems.length === 0) {
-                list.innerHTML = '<div class="log-select-empty-msg" style="padding: 10px; color:#8b949e; text-align:center;">검색 결과가 없습니다.</div>';
+                list.innerHTML = '<div class="log-select-empty-msg" style="padding: 10px; color:var(--c-text-muted); text-align:center;">검색 결과가 없습니다.</div>';
             } else {
                 displayItems.forEach(item => {
                     const val = item.displayValue;
@@ -5302,7 +5409,7 @@ window.updateRegisterContentOptions = function () {
                             const addSpecBtn = document.createElement('button');
                             addSpecBtn.innerHTML = '＋';
                             addSpecBtn.type = 'button';
-                            addSpecBtn.style.cssText = 'margin-left: 5px; background: #0d1117; border: 1px solid #3fb950; color: #3fb950; border-radius: 4px; padding: 0 4px; font-size: 12px; font-weight: bold; cursor: pointer; flex-shrink: 0; line-height: 1; position: relative; z-index: 20; -webkit-tap-highlight-color: rgba(0,0,0,0);';
+                            addSpecBtn.style.cssText = 'margin-left: 5px; background: var(--c-bg); border: 1px solid var(--c-green); color: var(--c-green); border-radius: 4px; padding: 0 4px; font-size: 12px; font-weight: bold; cursor: pointer; flex-shrink: 0; line-height: 1; position: relative; z-index: 20; -webkit-tap-highlight-color: rgba(0,0,0,0);';
                             addSpecBtn.title = '물품 상세 추가';
 
                             let lastBtnTouch = 0;
@@ -5490,11 +5597,11 @@ window.updateRegisterContentOptions = function () {
         displayListWrapper.id = 'register-display-list-wrapper';
         displayListWrapper.style.marginTop = '0px';
         displayListWrapper.style.padding = '10px';
-        displayListWrapper.style.background = '#161b22';
-        displayListWrapper.style.border = '1px solid #30363d';
+        displayListWrapper.style.background = 'var(--c-surface)';
+        displayListWrapper.style.border = '1px solid var(--c-border)';
         displayListWrapper.style.borderRadius = '4px';
         displayListWrapper.style.fontSize = '13px';
-        displayListWrapper.style.color = '#c9d1d9';
+        displayListWrapper.style.color = 'var(--c-text-2)';
 
         const parentContainer = input.closest('.form-row') || input.parentNode;
         const partRow = document.getElementById('register-part-row');
@@ -6188,7 +6295,7 @@ window.openEquipTransferModal = function () {
 
     if (transferEquips.length === 0) {
         const msg = targetSite ? `[${targetSite}] 사업장(그룹)에 이관 대기 중인 셋업 완료 장비가 없습니다.` : `이관 대기 중인 셋업 완료 장비가 없습니다.`;
-        listEl.innerHTML = `<li style="padding: 15px; text-align: center; color: #8b949e;">${msg}</li>`;
+        listEl.innerHTML = `<li style="padding: 15px; text-align: center; color: var(--c-text-muted);">${msg}</li>`;
     } else {
         transferEquips.forEach(item => {
             const parts = item.equip.split('::');
@@ -6205,20 +6312,20 @@ window.openEquipTransferModal = function () {
 
             let resubmitHtml = '';
             if (item.resubmitMemo) {
-                resubmitHtml = `<div style="color: #58a6ff; font-size: 11px; margin-top: 2px; word-break: break-all;">🔄 수정/보완: ${escapeHtml(item.resubmitMemo)}</div>`;
+                resubmitHtml = `<div style="color: var(--c-blue); font-size: 11px; margin-top: 2px; word-break: break-all;">🔄 수정/보완: ${escapeHtml(item.resubmitMemo)}</div>`;
             }
 
             let transferCommentHtml = '';
             if (item.transferComment) {
-                transferCommentHtml = `<div style="color: #a371f7; font-size: 11px; margin-top: 2px; word-break: break-all;">💬 코멘트: ${escapeHtml(item.transferComment)}</div>`;
+                transferCommentHtml = `<div style="color: var(--c-purple); font-size: 11px; margin-top: 2px; word-break: break-all;">💬 코멘트: ${escapeHtml(item.transferComment)}</div>`;
             }
 
             const li = document.createElement('li');
-            li.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #30363d;';
+            li.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--c-border);';
             li.innerHTML = `
                 <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px;">
-                    <span class="transfer-equip-name" style="color: #58a6ff; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; text-decoration: underline;" title="클릭하여 상세 내용 확인">[${escapeHtml(item.site)}] ${escapeHtml(displayName)} <span style="color: #3fb950;">${subInfo}</span></span>
-                    <span style="color: #8b949e; font-size: 11px;">상태: ${escapeHtml(item.setupInfo.equipStatus || '미지정')}</span>
+                    <span class="transfer-equip-name" style="color: var(--c-blue); font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; text-decoration: underline;" title="클릭하여 상세 내용 확인">[${escapeHtml(item.site)}] ${escapeHtml(displayName)} <span style="color: var(--c-green);">${subInfo}</span></span>
+                    <span style="color: var(--c-text-muted); font-size: 11px;">상태: ${escapeHtml(item.setupInfo.equipStatus || '미지정')}</span>
                     ${resubmitHtml}
                     ${transferCommentHtml}
                 </div>
@@ -6318,12 +6425,12 @@ window.setupTransferHistoryModal = function () {
                     <div class="transfer-history-filter-wrapper" style="display: flex; gap: 10px; align-items: center; flex-shrink: 0;">
                         <div class="transfer-history-date-group" style="display: flex; align-items: center; gap: 5px;">
                             <input type="date" id="transfer-history-start" class="input-dark" style="width: 120px; font-size: 12px; padding: 4px;">
-                            <span style="color: #8b949e;">~</span>
+                            <span style="color: var(--c-text-muted);">~</span>
                             <input type="date" id="transfer-history-end" class="input-dark" style="width: 120px; font-size: 12px; padding: 4px;">
                         </div>
                         <input type="text" id="transfer-history-search" class="input-dark" style="flex: 1; font-size: 12px; padding: 4px 8px;" placeholder="사업장, 장비명, 시리얼, 고객사명 검색...">
                     </div>
-                    <div class="data-table-wrapper" style="flex: 1; overflow-y: auto; margin-top: 10px; border: 1px solid #30363d; border-radius: 4px;">
+                    <div class="data-table-wrapper" style="flex: 1; overflow-y: auto; margin-top: 10px; border: 1px solid var(--c-border); border-radius: 4px;">
                         <table class="data-table" style="margin: 0; width: 100%;">
                             <thead>
                                 <tr>
@@ -6440,7 +6547,7 @@ window.renderTransferHistoryList = function () {
     historyList.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
     if (historyList.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #8b949e; padding: 20px;">검색된 이관 내역이 없습니다.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--c-text-muted); padding: 20px;">검색된 이관 내역이 없습니다.</td></tr>';
         return;
     }
 
@@ -6453,16 +6560,16 @@ window.renderTransferHistoryList = function () {
         const custName = item.setupInfo.custEquipName || '';
 
         let subInfo = '';
-        if (custName) subInfo = `<span style="color: #3fb950; font-size: 11px; font-weight: bold; margin-left: 5px;">[${escapeHtml(custName)}]</span>`;
-        else if (serial) subInfo = `<span style="color: #3fb950; font-size: 11px; font-weight: bold; margin-left: 5px;">[${escapeHtml(serial)}]</span>`;
+        if (custName) subInfo = `<span style="color: var(--c-green); font-size: 11px; font-weight: bold; margin-left: 5px;">[${escapeHtml(custName)}]</span>`;
+        else if (serial) subInfo = `<span style="color: var(--c-green); font-size: 11px; font-weight: bold; margin-left: 5px;">[${escapeHtml(serial)}]</span>`;
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td style="text-align: center; padding: 8px 10px; border-bottom: 1px solid #21262d;">${item.date || '-'}</td>
-            <td style="text-align: center; padding: 8px 10px; border-bottom: 1px solid #21262d;">${escapeHtml(item.site)}</td>
-            <td style="padding: 8px 10px; border-bottom: 1px solid #21262d;">
+            <td style="text-align: center; padding: 8px 10px; border-bottom: 1px solid var(--c-surface-2);">${item.date || '-'}</td>
+            <td style="text-align: center; padding: 8px 10px; border-bottom: 1px solid var(--c-surface-2);">${escapeHtml(item.site)}</td>
+            <td style="padding: 8px 10px; border-bottom: 1px solid var(--c-surface-2);">
                 <div style="display: flex; align-items: center;">
-                    <span style="font-weight: bold; color: #e6edf3;">${escapeHtml(displayName)}</span>
+                    <span style="font-weight: bold; color: var(--c-text);">${escapeHtml(displayName)}</span>
                     ${subInfo}
                 </div>
             </td>

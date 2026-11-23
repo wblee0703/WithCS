@@ -5,21 +5,21 @@
    ========================================================================== */
 
 :root {
-    --gantt-bg-dark: #0d1117;
-    --gantt-bg-card: #161b22;
-    --gantt-bg-element: #21262d;
-    --gantt-border: #30363d;
-    --gantt-text-primary: #e6edf3;
-    --gantt-text-secondary: #8b949e;
-    --gantt-text-title: #c9d1d9;
+    --gantt-bg-dark: var(--c-bg);
+    --gantt-bg-card: var(--c-surface);
+    --gantt-bg-element: var(--c-surface-2);
+    --gantt-border: var(--c-border);
+    --gantt-text-primary: var(--c-text);
+    --gantt-text-secondary: var(--c-text-muted);
+    --gantt-text-title: var(--c-text-2);
     --gantt-text-white: #fff;
     --gantt-blue: #1f6feb;
-    --gantt-blue-light: #58a6ff;
-    --gantt-green: #3fb950;
+    --gantt-blue-light: var(--c-blue);
+    --gantt-green: var(--c-green);
     --gantt-green-dark: #238636;
-    --gantt-yellow: #e3b341;
-    --gantt-orange: #f0883e;
-    --gantt-gray-bold: #6e7681;
+    --gantt-yellow: var(--c-yellow-2);
+    --gantt-orange: var(--c-orange);
+    --gantt-gray-bold: var(--c-text-faint);
     --gantt-bg-current-week: rgba(233, 235, 138, 0.15);
     --gantt-text-current-week: #f5c04f;
     --gantt-bg-today: rgba(56, 139, 253, 0.2);
@@ -106,7 +106,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 0 10px;
-    border-bottom: 1px solid #21262d;
+    border-bottom: 1px solid var(--c-surface-2);
     font-size: 12px;
     color: var(--gantt-text-primary);
     cursor: default;

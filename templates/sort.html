@@ -2,7 +2,7 @@
 {% set active_page = 'sort' %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/sort.css') }}?v=20">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/sort.css') }}?v=20-t2">
 {% endblock %}
 
 {% block content %}
@@ -95,7 +95,7 @@
                         <input type="text" id="sort-keyword" class="input-dark full-width"
                             placeholder="검색어 입력 또는 클릭하여 선택..." autocomplete="off" style="cursor: text;">
                         <div id="sort-keyword-dropdown" class="log-select-dropdown"
-                            style="width:100%; max-height:300px; display:none; position:absolute; top:100%; left:0; z-index:1000; background:#161b22; border:1px solid #30363d; border-radius:4px; box-shadow:0 4px 12px rgba(0,0,0,0.5); margin-top:4px; box-sizing:border-box;">
+                            style="width:100%; max-height:300px; display:none; position:absolute; top:100%; left:0; z-index:1000; background:var(--c-surface); border:1px solid var(--c-border); border-radius:4px; box-shadow:0 4px 12px rgba(0,0,0,0.5); margin-top:4px; box-sizing:border-box;">
                             <div id="sort-keyword-list" class="log-select-list"
                                 style="max-height: 180px; overflow-y:auto; padding:8px;"></div>
                             <div class="log-select-footer" style="padding: 5px; display: flex; gap: 5px;">
@@ -163,14 +163,14 @@
                 <div class="sort-full-chart"
                     style="display: flex; flex-direction: column; width: 100%; margin-bottom: 20px; flex-shrink: 0;">
                     <div
-                        style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: #e6edf3; flex-shrink: 0;">
+                        style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: var(--c-text); flex-shrink: 0;">
                         파츠 교체 현황</div>
                     <div class="chart-content-row"
                         style="display: flex; flex-direction: row; width: 100%; height: 300px; min-height: 200px; flex-shrink: 0;">
                         <!-- Y축 영역 -->
                         <div id="sort-part-legend" class="chart-legend-table"></div>
                         <div id="sort-y-axis"
-                            style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid #30363d; color: #8b949e; font-size: 11px; margin-bottom: 48px; flex-shrink: 0;">
+                            style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid var(--c-border); color: var(--c-text-muted); font-size: 11px; margin-bottom: 48px; flex-shrink: 0;">
                         </div>
                         <div id="sort-chart-container"
                             style="flex: 1; display: flex; align-items: flex-end; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; gap: 10px; padding-bottom: 5px; padding-left: 10px;">
@@ -186,12 +186,12 @@
                     <!-- 용액 교체 현황 -->
                     <div class="sort-half-chart" style="display: flex; flex-direction: column; flex: 1; min-width: 0;">
                         <div
-                            style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: #e6edf3;">
+                            style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: var(--c-text);">
                             용액 교체 현황</div>
                         <div class="chart-content-row" style="display: flex; flex-direction: row; flex: 1;">
                             <div id="sort-solution-legend" class="chart-legend-table"></div>
                             <div id="sort-solution-y-axis"
-                                style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid #30363d; color: #8b949e; font-size: 11px; margin-bottom: 48px; flex-shrink: 0;">
+                                style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid var(--c-border); color: var(--c-text-muted); font-size: 11px; margin-bottom: 48px; flex-shrink: 0;">
                             </div>
                             <div id="sort-solution-chart-container"
                                 style="flex: 1; display: flex; align-items: flex-end; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; gap: 10px; padding-bottom: 5px; padding-left: 10px;">
@@ -205,13 +205,13 @@
                     <!-- 점검구분별 작업현황 -->
                     <div class="sort-half-chart" style="display: flex; flex-direction: column; flex: 1; min-width: 0;">
                         <div
-                            style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: #e6edf3;">
+                            style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: var(--c-text);">
                             <span>점검구분별 작업현황</span>
                         </div>
                         <div class="chart-content-row" style="display: flex; flex-direction: row; flex: 1;">
                             <div id="sort-type-legend" class="chart-legend-table"></div>
                             <div id="sort-type-y-axis"
-                                style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid #30363d; color: #8b949e; font-size: 11px; margin-bottom: 48px; flex-shrink: 0;">
+                                style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid var(--c-border); color: var(--c-text-muted); font-size: 11px; margin-bottom: 48px; flex-shrink: 0;">
                             </div>
                             <div id="sort-type-chart-container"
                                 style="flex: 1; display: flex; align-items: flex-end; justify-content: space-around; overflow-x: auto; overflow-y: hidden; gap: 10px; padding-bottom: 5px; padding-left: 10px;">
@@ -228,13 +228,13 @@
                     <!-- 세부구분별 작업현황 -->
                     <div class="sort-half-chart" style="display: flex; flex-direction: column; flex: 1; min-width: 0;">
                         <div
-                            style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: #e6edf3;">
+                            style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: var(--c-text);">
                             <span>세부구분별 작업현황</span>
                         </div>
                         <div class="chart-content-row" style="display: flex; flex-direction: row; flex: 1;">
                             <div id="sort-detail-type-legend" class="chart-legend-table"></div>
                             <div id="sort-detail-type-y-axis"
-                                style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid #30363d; color: #8b949e; font-size: 11px; margin-bottom: 48px; flex-shrink: 0;">
+                                style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid var(--c-border); color: var(--c-text-muted); font-size: 11px; margin-bottom: 48px; flex-shrink: 0;">
                             </div>
                             <div id="sort-detail-type-chart-container"
                                 style="flex: 1; display: flex; align-items: flex-end; justify-content: space-around; overflow-x: auto; overflow-y: hidden; gap: 10px; padding-bottom: 5px; padding-left: 10px;">
@@ -248,13 +248,13 @@
                     <!-- 세부구분 2별 작업현황 -->
                     <div class="sort-half-chart" style="display: flex; flex-direction: column; flex: 1; min-width: 0;">
                         <div
-                            style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: #e6edf3;">
+                            style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: var(--c-text);">
                             <span>세부구분 2별 작업현황</span>
                         </div>
                         <div class="chart-content-row" style="display: flex; flex-direction: row; flex: 1;">
                             <div id="sort-detail-type2-legend" class="chart-legend-table"></div>
                             <div id="sort-detail-type2-y-axis"
-                                style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid #30363d; color: #8b949e; font-size: 11px; margin-bottom: 48px; flex-shrink: 0;">
+                                style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid var(--c-border); color: var(--c-text-muted); font-size: 11px; margin-bottom: 48px; flex-shrink: 0;">
                             </div>
                             <div id="sort-detail-type2-chart-container"
                                 style="flex: 1; display: flex; align-items: flex-end; justify-content: space-around; overflow-x: auto; overflow-y: hidden; gap: 10px; padding-bottom: 5px; padding-left: 10px;">
@@ -269,7 +269,7 @@
                 <div class="sort-full-chart"
                     style="display: flex; flex-direction: column; width: 100%; margin-bottom: 20px; flex-shrink: 0; margin-top: 20px;">
                     <div
-                        style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: #e6edf3;">
+                        style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: var(--c-text);">
                         <span>비정기 점검 항목 현황</span>
                     </div>
                     <div class="chart-content-row"
@@ -277,7 +277,7 @@
                         <!-- Y축 영역 -->
                         <div id="sort-irregular-legend" class="chart-legend-table"></div>
                         <div id="sort-irregular-y-axis"
-                            style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid #30363d; color: #8b949e; font-size: 11px; margin-bottom: 48px; flex-shrink: 0;">
+                            style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid var(--c-border); color: var(--c-text-muted); font-size: 11px; margin-bottom: 48px; flex-shrink: 0;">
                         </div>
                         <div id="sort-irregular-chart-container"
                             style="flex: 1; display: flex; align-items: flex-end; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; gap: 10px; padding-bottom: 5px; padding-left: 10px;">
@@ -291,7 +291,7 @@
                 <div class="sort-full-chart"
                     style="display: flex; flex-direction: column; width: 100%; margin-bottom: 20px; flex-shrink: 0; margin-top: 20px;">
                     <div
-                        style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: #e6edf3;">
+                        style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: var(--c-text);">
                         <span>고객 대응 세부사항</span>
                     </div>
                     <div class="chart-content-row"
@@ -299,7 +299,7 @@
                         <!-- Y축 영역 -->
                         <div id="sort-cust-response-legend" class="chart-legend-table"></div>
                         <div id="sort-cust-response-y-axis"
-                            style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid #30363d; color: #8b949e; font-size: 11px; margin-bottom: 48px; flex-shrink: 0;">
+                            style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid var(--c-border); color: var(--c-text-muted); font-size: 11px; margin-bottom: 48px; flex-shrink: 0;">
                         </div>
                         <div id="sort-cust-response-chart-container"
                             style="flex: 1; display: flex; align-items: flex-end; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; gap: 10px; padding-bottom: 5px; padding-left: 10px;">
@@ -317,7 +317,7 @@
                 <div class="sort-full-chart"
                     style="display: flex; flex-direction: column; width: 100%; margin-bottom: 20px; flex-shrink: 0;">
                     <div
-                        style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: #e6edf3;">
+                        style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: var(--c-text);">
                         <span>장비별 작업 현황</span>
                     </div>
                     <div class="chart-content-row"
@@ -325,7 +325,7 @@
                         <!-- Y축 영역 -->
                         <div id="sort-equip-model-legend" class="chart-legend-table"></div>
                         <div id="sort-equip-model-y-axis"
-                            style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid #30363d; color: #8b949e; font-size: 11px; margin-bottom: 100px; flex-shrink: 0;">
+                            style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid var(--c-border); color: var(--c-text-muted); font-size: 11px; margin-bottom: 100px; flex-shrink: 0;">
                         </div>
                         <div id="sort-equip-model-chart-container"
                             style="flex: 1; display: flex; align-items: flex-end; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; gap: 10px; padding-bottom: 100px; padding-left: 10px;">
@@ -338,27 +338,27 @@
 
                 <!-- [추가] 장비 모델 세부구분 드릴다운 연동 차트 -->
                 <div id="sort-drilldown-wrapper" class="sort-full-chart"
-                    style="display: none; flex-direction: column; width: 100%; margin-bottom: 20px; flex-shrink: 0; margin-top: 20px; border-top: 1px dashed #30363d; padding-top: 15px;">
+                    style="display: none; flex-direction: column; width: 100%; margin-bottom: 20px; flex-shrink: 0; margin-top: 20px; border-top: 1px dashed var(--c-border); padding-top: 15px;">
                     <div class="drilldown-header"
                         style="display: flex; justify-content: space-between; align-items: center; margin-left: 10px; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <button id="btn-drilldown-back" type="button" class="btn-blue-sm"
                                 style="display: none; padding: 3px 8px; font-size: 11px; cursor: pointer; border-radius: 4px; border: 1px solid #1f6feb;">◀ 이전 단계</button>
-                            <span id="drilldown-title" style="font-size: 14px; font-weight: bold; color: #58a6ff;">세부구분별 작업 현황</span>
+                            <span id="drilldown-title" style="font-size: 14px; font-weight: bold; color: var(--c-blue);">세부구분별 작업 현황</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <div class="drilldown-mode-group" style="display: flex; align-items: center; gap: 4px; margin-right: 4px;">
                                 <button id="btn-drilldown-level1" type="button" class="btn-drilldown-mode" title="[모델명] 비정기 세부구분 1별 빈도수"
-                                    style="padding: 2px 8px; font-size: 11px; cursor: pointer; border-radius: 4px; border: 1px solid #30363d; background: transparent; color: #8b949e;">세부구분 1</button>
+                                    style="padding: 2px 8px; font-size: 11px; cursor: pointer; border-radius: 4px; border: 1px solid var(--c-border); background: transparent; color: var(--c-text-muted);">세부구분 1</button>
                                 <button id="btn-drilldown-level2" type="button" class="btn-drilldown-mode" title="상위필터 없이 [모델명] 비정기 전체 세부구분 2별 총빈도수"
-                                    style="padding: 2px 8px; font-size: 11px; cursor: pointer; border-radius: 4px; border: 1px solid #30363d; background: transparent; color: #8b949e;">세부구분 2</button>
+                                    style="padding: 2px 8px; font-size: 11px; cursor: pointer; border-radius: 4px; border: 1px solid var(--c-border); background: transparent; color: var(--c-text-muted);">세부구분 2</button>
                                 <button id="btn-drilldown-level3" type="button" class="btn-drilldown-mode" title="상위필터 없이 [모델명] 비정기 전체 세부구분 3별 총빈도수"
-                                    style="padding: 2px 8px; font-size: 11px; cursor: pointer; border-radius: 4px; border: 1px solid #30363d; background: transparent; color: #8b949e;">세부구분 3</button>
+                                    style="padding: 2px 8px; font-size: 11px; cursor: pointer; border-radius: 4px; border: 1px solid var(--c-border); background: transparent; color: var(--c-text-muted);">세부구분 3</button>
                             </div>
                             <button id="btn-drilldown-export-csv" class="btn-export-chart-csv" title="세부구분 1, 2, 3 총빈도수 시트별 엑셀 다운로드"
-                                style="padding: 2px 6px; font-size: 11px; cursor: pointer; border-radius: 4px; border: 1px solid #30363d; background: transparent; color: #8b949e;">⬇️ 엑셀</button>
+                                style="padding: 2px 6px; font-size: 11px; cursor: pointer; border-radius: 4px; border: 1px solid var(--c-border); background: transparent; color: var(--c-text-muted);">⬇️ 엑셀</button>
                             <button id="btn-drilldown-close" type="button" title="닫기"
-                                style="background: none; border: none; color: #8b949e; font-size: 18px; cursor: pointer; line-height: 1; padding: 0 4px;">×</button>
+                                style="background: none; border: none; color: var(--c-text-muted); font-size: 18px; cursor: pointer; line-height: 1; padding: 0 4px;">×</button>
                         </div>
                     </div>
                     <div class="chart-content-row"
@@ -366,7 +366,7 @@
                         <!-- Y축 영역 -->
                         <div id="sort-drilldown-legend" class="chart-legend-table"></div>
                         <div id="sort-drilldown-y-axis"
-                            style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid #30363d; color: #8b949e; font-size: 11px; margin-bottom: 100px; flex-shrink: 0;">
+                            style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid var(--c-border); color: var(--c-text-muted); font-size: 11px; margin-bottom: 100px; flex-shrink: 0;">
                         </div>
                         <div id="sort-drilldown-chart-container"
                             style="flex: 1; display: flex; align-items: flex-end; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; gap: 10px; padding-bottom: 100px; padding-left: 10px;">
@@ -384,14 +384,14 @@
                 <div class="sort-full-chart"
                     style="display: flex; flex-direction: column; width: 100%; margin-bottom: 20px; flex-shrink: 0;">
                     <div
-                        style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: #e6edf3;">
+                        style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: var(--c-text);">
                         <span>월별 작업 구분 현황</span>
                     </div>
                     <div class="chart-content-row"
                         style="display: flex; flex-direction: row; width: 100%; height: 300px; min-height: 200px; flex-shrink: 0;">
                         <div id="sort-monthly-type-legend" class="chart-legend-table"></div>
                         <div id="sort-monthly-type-y-axis"
-                            style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid #30363d; color: #8b949e; font-size: 11px; margin-bottom: 48px; flex-shrink: 0;">
+                            style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid var(--c-border); color: var(--c-text-muted); font-size: 11px; margin-bottom: 48px; flex-shrink: 0;">
                         </div>
                         <div id="sort-monthly-type-chart-container"
                             style="flex: 1; display: flex; align-items: flex-end; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; gap: 10px; padding-bottom: 5px; padding-left: 10px;">
@@ -403,9 +403,9 @@
                 </div>
                 <!-- [추가] 월별 세부구분 현황 (월별 작업 구분 현황의 범례에서 작업 구분을 누르면 표시) -->
                 <div id="sort-monthly-detail-wrapper" class="sort-full-chart"
-                    style="display: none; flex-direction: column; width: 100%; margin-bottom: 20px; flex-shrink: 0; margin-top: 20px; border-top: 1px dashed #30363d;">
+                    style="display: none; flex-direction: column; width: 100%; margin-bottom: 20px; flex-shrink: 0; margin-top: 20px; border-top: 1px dashed var(--c-border);">
                     <div
-                        style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: #58a6ff;">
+                        style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: var(--c-blue);">
                         <span id="sort-monthly-detail-title">월별 세부구분 현황</span>
                         <!-- [추가] 세부구분 1/2/3 보기 전환 (장비별 통계 세부 그래프와 같은 방식) -->
                         <span class="sort-monthly-mode-group">
@@ -418,7 +418,7 @@
                         style="display: flex; flex-direction: row; width: 100%; height: 300px; min-height: 200px; flex-shrink: 0;">
                         <div id="sort-monthly-detail-legend" class="chart-legend-table"></div>
                         <div id="sort-monthly-detail-y-axis"
-                            style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid #30363d; color: #8b949e; font-size: 11px; margin-bottom: 48px; flex-shrink: 0;">
+                            style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid var(--c-border); color: var(--c-text-muted); font-size: 11px; margin-bottom: 48px; flex-shrink: 0;">
                         </div>
                         <div id="sort-monthly-detail-chart-container"
                             style="flex: 1; display: flex; align-items: flex-end; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; gap: 10px; padding-bottom: 5px; padding-left: 10px;">
@@ -427,16 +427,16 @@
                 </div>
                 <!-- [추가] 월별 세부구분 2 현황 (위 세부구분 그래프 범례 클릭 시 표시) -->
                 <div id="sort-monthly-detail2-wrapper" class="sort-full-chart"
-                    style="display: none; flex-direction: column; width: 100%; margin-bottom: 20px; flex-shrink: 0; margin-top: 20px; border-top: 1px dashed #30363d;">
+                    style="display: none; flex-direction: column; width: 100%; margin-bottom: 20px; flex-shrink: 0; margin-top: 20px; border-top: 1px dashed var(--c-border);">
                     <div
-                        style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: #58a6ff;">
+                        style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: var(--c-blue);">
                         <span id="sort-monthly-detail2-title">월별 세부구분 2 현황</span>
                     </div>
                     <div class="chart-content-row"
                         style="display: flex; flex-direction: row; width: 100%; height: 300px; min-height: 200px; flex-shrink: 0;">
                         <div id="sort-monthly-detail2-legend" class="chart-legend-table"></div>
                         <div id="sort-monthly-detail2-y-axis"
-                            style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid #30363d; color: #8b949e; font-size: 11px; margin-bottom: 48px; flex-shrink: 0;">
+                            style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid var(--c-border); color: var(--c-text-muted); font-size: 11px; margin-bottom: 48px; flex-shrink: 0;">
                         </div>
                         <div id="sort-monthly-detail2-chart-container"
                             style="flex: 1; display: flex; align-items: flex-end; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; gap: 10px; padding-bottom: 5px; padding-left: 10px;">
@@ -445,16 +445,16 @@
                 </div>
                 <!-- [추가] 월별 세부구분 3 현황 (위 세부구분 그래프 범례 클릭 시 표시) -->
                 <div id="sort-monthly-detail3-wrapper" class="sort-full-chart"
-                    style="display: none; flex-direction: column; width: 100%; margin-bottom: 20px; flex-shrink: 0; margin-top: 20px; border-top: 1px dashed #30363d;">
+                    style="display: none; flex-direction: column; width: 100%; margin-bottom: 20px; flex-shrink: 0; margin-top: 20px; border-top: 1px dashed var(--c-border);">
                     <div
-                        style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: #58a6ff;">
+                        style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: var(--c-blue);">
                         <span id="sort-monthly-detail3-title">월별 세부구분 3 현황</span>
                     </div>
                     <div class="chart-content-row"
                         style="display: flex; flex-direction: row; width: 100%; height: 300px; min-height: 200px; flex-shrink: 0;">
                         <div id="sort-monthly-detail3-legend" class="chart-legend-table"></div>
                         <div id="sort-monthly-detail3-y-axis"
-                            style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid #30363d; color: #8b949e; font-size: 11px; margin-bottom: 48px; flex-shrink: 0;">
+                            style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid var(--c-border); color: var(--c-text-muted); font-size: 11px; margin-bottom: 48px; flex-shrink: 0;">
                         </div>
                         <div id="sort-monthly-detail3-chart-container"
                             style="flex: 1; display: flex; align-items: flex-end; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; gap: 10px; padding-bottom: 5px; padding-left: 10px;">
@@ -466,7 +466,7 @@
         </div>
         <div class="card" style="width: 100%; margin-bottom: 15px;">
             <div class="card-header">
-                <h3 style="font-size: 16px; color: #c9d1d9;">검색 결과 <span id="sort-result-count"
+                <h3 style="font-size: 16px; color: var(--c-text-2);">검색 결과 <span id="sort-result-count"
                         class="count-badge">0</span></h3>
             </div>
             <div id="sort-result-body" class="card-body" style="padding: 0;">
@@ -580,7 +580,7 @@
                 <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <h3 style="margin: 0;">📊 SORT 데이터 기반 운영 리포트</h3>
-                        <span class="report-free-tag" style="background: rgba(63, 185, 80, 0.15); color: #3fb950; border: 1px solid rgba(63, 185, 80, 0.4); font-size: 11px; padding: 2px 8px; border-radius: 10px;">실시간 DB 집계</span>
+                        <span class="report-free-tag" style="background: rgba(63, 185, 80, 0.15); color: var(--c-green); border: 1px solid rgba(63, 185, 80, 0.4); font-size: 11px; padding: 2px 8px; border-radius: 10px;">실시간 DB 집계</span>
                     </div>
                     <div style="display: flex; gap: 8px; align-items: center;">
                         <button type="button" id="btn-sort-report-copy" class="btn-gray" style="padding: 5px 12px; font-size: 12px;">📋 리포트 복사</button>
@@ -613,18 +613,18 @@
 
                     <!-- 4. 기술 분석 브리핑 마크다운 -->
                     <div class="sort-report-insight-card">
-                        <h4 style="color: #58a6ff; margin-bottom: 10px; font-size: 15px;">📑 통계 분석 및 권고 브리핑</h4>
+                        <h4 style="color: var(--c-blue); margin-bottom: 10px; font-size: 15px;">📑 통계 분석 및 권고 브리핑</h4>
                         <div id="sort-report-markdown" class="report-markdown-body"></div>
                     </div>
 
                     <!-- 5. 상위 랭킹 요약 (세부 구분 Top 5 & 담당자 활동 Top 5) -->
                     <div class="sort-report-ranking-grid">
                         <div class="sort-report-rank-box">
-                            <h4 style="color: #c9d1d9; margin-bottom: 8px; font-size: 13px;">⚙️ 최다 발생 세부구분 (Top 5)</h4>
+                            <h4 style="color: var(--c-text-2); margin-bottom: 8px; font-size: 13px;">⚙️ 최다 발생 세부구분 (Top 5)</h4>
                             <div id="sort-report-rank-details"></div>
                         </div>
                         <div class="sort-report-rank-box">
-                            <h4 style="color: #c9d1d9; margin-bottom: 8px; font-size: 13px;">👷 주요 담당 엔지니어 (Top 5)</h4>
+                            <h4 style="color: var(--c-text-2); margin-bottom: 8px; font-size: 13px;">👷 주요 담당 엔지니어 (Top 5)</h4>
                             <div id="sort-report-rank-workers"></div>
                         </div>
                     </div>
@@ -685,5 +685,5 @@
 <!-- Chart.js 라이브러리 (리포트 차트 렌더링용) -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
-<script src="{{ url_for('SettingDAO', filename='JavaScript/sort.js') }}?v=1.2.4"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/sort.js') }}?v=1.2.4-t4"></script>
 {% endblock %}

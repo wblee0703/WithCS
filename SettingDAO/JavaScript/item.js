@@ -1737,7 +1737,7 @@ function renderModalMasterItemList(filterText) {
     });
 
     if (filtered.length === 0) {
-        listEl.innerHTML = '<li style="padding: 12px; color: #8b949e; text-align: center; cursor: default;">검색된 마스터 물품이 없습니다.</li>';
+        listEl.innerHTML = '<li style="padding: 12px; color: var(--c-text-muted); text-align: center; cursor: default;">검색된 마스터 물품이 없습니다.</li>';
         return;
     }
 
@@ -1745,7 +1745,7 @@ function renderModalMasterItemList(filterText) {
         const li = document.createElement('li');
         li.style.padding = '7px 10px';
         li.style.cursor = 'pointer';
-        li.style.borderBottom = '1px solid #21262d';
+        li.style.borderBottom = '1px solid var(--c-surface-2)';
         li.style.display = 'flex';
         li.style.alignItems = 'center';
         li.style.fontSize = '12px';
@@ -1767,12 +1767,12 @@ function renderModalMasterItemList(filterText) {
             }
         });
 
-        let badgeHtml = '<span style="color: #484f58; font-size: 11px;">미등록</span>';
+        let badgeHtml = '<span style="color: var(--c-border-2); font-size: 11px;">미등록</span>';
         if (existingGrades.length >= 3) {
-            badgeHtml = `<span style="font-size: 11px; color: #8b949e; background: #21262d; padding: 2px 6px; border-radius: 4px;">전체 등록됨</span>`;
+            badgeHtml = `<span style="font-size: 11px; color: var(--c-text-muted); background: var(--c-surface-2); padding: 2px 6px; border-radius: 4px;">전체 등록됨</span>`;
         } else if (existingGrades.length > 0) {
             existingGrades.sort();
-            badgeHtml = `<span style="font-size: 11px; color: #e3b341; background: #382814; border: 1px solid #bb800955; padding: 1px 6px; border-radius: 4px;">${existingGrades.join(',')} 등록됨</span>`;
+            badgeHtml = `<span style="font-size: 11px; color: var(--c-yellow-2); background: #382814; border: 1px solid #bb800955; padding: 1px 6px; border-radius: 4px;">${existingGrades.join(',')} 등록됨</span>`;
         }
 
         const codeVal = item.code || '-';
@@ -1781,10 +1781,10 @@ function renderModalMasterItemList(filterText) {
         const partnoVal = item.partno || '-';
 
         li.innerHTML = `
-            <div class="mcol-partno" style="width: 85px; flex-shrink: 0; text-align: center; color: #8b949e; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 6px;" title="${partnoVal}">${partnoVal}</div>
-            <div class="mcol-code" style="width: 200px; flex-shrink: 0; color: #58a6ff; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 6px;" title="${codeVal}">${codeVal}</div>
-            <div class="mcol-part" style="width: 200px; flex-shrink: 0; color: #e6edf3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 6px;" title="${partVal}">${partVal}</div>
-            <div class="mcol-spec" style="flex: 1; min-width: 160px; color: #8b949e; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 6px;" title="${specVal}">${specVal}</div>
+            <div class="mcol-partno" style="width: 85px; flex-shrink: 0; text-align: center; color: var(--c-text-muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 6px;" title="${partnoVal}">${partnoVal}</div>
+            <div class="mcol-code" style="width: 200px; flex-shrink: 0; color: var(--c-blue); font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 6px;" title="${codeVal}">${codeVal}</div>
+            <div class="mcol-part" style="width: 200px; flex-shrink: 0; color: var(--c-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 6px;" title="${partVal}">${partVal}</div>
+            <div class="mcol-spec" style="flex: 1; min-width: 160px; color: var(--c-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 6px;" title="${specVal}">${specVal}</div>
             <div class="mcol-status" style="width: 95px; flex-shrink: 0; text-align: center;">${badgeHtml}</div>
         `;
 

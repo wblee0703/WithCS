@@ -2,8 +2,8 @@
    1. 셋업 페이지 레이아웃 (Setup Page Layout)
    ========================================================================== */
 .setup-card {
-    background: #161b22;
-    border: 1px solid #30363d;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
     border-radius: 8px;
     padding: 0;
     margin-bottom: 0;
@@ -15,9 +15,9 @@
 }
 
 .setup-card-header {
-    background: #21262d;
+    background: var(--c-surface-2);
     padding: 12px 15px;
-    border-bottom: 1px solid #30363d;
+    border-bottom: 1px solid var(--c-border);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -26,7 +26,7 @@
 .setup-card-header h3 {
     margin: 0;
     font-size: 14px;
-    color: #e6edf3;
+    color: var(--c-text);
 }
 
 .setup-card-body {
@@ -76,14 +76,14 @@
 }
 
 .data-table th {
-    color: #8b949e;
+    color: var(--c-text-muted);
     font-size: 12px;
     text-align: center;
     padding: 10px;
-    border-bottom: 1px solid #30363d;
+    border-bottom: 1px solid var(--c-border);
     position: sticky;
     top: 0;
-    background: #161b22;
+    background: var(--c-surface);
     z-index: 1;
     white-space: nowrap;
 }
@@ -91,7 +91,7 @@
 .data-table td {
     padding: 8px 10px;
     font-size: 13px;
-    border-bottom: 1px solid #21262d;
+    border-bottom: 1px solid var(--c-surface-2);
     white-space: nowrap;
 }
 
@@ -99,13 +99,13 @@
     width: 100%;
     background: transparent;
     border: none;
-    color: #e6edf3;
+    color: var(--c-text);
     padding: 4px;
 }
 
 .data-table input[type="text"]:focus {
-    background: #0d1117;
-    outline: 1px solid #58a6ff;
+    background: var(--c-bg);
+    outline: 1px solid var(--c-blue);
     border-radius: 4px;
 }
 
@@ -122,9 +122,9 @@
 /* 날짜 입력 필드 스타일 */
 .data-table input[type="date"],
 .input-date-dark {
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #fff;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-heading);
     padding: 4px;
     border-radius: 4px;
     width: 100%;
@@ -192,9 +192,9 @@
 .edit-cell-input {
     width: 100%;
     box-sizing: border-box;
-    background-color: #0d1117;
-    border: 1px solid #30363d;
-    color: #e6edf3;
+    background-color: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-text);
     padding: 3px 6px;
     border-radius: 4px;
     font-size: 11px;
@@ -205,24 +205,24 @@
 
 .edit-cell-select:focus,
 .edit-cell-input:focus {
-    border-color: #58a6ff;
-    background-color: #161b22;
+    border-color: var(--c-blue);
+    background-color: var(--c-surface);
 }
 
 .edit-cell-select option {
-    background-color: #161b22;
-    color: #e6edf3;
+    background-color: var(--c-surface);
+    color: var(--c-text);
 }
 
 #setup-log-card.edit-mode .btn-list-setting {
-    color: #3fb950 !important;
+    color: var(--c-green) !important;
 }
 
 /* 셋업 일지 수정 버튼 스타일 재정의 */
 #setup-log-card .btn-edit {
     background: none;
     border: none;
-    color: #8b949e;
+    color: var(--c-text-muted);
     padding: 0;
     font-size: 14px;
     width: auto;
@@ -230,14 +230,14 @@
 }
 
 #setup-log-card .btn-edit:hover {
-    color: #e6edf3;
+    color: var(--c-text);
 }
 
 /* 검색 입력창 */
 .input-search-dark {
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #c9d1d9;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-text-2);
     padding: 5px 10px;
     border-radius: 4px;
     font-size: 12px;
@@ -256,18 +256,18 @@
 }
 
 .input-dark {
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #fff;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-heading);
     padding: 4px;
     border-radius: 4px;
 }
 
 .select-dark {
     flex: 3;
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #fff;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-heading);
     padding: 4px;
     border-radius: 4px;
 }
@@ -297,7 +297,7 @@
 }
 
 .setup-section-panel + .setup-section-panel {
-    border-top: 1px solid #30363d;
+    border-top: 1px solid var(--c-border);
 }
 
 /* 셋업 진행률 카드 */
@@ -319,16 +319,16 @@
 
 .resizer-vertical {
     height: 6px;
-    background: #21262d;
+    background: var(--c-surface-2);
     cursor: row-resize;
-    border-top: 1px solid #30363d;
-    border-bottom: 1px solid #30363d;
+    border-top: 1px solid var(--c-border);
+    border-bottom: 1px solid var(--c-border);
     transition: background 0.2s;
     flex-shrink: 0;
 }
 
 .resizer-vertical:hover {
-    background: #58a6ff;
+    background: var(--c-blue);
 }
 
 .textarea-dark {
@@ -336,9 +336,9 @@
     width: 100%;
     height: 100%;
     resize: none;
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #fff;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-heading);
     padding: 10px;
     border-radius: 4px;
     box-sizing: border-box;
@@ -350,15 +350,15 @@
    5. 카테고리 헤더 및 버튼 (Category Header & Buttons)
    ========================================================================== */
 .category-header-row {
-    background-color: #21262d;
+    background-color: var(--c-surface-2);
 }
 
 .category-header {
     padding: 8px 10px;
     font-weight: bold;
-    color: #8b949e;
+    color: var(--c-text-muted);
     font-size: 13px;
-    border-bottom: 1px solid #30363d;
+    border-bottom: 1px solid var(--c-border);
 }
 
 .date-display {
@@ -368,7 +368,7 @@
 
 .btn-add-category {
     background: transparent;
-    color: #3fb950;
+    color: var(--c-green);
     border: none;
     padding: 0 5px;
     font-size: 16px;
@@ -409,8 +409,8 @@
 /* 실행 버튼 (Play) */
 .btn-play-sm {
     background: transparent;
-    border: 1px solid #3fb950;
-    color: #3fb950;
+    border: 1px solid var(--c-green);
+    color: var(--c-green);
     border-radius: 4px;
     width: 28px; /* [수정] 버튼 크기 확대 */
     height: 28px;
@@ -425,7 +425,7 @@
     z-index: 5;
 }
 .btn-play-sm:hover {
-    background: #3fb950;
+    background: var(--c-green);
     color: #fff;
 }
 
@@ -449,9 +449,9 @@
     margin-right: 5px;
     padding: 2px 10px;
     font-size: 11px;
-    background-color: #21262d;
-    color: #c9d1d9;
-    border: 1px solid #30363d;
+    background-color: var(--c-surface-2);
+    color: var(--c-text-2);
+    border: 1px solid var(--c-border);
     border-radius: 4px;
     cursor: pointer;
     font-weight: 500;
@@ -465,9 +465,9 @@ body.role-superadmin .btn-setup-csv-import {
 }
 
 .btn-setup-csv-import:hover {
-    background-color: #30363d;
-    color: #58a6ff;
-    border-color: #8b949e;
+    background-color: var(--c-border);
+    color: var(--c-blue);
+    border-color: var(--c-text-muted);
 }
 
 /* [요청] HOME 진행률 보기 버튼 (오른쪽), CSV 불러오기는 그 오른쪽 (작은 크기) */
@@ -741,22 +741,22 @@ body.role-superadmin .btn-setup-csv-import {
    ========================================================================== */
 
 /* Execution Rate Colors */
-.rate-text-100 { color: #3fb950 !important; }
-.rate-text-mid { color: #e3b341 !important; }
-.rate-text-0 { color: #8b949e !important; }
+.rate-text-100 { color: var(--c-green) !important; }
+.rate-text-mid { color: var(--c-yellow-2) !important; }
+.rate-text-0 { color: var(--c-text-muted) !important; }
 
 /* Helpers */
 .visibility-hidden { visibility: hidden !important; }
 .display-none { display: none !important; }
-.color-completed { color: #8b949e !important; }
-.color-normal { color: #e6edf3 !important; }
+.color-completed { color: var(--c-text-muted) !important; }
+.color-normal { color: var(--c-text) !important; }
 .flex-center { display: flex; justify-content: center; align-items: center; }
 
 /* Setup Detail Components */
 .btn-recalc-date {
     background: transparent; 
-    border: 1px solid #30363d; 
-    color: #8b949e; 
+    border: 1px solid var(--c-border); 
+    color: var(--c-text-muted); 
     border-radius: 4px; 
     cursor: pointer; 
     padding: 2px 8px; 
@@ -777,9 +777,9 @@ body.role-superadmin .btn-setup-csv-import {
 }
 
 /* Setup Log Components */
-.tag-delayed { color: #f0883e; font-weight: bold; }
+.tag-delayed { color: var(--c-orange); font-weight: bold; }
 .btn-editing-active { background-color: #238636 !important; color: #ffffff !important; }
-.input-edit-cell { width: 100%; background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 2px; border-radius: 4px; }
+.input-edit-cell { width: 100%; background: var(--c-bg); border: 1px solid var(--c-border); color: var(--c-heading); padding: 2px; border-radius: 4px; }
 
 /* ==========================================================================
    [추가] 셋업 기능 전 권한(일반/관리자) 사용 보장 오버라이드
@@ -805,9 +805,9 @@ body[class*="role-"] #setup-detail-card.edit-mode .btn-add-category {
 #setup-task-schedule-modal select option,
 #setup-log-register-modal select option,
 .modal-select option {
-    background-color: #161b22 !important;
-    background: #161b22 !important;
-    color: #e6edf3 !important;
+    background-color: var(--c-surface) !important;
+    background: var(--c-surface) !important;
+    color: var(--c-text) !important;
 }
 
 #setup-task-schedule-modal .log-select-dropdown,
@@ -816,24 +816,24 @@ body[class*="role-"] #setup-detail-card.edit-mode .btn-add-category {
 #setup-log-register-modal .log-select-list,
 .suggestion-list,
 .suggestion-box {
-    background-color: #161b22 !important;
-    background: #161b22 !important;
-    border: 1px solid #30363d !important;
-    color: #e6edf3 !important;
+    background-color: var(--c-surface) !important;
+    background: var(--c-surface) !important;
+    border: 1px solid var(--c-border) !important;
+    color: var(--c-text) !important;
 }
 
 #setup-task-schedule-modal .log-select-item,
 #setup-log-register-modal .log-select-item,
 .suggestion-item {
-    color: #e6edf3 !important;
+    color: var(--c-text) !important;
     background: transparent;
 }
 
 #setup-task-schedule-modal .log-select-item:hover,
 #setup-log-register-modal .log-select-item:hover,
 .suggestion-item:hover {
-    background-color: #21262d !important;
-    color: #ffffff !important;
+    background-color: var(--c-surface-2) !important;
+    color: var(--c-heading) !important;
 }
 
 #setup-task-schedule-modal .log-select-item.selected,
@@ -867,14 +867,14 @@ body[class*="role-"] #setup-detail-card.edit-mode .btn-add-category {
     cursor: pointer;
     padding: 8px 10px;
     margin-bottom: 4px;
-    border: 1px solid #21262d;
+    border: 1px solid var(--c-surface-2);
     border-left: 3px solid transparent;
     border-radius: 6px;
-    background: #0d1117;
+    background: var(--c-bg);
 }
-#equip-list li.setup-project-item:hover { border-color: #30363d; }
+#equip-list li.setup-project-item:hover { border-color: var(--c-border); }
 #equip-list li.setup-project-item.active {
-    background: #1c2128;
+    background: var(--c-surface-3);
     border-color: #388bfd;
     border-left-color: #388bfd;
 }
@@ -893,14 +893,14 @@ body[class*="role-"] #setup-detail-card.edit-mode .btn-add-category {
 #equip-list li.setup-project-item .item-text {
     font-size: 13px;
     font-weight: 600;
-    color: #e6edf3;
+    color: var(--c-text);
     min-width: 0;
 }
 #equip-list li.setup-project-item .item-subtext {
     margin-left: 0;
     font-size: 11px;
     font-weight: 400;
-    color: #8b949e;
+    color: var(--c-text-muted);
     overflow: hidden;
     text-overflow: ellipsis;
 }
@@ -912,18 +912,18 @@ body[class*="role-"] #setup-detail-card.edit-mode .btn-add-category {
     border-radius: 10px;
     border: 1px solid;
 }
-.sp-badge--ing { color: #d29922; border-color: #9e6a03; background: rgba(158, 106, 3, 0.15); }
-.sp-badge--done { color: #3fb950; border-color: #238636; background: rgba(35, 134, 54, 0.15); }
+.sp-badge--ing { color: var(--c-yellow); border-color: #9e6a03; background: rgba(158, 106, 3, 0.15); }
+.sp-badge--done { color: var(--c-green); border-color: #238636; background: rgba(35, 134, 54, 0.15); }
 .sp-progress { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
-.sp-progress__bar { flex: 1; height: 5px; border-radius: 3px; background: #21262d; overflow: hidden; }
-.sp-progress__bar > div { height: 100%; background: #d29922; border-radius: inherit; }
-.sp-progress__value { flex-shrink: 0; width: 32px; text-align: right; font-size: 10px; color: #d29922; font-weight: 600; }
+.sp-progress__bar { flex: 1; height: 5px; border-radius: 3px; background: var(--c-surface-2); overflow: hidden; }
+.sp-progress__bar > div { height: 100%; background: var(--c-yellow); border-radius: inherit; }
+.sp-progress__value { flex-shrink: 0; width: 32px; text-align: right; font-size: 10px; color: var(--c-yellow); font-weight: 600; }
 #site-list .sp-site-badge {
     flex-shrink: 0;
     margin-left: 6px;
     font-size: 10px;
     font-weight: 600;
-    color: #d29922;
+    color: var(--c-yellow);
     background: rgba(158, 106, 3, 0.15);
     border: 1px solid #9e6a03;
     border-radius: 10px;

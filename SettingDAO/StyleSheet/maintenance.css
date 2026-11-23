@@ -50,9 +50,9 @@
    2. 카드 컴포넌트 (Cards)
    ========================================================================== */
 .card {
-    background: #161b22;
+    background: var(--c-surface);
     border-radius: 8px;
-    border: 1px solid #30363d;
+    border: 1px solid var(--c-border);
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -60,9 +60,9 @@
 }
 
 .card-header {
-    background: #21262d;
+    background: var(--c-surface-2);
     padding: 0 15px;
-    border-bottom: 1px solid #30363d;
+    border-bottom: 1px solid var(--c-border);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -72,7 +72,7 @@
 
 .card-header h3 {
     font-size: 14px;
-    color: #e6edf3;
+    color: var(--c-text);
     margin-bottom: 0 !important;
     display: flex;
     align-items: center;
@@ -106,14 +106,14 @@
 }
 
 .data-table th {
-    color: #8b949e;
+    color: var(--c-text-muted);
     font-size: 12px;
     text-align: center;
     padding: 10px;
-    border-bottom: 1px solid #30363d;
+    border-bottom: 1px solid var(--c-border);
     position: sticky;
     top: 0;
-    background: #161b22;
+    background: var(--c-surface);
     z-index: 1;
 }
 
@@ -121,14 +121,14 @@
     padding: 12px 10px;
     text-align: center;
     font-size: 13px;
-    border-bottom: 1px solid #21262d;
+    border-bottom: 1px solid var(--c-surface-2);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .data-table tbody tr:hover {
-    background-color: #161b22;
+    background-color: var(--c-surface);
 }
 
 .data-table input {
@@ -183,13 +183,13 @@ tr.editing select {
 }
 
 tr.editing td[contenteditable="true"] {
-    outline: 1px solid #58a6ff;
-    background: #0d1117;
+    outline: 1px solid var(--c-blue);
+    background: var(--c-bg);
 }
 
 tr.dragging {
     opacity: 0.5;
-    background-color: #21262d;
+    background-color: var(--c-surface-2);
 }
 
 /* 유지관리 테이블 설정 */
@@ -355,7 +355,7 @@ tr.dragging {
     flex: 1;
     /* [수정] 하단 고정 영역을 제외한 남은 공간을 모두 리스트가 차지하도록 변경 */
     min-height: 0;
-    border-bottom: 1px solid #30363d;
+    border-bottom: 1px solid var(--c-border);
     padding-bottom: 10px;
 }
 
@@ -400,9 +400,9 @@ tr.dragging {
 /* 드롭다운(select) 공통 다크 테마 디자인 적용 */
 select.input-dark,
 select#maint-content {
-    background-color: #0d1117;
-    border: 1px solid #30363d;
-    color: #e6edf3;
+    background-color: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-text);
     cursor: pointer;
     outline: none;
     border-radius: 4px;
@@ -410,13 +410,13 @@ select#maint-content {
 
 select.input-dark:focus,
 select#maint-content:focus {
-    border-color: #58a6ff;
+    border-color: var(--c-blue);
 }
 
 select.input-dark option,
 select#maint-content option {
-    background-color: #161b22;
-    color: #e6edf3;
+    background-color: var(--c-surface);
+    color: var(--c-text);
 }
 
 /* [추가] 달력 아이콘 스타일 (어두운 회색) */
@@ -433,15 +433,15 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .toggle-group {
     display: flex;
     height: 30px;
-    background: #0d1117;
+    background: var(--c-bg);
     border-radius: 4px;
     padding: 2px;
-    border: 1px solid #30363d;
+    border: 1px solid var(--c-border);
 }
 
 .toggle-group button {
     background: none;
-    color: #8b949e;
+    color: var(--c-text-muted);
     padding: 0 15px;
     font-size: 12px;
     display: inline-flex;
@@ -463,7 +463,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .toggle-group button.active[data-type="장비점검"] {
-    background: #d29922;
+    background: var(--c-yellow);
     color: #fff;
 }
 
@@ -490,9 +490,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 /* [수정] calendar.css와 충돌 방지를 위해 셀렉터 구체화 */
 #log-window .log-select-trigger {
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #fff;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-heading);
     padding: 4px 8px;
     border-radius: 4px;
     cursor: pointer;
@@ -516,8 +516,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     left: 0;
     width: 100%;
     min-width: 100%;
-    background: #161b22;
-    border: 1px solid #30363d;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
     border-radius: 4px;
     z-index: 1000;
     margin-top: 2px;
@@ -563,9 +563,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     margin: 5px 6px !important;
     display: block !important;
     padding: 6px 10px;
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #e6edf3;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-text);
     border-radius: 4px;
     box-sizing: border-box;
 }
@@ -573,10 +573,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .show-all-btn {
     width: 100%;
     padding: 10px;
-    background: #21262d;
-    color: #58a6ff;
+    background: var(--c-surface-2);
+    color: var(--c-blue);
     border: none;
-    border-top: 1px solid #30363d;
+    border-top: 1px solid var(--c-border);
     cursor: pointer;
     font-weight: bold;
     position: sticky;
@@ -585,7 +585,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .log-select-item:hover {
-    background: #21262d;
+    background: var(--c-surface-2);
 }
 
 .log-select-item.selected {
@@ -613,7 +613,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .DeviceID-label {
     display: block;
-    color: #8b949e;
+    color: var(--c-text-muted);
     font-size: 13px;
     font-weight: bold;
     margin-bottom: 5px;
@@ -645,7 +645,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .memo-title {
-    color: #e6edf3;
+    color: var(--c-text);
     font-size: 13px;
     margin: 0;
 }
@@ -689,9 +689,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 /* JS 생성 입력 요소 */
 .edit-period-input {
     width: 60px;
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #fff;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-heading);
     padding: 4px;
     border-radius: 4px;
 }
@@ -703,31 +703,31 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .edit-date-input {
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #fff;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-heading);
     padding: 4px;
     border-radius: 4px;
 }
 
 .btn-calendar-picker {
     cursor: pointer;
-    background: #21262d;
-    border: 1px solid #30363d;
+    background: var(--c-surface-2);
+    border: 1px solid var(--c-border);
     border-radius: 4px;
     padding: 2px 6px;
     font-size: 14px;
 }
 
 .input-disabled {
-    background-color: #21262d !important;
+    background-color: var(--c-surface-2) !important;
     cursor: not-allowed !important;
     opacity: 0.6;
 }
 
 /* [추가] 유효성 검사 실패 시 에러 테두리 */
 .error-border {
-    border: 1px solid #f85149 !important;
+    border: 1px solid var(--c-red) !important;
 }
 
 /* 배지 (Badges) */
@@ -749,7 +749,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .badge.고객대응 {
-    background: #d29922;
+    background: var(--c-yellow);
     color: #fff;
 }
 
@@ -764,26 +764,26 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .badge.default {
-    background: #30363d;
-    color: #fff;
+    background: var(--c-border);
+    color: var(--c-heading);
 }
 
 /* 텍스트 색상 */
 .text-green {
-    color: #3fb950;
+    color: var(--c-green);
 }
 
 .text-blue {
-    color: #58a6ff;
+    color: var(--c-blue);
 }
 
 .text-red {
-    color: #f85149;
+    color: var(--c-red);
     cursor: pointer;
 }
 
 .text-orange {
-    color: #d29922;
+    color: var(--c-yellow);
     font-weight: bold;
 }
 
@@ -848,7 +848,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .memo-row-time label {
-    color: #8b949e;
+    color: var(--c-text-muted);
     font-size: 13px;
     min-width: 50px;
 }
@@ -872,7 +872,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     left: 8px;
     top: 50%;
     transform: translateY(-50%);
-    color: #fff;
+    color: var(--c-heading);
     pointer-events: none;
     font-family: inherit;
     font-size: 12px;
@@ -880,7 +880,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .memo-time-duration {
     margin-left: 10px;
-    color: #58a6ff;
+    color: var(--c-blue);
     font-size: 13px;
     font-weight: bold;
     white-space: nowrap;
@@ -1351,4 +1351,37 @@ body[class*="role-"] #maint-table-body .btn-del-sm {
     height: 28px !important;
     padding: 2px 4px !important;
     line-height: 1 !important;
+}
+
+/* [추가] 장비 점검 이력 작업내용: 증상/원인/조치사항 (작업 상세 정보에서 기록) */
+.device-memo-parts {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 8px;
+    padding: 8px 10px;
+    background: var(--c-surface-3);
+    border: 1px solid var(--c-border);
+    border-radius: 4px;
+    max-height: 40%;
+    overflow-y: auto;
+    flex-shrink: 0;
+}
+.device-memo-part {
+    display: flex;
+    gap: 8px;
+    font-size: 13px;
+    line-height: 1.5;
+}
+.device-memo-part-label {
+    flex: 0 0 60px;
+    font-weight: bold;
+    color: var(--c-text-muted);
+}
+.device-memo-part-text {
+    flex: 1;
+    min-width: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--c-text);
 }

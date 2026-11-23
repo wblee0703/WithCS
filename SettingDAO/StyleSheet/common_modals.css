@@ -15,7 +15,7 @@
 }
 
 .session-time-display {
-    color: #e3b341;
+    color: var(--c-yellow-2);
     font-size: 14px;
     font-variant-numeric: tabular-nums;
 }
@@ -73,7 +73,7 @@
     height: 100%;
     padding: 0 8px;
     font-size: 13px;
-    color: #e6edf3;
+    color: var(--c-text);
 }
 
 #my-info-wrapper button {
@@ -89,8 +89,8 @@
 
 #my-info-wrapper #edit-my-role,
 #my-info-wrapper #edit-my-site {
-    background: #0d1117;
-    color: #e6edf3;
+    background: var(--c-bg);
+    color: var(--c-text);
 }
 
 /* --- 3. 작업 예정일 설정 모달 (Schedule Modal) --- */
@@ -122,7 +122,7 @@
     width: 80px !important;
     flex-shrink: 0 !important;
     margin-bottom: 0 !important;
-    color: #8b949e !important;
+    color: var(--c-text-muted) !important;
     font-size: 13px !important;
     font-weight: bold !important;
 }
@@ -148,9 +148,9 @@
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
-    background-color: #0d1117 !important;
-    border: 1px solid #30363d !important;
-    color: #e6edf3 !important;
+    background-color: var(--c-bg) !important;
+    border: 1px solid var(--c-border) !important;
+    color: var(--c-text) !important;
     background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16' fill='%238b949e'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 8px center;
@@ -159,8 +159,8 @@
 }
 
 #event-detail-modal select.input-dark option {
-    background-color: #161b22;
-    color: #e6edf3;
+    background-color: var(--c-surface);
+    color: var(--c-text);
 }
 
 #event-detail-modal #detail-type-select {
@@ -184,7 +184,7 @@
 }
 
 #detail-issue-share-checkbox+label {
-    color: #e6edf3;
+    color: var(--c-text);
     font-size: 13px;
     cursor: pointer;
 }
@@ -284,7 +284,7 @@
 }
 
 #task-search-modal .form-row span {
-    color: #e6edf3;
+    color: var(--c-text);
     flex-shrink: 0;
 }
 
@@ -320,12 +320,12 @@
 /* --- 7. 공통 아이템 템플릿 (Common Item Templates) --- */
 .worker-site {
     font-size: 11px;
-    color: #3fb950;
+    color: var(--c-green);
 }
 
 .worker-dept-pos {
     font-size: 11px;
-    color: #8b949e;
+    color: var(--c-text-muted);
 }
 
 #register-equip-suggestions .log-select-item {
@@ -352,7 +352,7 @@
 
 .equip-name {
     font-weight: bold;
-    color: #e6edf3;
+    color: var(--c-text);
     font-size: 13px;
     margin-right: 5px;
     white-space: nowrap;
@@ -362,7 +362,7 @@
 }
 
 .equip-serial {
-    color: #3fb950;
+    color: var(--c-green);
     /* 녹색 */
     font-weight: bold;
     font-size: 13px;
@@ -372,7 +372,7 @@
 }
 
 .equip-cust {
-    color: #3fb950;
+    color: var(--c-green);
     /* 녹색 */
     font-weight: bold;
     font-size: 13px;
@@ -494,7 +494,7 @@
 }
 
 .detail-label {
-    color: #8b949e;
+    color: var(--c-text-muted);
     font-size: 12px;
     display: block;
     margin-bottom: 5px;
@@ -558,9 +558,9 @@
 
 /* [추가] 유틸리티 숏컷 버튼 및 시간 조절 (+ 시간 입력 / - 시간 제거) 버튼 공통 스타일 */
 .btn-shortcut {
-    background: #21262d;
-    border: 1px solid #30363d;
-    color: #62a16a;
+    background: var(--c-surface-2);
+    border: 1px solid var(--c-border);
+    color: var(--c-green-3);
     width: 50px;
     text-align: center;
     padding: 2px 0;
@@ -572,22 +572,22 @@
 }
 
 .btn-shortcut:hover {
-    background: #62a16a;
+    background: var(--c-green-3);
     color: #fff;
-    border-color: #62a16a;
+    border-color: var(--c-green-3);
 }
 
 #btn-toggle-detail-time {
-    background: #21262d !important;
-    border: 1px solid #30363d !important;
-    color: #62a16a !important;
+    background: var(--c-surface-2) !important;
+    border: 1px solid var(--c-border) !important;
+    color: var(--c-green-3) !important;
     font-weight: bold;
 }
 
 #btn-toggle-detail-time:hover {
-    background: #62a16a !important;
+    background: var(--c-green-3) !important;
     color: #ffffff !important;
-    border-color: #62a16a !important;
+    border-color: var(--c-green-3) !important;
 }
 
 .detail-date-row-inner {
@@ -596,9 +596,9 @@
 }
 
 .input-date-dark {
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #fff;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-heading);
     padding: 5px;
     border-radius: 4px;
     flex: 1;
@@ -611,7 +611,7 @@
 
 #detail-equip-info,
 #detail-serial-no {
-    color: #e6edf3;
+    color: var(--c-text);
     font-weight: bold;
     font-size: 14px;
     flex: 1;
@@ -627,9 +627,9 @@
     flex: 1;
     min-width: 0;
     width: 100%;
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #e6edf3;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-text);
     padding: 8px 10px;
     border-radius: 4px;
     min-height: 34px;
@@ -645,9 +645,9 @@
     min-height: 200px;
     flex: none !important;
     resize: vertical;
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #fff;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-heading);
     padding: 8px;
     border-radius: 4px;
 }
@@ -661,8 +661,8 @@
 /* 체크박스 리스트 (Register Modal) */
 .checkbox-list-container {
     flex: 1;
-    background: #0d1117;
-    border: 1px solid #30363d;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
     border-radius: 4px;
     padding: 8px;
     height: 150px;
@@ -703,7 +703,7 @@
 }
 
 .checkbox-item label {
-    color: #e6edf3;
+    color: var(--c-text);
     font-size: 13px;
     cursor: pointer;
     white-space: nowrap;
@@ -718,8 +718,8 @@
 }
 
 .btn-save-state {
-    background-color: #d29922 !important;
-    border-color: #d29922 !important;
+    background-color: var(--c-yellow) !important;
+    border-color: var(--c-yellow) !important;
 }
 
 .register-item-container {
@@ -730,28 +730,28 @@
 .manual-input {
     width: 100%;
     padding: 8px;
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #e6edf3;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-text);
     border-radius: 4px;
 }
 
 .scheduled-date-text {
-    color: #e3b341;
+    color: var(--c-yellow-2);
     font-size: 0.85em;
 }
 
 .log-select-search-container {
     padding: 5px;
-    border-bottom: 1px solid #30363d;
+    border-bottom: 1px solid var(--c-border);
 }
 
 .log-select-search-input {
     width: 100%;
     padding: 5px;
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #e6edf3;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-text);
     border-radius: 3px;
     font-size: 12px;
 }
@@ -768,9 +768,9 @@
 
 /* 다음 예정일 등록 드롭다운 및 입력창 */
 .next-type-select {
-    background-color: #0d1117;
-    border: 1px solid #30363d;
-    color: #e6edf3;
+    background-color: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-text);
     border-radius: 4px;
     padding: 4px 6px;
     font-size: 12px;
@@ -779,16 +779,16 @@
 }
 
 .next-type-select:disabled {
-    background-color: #21262d;
-    color: #8b949e;
+    background-color: var(--c-surface-2);
+    color: var(--c-text-muted);
     cursor: not-allowed;
 }
 
 .next-date-input,
 .next-md-input {
-    background-color: #0d1117;
-    border: 1px solid #30363d;
-    color: #e6edf3;
+    background-color: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-text);
     border-radius: 4px;
     padding: 4px 8px;
     font-size: 13px;
@@ -798,11 +798,11 @@
 .next-type-select:focus,
 .next-date-input:focus,
 .next-md-input:focus {
-    border-color: #58a6ff;
+    border-color: var(--c-blue);
 }
 
 .error-border {
-    border: 1px solid #f85149 !important;
+    border: 1px solid var(--c-red) !important;
 }
 
 .dropdown-search-input {
@@ -811,9 +811,9 @@
     margin: 5px 6px !important;
     display: block !important;
     padding: 6px 10px;
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #e6edf3;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-text);
     border-radius: 4px;
     box-sizing: border-box;
 }
@@ -821,10 +821,10 @@
 .show-all-btn {
     width: 100%;
     padding: 10px;
-    background: #21262d;
-    color: #58a6ff;
+    background: var(--c-surface-2);
+    color: var(--c-blue);
     border: none;
-    border-top: 1px solid #30363d;
+    border-top: 1px solid var(--c-border);
     cursor: pointer;
     font-weight: bold;
     position: sticky;
@@ -859,9 +859,9 @@
 #detail-detail-type-select,
 #detail-detail-type2-select {
     width: 100%;
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #fff;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-heading);
     padding: 8px 10px;
     border-radius: 4px;
     height: 34px;
@@ -874,7 +874,7 @@
 }
 
 #register-equip-trigger.disabled {
-    color: #8b949e !important;
+    color: var(--c-text-muted) !important;
     cursor: not-allowed !important;
     opacity: 0.5 !important;
 }
@@ -938,9 +938,9 @@
         font-size: 12px !important;
         font-weight: bold !important;
         border-radius: 4px !important;
-        border: 1px solid #3fb950 !important;
-        color: #3fb950 !important;
-        background: #0d1117 !important;
+        border: 1px solid var(--c-green) !important;
+        color: var(--c-green) !important;
+        background: var(--c-bg) !important;
         -webkit-tap-highlight-color: rgba(0, 0, 0, 0) !important;
     }
 
@@ -975,11 +975,11 @@
 
 .task-date {
     font-size: 14px;
-    color: #fff;
+    color: var(--c-heading);
 }
 
 .cust-equip-name {
-    color: #e6edf3;
+    color: var(--c-text);
     font-size: 12px;
     margin-left: 8px;
     display: none;
@@ -999,7 +999,7 @@
 
 .task-details {
     font-size: 12px;
-    color: #e6edf3;
+    color: var(--c-text);
     width: 100%;
     white-space: nowrap;
     overflow: hidden;
@@ -1053,7 +1053,7 @@
 }
 
 #next-schedule-modal p {
-    color: #e6edf3;
+    color: var(--c-text);
     font-size: 13px;
     margin-bottom: 15px;
     text-align: center;
@@ -1062,7 +1062,7 @@
 }
 
 #next-schedule-modal p span {
-    color: #58a6ff;
+    color: var(--c-blue);
     font-weight: bold;
 }
 
@@ -1116,9 +1116,9 @@
 
 #register-schedule-modal .modal-select,
 #setup-task-schedule-modal .modal-select {
-    background: #0d1117;
-    color: #fff;
-    border: 1px solid #30363d;
+    background: var(--c-bg);
+    color: var(--c-heading);
+    border: 1px solid var(--c-border);
     padding: 5px;
     border-radius: 4px;
 }
@@ -1129,29 +1129,29 @@
 #setup-task-schedule-modal select option,
 #setup-log-register-modal select option,
 .modal-select option {
-    background-color: #161b22 !important;
-    background: #161b22 !important;
-    color: #e6edf3 !important;
+    background-color: var(--c-surface) !important;
+    background: var(--c-surface) !important;
+    color: var(--c-text) !important;
 }
 
 #setup-task-schedule-modal .log-select-dropdown,
 #setup-log-register-modal .log-select-dropdown,
 #setup-task-schedule-modal .log-select-list,
 #setup-log-register-modal .log-select-list {
-    background-color: #161b22 !important;
-    background: #161b22 !important;
-    border: 1px solid #30363d !important;
+    background-color: var(--c-surface) !important;
+    background: var(--c-surface) !important;
+    border: 1px solid var(--c-border) !important;
 }
 
 #setup-task-schedule-modal .log-select-item,
 #setup-log-register-modal .log-select-item {
-    color: #e6edf3 !important;
+    color: var(--c-text) !important;
 }
 
 #setup-task-schedule-modal .log-select-item:hover,
 #setup-log-register-modal .log-select-item:hover {
-    background-color: #21262d !important;
-    color: #ffffff !important;
+    background-color: var(--c-surface-2) !important;
+    color: var(--c-heading) !important;
 }
 
 #setup-task-schedule-modal .log-select-item.selected,
@@ -1267,9 +1267,9 @@
 #register-worker-trigger {
     width: 100%;
     box-sizing: border-box;
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #fff;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-heading);
     padding: 5px;
     border-radius: 4px;
     min-height: 30px;
@@ -1364,7 +1364,7 @@
 }
 
 #extra-work-history-modal .data-table tbody tr:hover {
-    background-color: #21262d;
+    background-color: var(--c-surface-2);
 }
 
 #extra-work-history-modal .data-table th,
@@ -1410,9 +1410,9 @@
 #setup-load-list-modal .modal-select,
 #setup-load-info-modal .modal-select {
     flex: 1;
-    background: #0d1117;
-    color: #fff;
-    border: 1px solid #30363d;
+    background: var(--c-bg);
+    color: var(--c-heading);
+    border: 1px solid var(--c-border);
     padding: 5px;
     border-radius: 4px;
 }
@@ -1435,11 +1435,11 @@
 }
 
 #setup-load-list-modal .info-text-gray {
-    color: #ff7b72;
+    color: var(--c-red-2);
 }
 
 #setup-load-info-modal .info-text-gray {
-    color: #58a6ff;
+    color: var(--c-blue);
 }
 
 .info-text-gray {
@@ -1490,12 +1490,12 @@
 
 #setup-equip-modal hr {
     border: 0;
-    border-top: 1px solid #30363d;
+    border-top: 1px solid var(--c-border);
     margin: 10px 0;
 }
 
 #setup-equip-modal h4 {
-    color: #58a6ff;
+    color: var(--c-blue);
     margin: 15px 0 5px;
 }
 
@@ -1517,9 +1517,9 @@
 #maint-load-list-modal .modal-select,
 #maint-load-info-modal .modal-select {
     flex: 1;
-    background: #0d1117;
-    color: #fff;
-    border: 1px solid #30363d;
+    background: var(--c-bg);
+    color: var(--c-heading);
+    border: 1px solid var(--c-border);
     padding: 5px;
     border-radius: 4px;
 }
@@ -1541,11 +1541,11 @@
 }
 
 #maint-load-list-modal .info-text-gray {
-    color: #ff7b72;
+    color: var(--c-red-2);
 }
 
 #maint-load-info-modal .info-text-gray {
-    color: #58a6ff;
+    color: var(--c-blue);
 }
 
 #maint-equip-modal .modal-window {
@@ -1567,12 +1567,12 @@
 
 #maint-equip-modal hr {
     border: 0;
-    border-top: 1px solid #30363d;
+    border-top: 1px solid var(--c-border);
     margin: 10px 0;
 }
 
 #maint-equip-modal h4 {
-    color: #58a6ff;
+    color: var(--c-blue);
     margin: 15px 0 5px;
 }
 
@@ -1589,9 +1589,9 @@
     flex: 1;
     resize: none;
     margin-bottom: 10px;
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #fff;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-heading);
     padding: 10px;
     border-radius: 4px;
 }
@@ -1605,9 +1605,9 @@
     width: 100%;
     height: 100%;
     resize: none;
-    background: #0d1117;
-    color: #e6edf3;
-    border: 1px solid #30363d;
+    background: var(--c-bg);
+    color: var(--c-text);
+    border: 1px solid var(--c-border);
     padding: 10px;
     font-family: monospace;
     line-height: 1.5;
@@ -1619,7 +1619,7 @@
 }
 
 .memo-worker-wrapper .memo-row-top label {
-    color: #8b949e;
+    color: var(--c-text-muted);
     font-size: 13px;
     min-width: 50px;
 }
@@ -1638,13 +1638,13 @@
 }
 
 .memo-worker-wrapper .memo-row-bottom label {
-    color: #8b949e;
+    color: var(--c-text-muted);
     font-size: 13px;
     min-width: 50px;
 }
 
 .memo-worker-wrapper .memo-row-bottom label span {
-    color: #f85149;
+    color: var(--c-red);
 }
 
 #memo-md {
@@ -1715,9 +1715,9 @@ input[type="date"]::-webkit-datetime-edit-year {
     -webkit-appearance: none !important;
     -moz-appearance: none !important;
     appearance: none !important;
-    background-color: #0d1117 !important;
-    border: 1px solid #30363d !important;
-    color: #e6edf3 !important;
+    background-color: var(--c-bg) !important;
+    border: 1px solid var(--c-border) !important;
+    color: var(--c-text) !important;
     background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16' fill='%238b949e'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E") !important;
     background-repeat: no-repeat !important;
     background-position: right 4px center !important;
@@ -1732,8 +1732,8 @@ input[type="date"]::-webkit-datetime-edit-year {
 #detail-end-time-row select option,
 #memo-time-inputs-wrapper select option {
     font-size: 13px !important;
-    background-color: #161b22 !important;
-    color: #e6edf3 !important;
+    background-color: var(--c-surface) !important;
+    color: var(--c-text) !important;
 }
 
 /* [추가] 모바일 환경(950px 이하)에서 작업 상세 정보 / 추가 작업 상세 정보의 
@@ -1794,8 +1794,8 @@ input[type="date"]::-webkit-datetime-edit-year {
 
 :is(#extra-work-tracking-actions, #detail-tracking-actions) .btn-tracking-open {
     background: transparent;
-    border: 1px solid #f0883e;
-    color: #f0883e;
+    border: 1px solid var(--c-orange);
+    color: var(--c-orange);
 }
 
 :is(#extra-work-tracking-actions, #detail-tracking-actions) .btn-tracking-open:hover:not(:disabled) {
@@ -1803,14 +1803,14 @@ input[type="date"]::-webkit-datetime-edit-year {
 }
 
 :is(#extra-work-tracking-actions, #detail-tracking-actions) .btn-tracking-sub {
-    background: #21262d;
-    border: 1px solid #30363d;
-    color: #c9d1d9;
+    background: var(--c-surface-2);
+    border: 1px solid var(--c-border);
+    color: var(--c-text-2);
 }
 
 :is(#extra-work-tracking-actions, #detail-tracking-actions) .btn-tracking-sub:hover:not(:disabled) {
-    border-color: #58a6ff;
-    color: #58a6ff;
+    border-color: var(--c-blue);
+    color: var(--c-blue);
 }
 
 :is(#extra-work-tracking-actions, #detail-tracking-actions) .btn-tracking-close {
@@ -1826,4 +1826,62 @@ input[type="date"]::-webkit-datetime-edit-year {
 :is(#extra-work-tracking-actions, #detail-tracking-actions) button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+/* [요청] 작업 상세 정보: 작업자·공수 한 줄 (공수 라벨은 고정 너비 없이, 공수 입력칸은 좁게) */
+#event-detail-modal .detail-row-worker-md .detail-label-inline {
+    flex: 0 0 auto !important;
+    white-space: nowrap;
+}
+#event-detail-modal .detail-row-worker-md > #detail-md {
+    flex: 0 0 80px !important;
+    width: 80px !important;
+    min-width: 0;
+}
+
+/* [추가] 점검 결과 메모: 증상 / 원인 / 조치사항 나눠 입력 */
+#event-detail-modal .work-memo-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    margin-bottom: 5px;
+}
+#event-detail-modal .work-memo-head .detail-label {
+    margin-bottom: 0 !important;
+    width: auto !important;
+}
+#btn-toggle-work-memo-mode {
+    padding: 3px 10px !important;
+    font-size: 12px;
+    width: auto !important;
+    height: auto !important;
+    flex: none !important;
+}
+#detail-work-memo-structured {
+    flex-direction: column;
+    gap: 8px;
+}
+#detail-work-memo-structured .work-memo-section {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+#detail-work-memo-structured .work-memo-section-label {
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--c-text-muted);
+}
+#detail-work-memo-structured .work-memo-section-input {
+    width: 100%;
+    min-height: 64px;
+    resize: vertical;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-heading);
+    padding: 8px;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-family: inherit;
 }

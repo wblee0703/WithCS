@@ -430,6 +430,10 @@ class LogItem(db.Model):
     sort_order = db.Column(db.Integer, default=0)
     updated_by = db.Column(db.String(100), default='')  # [추가] 마지막 등록/수정자 (로그인 사용자 이름)
     updated_at = db.Column(db.String(30), default='')   # [추가] 마지막 등록/수정 일시 (KST, YYYY-MM-DD HH:MM)
+    # [추가] 점검 결과를 나눠 기록 (memo = 내용, 아래 3개 = 증상/원인/조치사항)
+    symptom = db.Column(db.Text, nullable=True)   # 증상
+    cause = db.Column(db.Text, nullable=True)     # 원인
+    action = db.Column(db.Text, nullable=True)    # 조치사항
 
 # [추가] 장비별 유지관리 물품 관리 테이블 (ItemLog / item_log)
 class ItemLog(db.Model):
@@ -955,7 +959,8 @@ def ensure_tracking_report_columns():
         except Exception:
             db.session.rollback()
     # [추가] 작업(maint_log) 마지막 등록/수정자 기록 컬럼
-    for col, typ in [('updated_by', "VARCHAR(100) DEFAULT ''"), ('updated_at', "VARCHAR(30) DEFAULT ''")]:
+    for col, typ in [('updated_by', "VARCHAR(100) DEFAULT ''"), ('updated_at', "VARCHAR(30) DEFAULT ''"),
+                     ('symptom', 'TEXT'), ('cause', 'TEXT'), ('action', 'TEXT')]:  # [추가] 증상/원인/조치사항
         try:
             db.session.execute(text(f'ALTER TABLE maint_log ADD COLUMN {col} {typ}'))
             db.session.commit()
@@ -1328,6 +1333,7 @@ def load_data():
                 "code": m_code, "content": m.content, "spec": m_spec, "date": m.date, "scheduledDate": getattr(m, 'scheduled_date', m.date),
                 "period": int(m.period) if getattr(m, 'period', None) and str(m.period).isdigit() else getattr(m, 'period', ''),
                 "costType": m.cost_type, "worker": m.worker, "md": m.md, "itemCost": getattr(m, 'item_cost', ''), "memo": m.memo,
+                "symptom": m.symptom or '', "cause": m.cause or '', "action": m.action or '',
                 "sortOrder": getattr(m, 'sort_order', 0),
                 "updatedBy": getattr(m, 'updated_by', '') or '', "updatedAt": getattr(m, 'updated_at', '') or '',
                 "originalLogId": int(m.original_log_id) if m.original_log_id and str(m.original_log_id).isdigit() else m.original_log_id
@@ -1379,6 +1385,7 @@ def load_data():
                 "detailType": l.detail_type, "detailType2": l.detail_type2, "detailType3": getattr(l, 'detail_type3', ''), "content": l.content, "startTime": getattr(l, 'start_time', ''),
                 "endTime": getattr(l, 'end_time', ''),
                 "addWork": l.add_work, "costType": l.cost_type, "md": l.md, "worker": l.worker, "memo": l.memo,
+                "symptom": l.symptom or '', "cause": l.cause or '', "action": l.action or '',
                 "isIssueShared": l.is_issue_shared,
                 "updatedBy": getattr(l, 'updated_by', '') or '', "updatedAt": getattr(l, 'updated_at', '') or '',
                 "originalLogId": int(l.original_log_id) if l.original_log_id and str(l.original_log_id).isdigit() else l.original_log_id,
@@ -5094,7 +5101,7 @@ def history_transaction():
     def _audit_fields(it):
         return tuple(str(getattr(it, f, '') or '') for f in (
             'status', 'date', 'scheduled_date', 'period', 'type', 'detail_type', 'detail_type2', 'detail_type3',
-            'content', 'add_work', 'cost_type', 'md', 'worker', 'memo', 'start_time', 'end_time'))
+            'content', 'add_work', 'cost_type', 'md', 'worker', 'memo', 'symptom', 'cause', 'action', 'start_time', 'end_time'))
     audit_targets = []  # [(item, before_snapshot)]
 
     try:
@@ -5152,6 +5159,9 @@ def history_transaction():
             item.md = str(l.get('md', getattr(item, 'md', '')))
             item.worker = l.get('worker', item.worker)
             item.memo = l.get('memo', item.memo)
+            for _k in ('symptom', 'cause', 'action'):  # [추가] 증상/원인/조치사항 (보내지 않으면 기존 값 유지)
+                if _k in l:
+                    setattr(item, _k, str(l.get(_k) or ''))
             item.start_time = l.get('startTime', getattr(item, 'start_time', ''))
             item.end_time = l.get('endTime', getattr(item, 'end_time', ''))
             item.is_issue_shared = bool(l.get('isIssueShared', getattr(item, 'is_issue_shared', False)))
@@ -5409,6 +5419,9 @@ def history_transaction():
                 item.worker = m.get('worker', item.worker)
                 item.md = str(m.get('md', getattr(item, 'md', '')))
                 item.memo = m.get('memo', item.memo)
+                for _k in ('symptom', 'cause', 'action'):  # [추가] 증상/원인/조치사항
+                    if _k in m:
+                        setattr(item, _k, str(m.get(_k) or ''))
                 item.original_log_id = str(m.get('originalLogId')) if m.get('originalLogId') else item.original_log_id
             else:
                 # [사용자 요청] 순수 유지관리 물품인 경우 maint_log(LogItem) 잔재 데이터 제거 및 신규 기록 방지
@@ -5896,6 +5909,9 @@ def get_trouble_list():
             "content": td_val,
             "trouble_details": td_val,
             "memo": (m_log.memo if m_log else '') or '',
+            "log_symptom": (m_log.symptom if m_log else '') or '',
+            "log_cause": (m_log.cause if m_log else '') or '',
+            "log_action": (m_log.action if m_log else '') or '',
             "worker": (m_log.worker if m_log else '') or '',
             "status": "기록완료" if (t.occur_date and str(t.occur_date).strip() not in ('', '-')) else "미기록",
             "image_data": t.image_data or (getattr(m_log, 'image_data', '') if m_log else ''),
@@ -5945,6 +5961,9 @@ def get_trouble_list():
             "content": safe_content,
             "trouble_details": safe_content,
             "memo": l.memo,
+            "log_symptom": l.symptom or '',
+            "log_cause": l.cause or '',
+            "log_action": l.action or '',
             "worker": l.worker,
             "status": "미기록",
             "image_data": getattr(l, 'image_data', ''),

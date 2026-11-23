@@ -4,7 +4,7 @@
 {% block title %}데이터 관리 - WITH ON{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/data.css') }}?v=1.5.3">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/data.css') }}?v=1.5.3-t2">
 <style>
     /* 달력 아이콘 반전 */
     .custom-date-icon::-webkit-calendar-picker-indicator {
@@ -50,7 +50,7 @@
         <!-- 장비 미선택 시 기본 안내 뷰 -->
         <div id="data-placeholder-view" class="data-placeholder-view">
             <div class="data-placeholder-icon">📊</div>
-            <h3 style="margin: 0 0 8px 0; color: #e6edf3;">장비 데이터 관리</h3>
+            <h3 style="margin: 0 0 8px 0; color: var(--c-text);">장비 데이터 관리</h3>
             <p style="margin: 0; font-size: 13px; line-height: 1.6;">
                 좌측 사이드바에서 <strong>사업장</strong>과 <strong>장비</strong>를 선택하면<br>
                 해당 장비의 측정 데이터 입력 및 관리 화면이 표시됩니다.
@@ -231,7 +231,7 @@
                         <div class="analysis-filter-group">
                             <span class="analysis-filter-label">📅 기간:</span>
                             <input type="date" id="analysis-date-start" class="analysis-date-input custom-date-icon" title="시작일">
-                            <span style="color: #8b949e;">~</span>
+                            <span style="color: var(--c-text-muted);">~</span>
                             <input type="date" id="analysis-date-end" class="analysis-date-input custom-date-icon" title="종료일">
                             <button type="button" id="btn-reset-analysis-date" class="btn-analysis-filter-sm">전체 기간</button>
                         </div>
@@ -317,7 +317,7 @@
                     <button type="button" class="data-modal-close" id="btn-close-param-date-modal">&times;</button>
                 </div>
                 <div class="data-modal-body">
-                    <label for="data-new-param-date" style="display: block; font-size: 13px; margin-bottom: 8px; color: #c9d1d9;">추가할 점검 일자</label>
+                    <label for="data-new-param-date" style="display: block; font-size: 13px; margin-bottom: 8px; color: var(--c-text-2);">추가할 점검 일자</label>
                     <input type="date" id="data-new-param-date" class="data-modal-input" max="9999-12-31">
                 </div>
                 <div class="data-modal-footer">
@@ -335,7 +335,7 @@
                     <button type="button" class="data-modal-close" id="btn-close-col-modal">&times;</button>
                 </div>
                 <div class="data-modal-body">
-                    <label for="data-new-col-name" style="display: block; font-size: 13px; margin-bottom: 8px; color: #c9d1d9;">열 이름 (측정 항목명 및 단위)</label>
+                    <label for="data-new-col-name" style="display: block; font-size: 13px; margin-bottom: 8px; color: var(--c-text-2);">열 이름 (측정 항목명 및 단위)</label>
                     <input type="text" id="data-new-col-name" class="data-modal-input" placeholder="예: 온도(℃), 압력(kPa), Laser Power(W) 등" autocomplete="off">
                 </div>
                 <div class="data-modal-footer">
@@ -350,5 +350,5 @@
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="{{ url_for('SettingDAO', filename='JavaScript/data.js') }}?v=1.9.3"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/data.js') }}?v=1.9.3-t4"></script>
 {% endblock %}

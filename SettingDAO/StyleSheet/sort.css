@@ -28,7 +28,7 @@
     overflow-x: visible;
     /* 제안박스(드롭다운)가 스크롤 영역에 잘리지 않도록 가시성 확보 */
     /* [수정] common.css의 스타일이 누락되어 발생하는 렌더링 문제 해결 */
-    background: #161b22;
+    background: var(--c-surface);
     border-radius: 8px;
     padding: 15px;
     display: flex;
@@ -43,23 +43,23 @@
 
 .dashboard-sidebar .form-label-custom {
     display: block;
-    color: #8b949e;
+    color: var(--c-text-muted);
     font-size: 13px;
     margin-bottom: 5px;
     font-weight: bold;
 }
 
 .dashboard-sidebar .input-dark {
-    background-color: #0d1117;
-    border: 1px solid #30363d;
-    color: #e6edf3;
+    background-color: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-text);
     padding: 8px;
     border-radius: 4px;
     box-sizing: border-box;
 }
 
 .dashboard-sidebar .input-dark:focus {
-    border-color: #58a6ff;
+    border-color: var(--c-blue);
     outline: none;
 }
 
@@ -94,8 +94,8 @@
 /* 검색 결과 리스트 아이템 스타일 */
 .sort-result-item {
     padding: 12px;
-    border: 1px solid #30363d;
-    background: #161b22;
+    border: 1px solid var(--c-border);
+    background: var(--c-surface);
     border-radius: 6px;
     margin-bottom: 10px;
     cursor: pointer;
@@ -103,8 +103,8 @@
 }
 
 .sort-result-item:hover {
-    background: #21262d;
-    border-color: #58a6ff;
+    background: var(--c-surface-2);
+    border-color: var(--c-blue);
 }
 
 /* 막대 그래프 컨테이너 및 바 스타일 */
@@ -123,7 +123,7 @@
 .sort-bar-group .bar-value {
     margin-bottom: 5px;
     font-size: 14px;
-    color: #e6edf3;
+    color: var(--c-text);
     font-weight: bold;
     text-align: center;
     flex: none;
@@ -144,7 +144,7 @@
     /* 그룹 너비의 비율 사용 */
     max-width: 50px;
     /* 너무 뚱뚱해지지 않게 제한 */
-    background-color: #30363d;
+    background-color: var(--c-border);
     border-radius: 4px 4px 0 0;
     transition: height 0.5s ease;
     min-height: 1px;
@@ -153,7 +153,7 @@
 
 .sort-bar-group .bar-label {
     font-size: 11px;
-    color: #e6edf3;
+    color: var(--c-text);
     white-space: nowrap;
     position: absolute;
     top: calc(100% + 5px);
@@ -210,7 +210,7 @@
     flex-shrink: 0;
     padding: 10px 10px 100px 10px;
     overflow-y: auto;
-    border-right: 1px solid #30363d;
+    border-right: 1px solid var(--c-border);
     box-sizing: border-box;
     height: 100%;
 }
@@ -219,7 +219,7 @@
     display: flex;
     align-items: center;
     font-size: 12px;
-    color: #c9d1d9;
+    color: var(--c-text-2);
     margin-bottom: 6px;
     white-space: nowrap;
     overflow: hidden;
@@ -295,11 +295,11 @@
 /* 필터 드롭다운 UI 관련 */
 .sort-group-filter-container {
     padding: 8px;
-    border-bottom: 1px solid #30363d;
+    border-bottom: 1px solid var(--c-border);
     display: flex;
     flex-wrap: wrap;
     gap: 5px;
-    background: #21262d;
+    background: var(--c-surface-2);
     border-radius: 4px 4px 0 0;
 }
 
@@ -319,9 +319,9 @@
     min-height: 30px;
     display: flex;
     align-items: center;
-    background: #0d1117;
-    color: #8b949e;
-    border: 1px solid #30363d;
+    background: var(--c-bg);
+    color: var(--c-text-muted);
+    border: 1px solid var(--c-border);
     border-radius: 4px;
     padding: 6px 10px;
     font-size: 13px;
@@ -340,8 +340,8 @@
     left: 0;
     z-index: 1000;
     margin-top: 4px;
-    background: #161b22;
-    border: 1px solid #30363d;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
     border-radius: 4px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
     box-sizing: border-box;
@@ -355,8 +355,8 @@
 
 .sort-footer {
     padding: 8px;
-    border-top: 1px solid #30363d;
-    background: #21262d;
+    border-top: 1px solid var(--c-border);
+    background: var(--c-surface-2);
     display: flex;
     gap: 5px;
 }
@@ -366,7 +366,7 @@
     /* 비율 대신 고정 너비 할당 */
     text-align: center;
     font-weight: bold;
-    color: #58a6ff;
+    color: var(--c-blue);
 }
 
 .sort-item-text {
@@ -382,7 +382,7 @@
 
 .sort-dropdown-empty {
     padding: 10px;
-    color: #8b949e;
+    color: var(--c-text-muted);
     text-align: center;
     font-size: 12px;
 }
@@ -404,7 +404,7 @@
 .sort-empty-row {
     text-align: center;
     padding: 20px;
-    color: #8b949e;
+    color: var(--c-text-muted);
 }
 
 .sort-result-row {
@@ -412,24 +412,24 @@
 }
 
 .sort-result-row:hover {
-    background-color: #21262d;
+    background-color: var(--c-surface-2);
 }
 
 .site-group-text {
     font-size: 11px;
-    color: #8b949e;
+    color: var(--c-text-muted);
     margin-bottom: 2px;
 }
 
 .equip-sub-info {
-    color: #3fb950;
+    color: var(--c-green);
     font-weight: bold;
     font-size: 12px;
     margin-top: 2px;
 }
 
 .detail-sub-text {
-    color: #8b949e;
+    color: var(--c-text-muted);
     font-size: 12px;
     margin-top: 2px;
 }
@@ -445,11 +445,11 @@
 }
 
 .status-complete {
-    color: #3fb950;
+    color: var(--c-green);
 }
 
 .status-pending {
-    color: #d29922;
+    color: var(--c-yellow);
 }
 
 .sort-chart-empty {
@@ -499,8 +499,8 @@
 
 /* 제안박스(드롭다운) 여백 및 리스트 스타일 개선 */
 #section-sort .log-select-dropdown {
-    background: #161b22;
-    border: 1px solid #30363d;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
     border-radius: 4px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
     z-index: 9999 !important;
@@ -528,23 +528,23 @@
 
 #section-sort .log-select-footer {
     padding: 8px !important;
-    border-top: 1px solid #30363d;
-    background: #21262d;
+    border-top: 1px solid var(--c-border);
+    background: var(--c-surface-2);
 }
 
 /* [추가] 차트 CSV 추출 버튼 호버 스타일 */
 .btn-export-chart-csv:hover {
-    color: #e6edf3 !important;
-    background-color: #21262d !important;
+    color: var(--c-text) !important;
+    background-color: var(--c-surface-2) !important;
 }
 
 /* [추가] 그래프 카드를 구분하기 위한 스타일 */
 .sort-half-chart,
 .sort-full-chart {
-    border: 1px solid #30363d;
+    border: 1px solid var(--c-border);
     border-radius: 8px;
     padding: 15px;
-    background-color: #0d1117;
+    background-color: var(--c-bg);
     height: 400px !important;
     min-height: 400px !important;
     max-height: 400px !important;
@@ -598,7 +598,7 @@
     bottom: 100px !important;
     /* Y축과 라벨 높이에 맞춰 X축 위치 조정 */
     height: 1px;
-    background-color: #30363d;
+    background-color: var(--c-border);
     /* Y축과 동일한 색상 */
 }
 
@@ -679,7 +679,7 @@
         height: 40px !important;
         min-height: 40px !important;
         margin-bottom: 10px !important;
-        border-bottom: 1px solid #30363d !important;
+        border-bottom: 1px solid var(--c-border) !important;
         box-sizing: border-box !important;
     }
 
@@ -893,8 +893,8 @@
 }
 
 .btn-drilldown-mode:hover {
-    border-color: #58a6ff !important;
-    color: #e6edf3 !important;
+    border-color: var(--c-blue) !important;
+    color: var(--c-text) !important;
 }
 
 /* ==============================================================================
@@ -905,27 +905,27 @@
     flex-wrap: wrap;
     gap: 8px;
     align-items: center;
-    background: #161b22;
-    border: 1px solid #30363d;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
     padding: 10px 14px;
     border-radius: 8px;
     font-size: 12px;
-    color: #8b949e;
+    color: var(--c-text-muted);
 }
 
 .sort-report-filter-tag {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    background: #21262d;
-    color: #c9d1d9;
+    background: var(--c-surface-2);
+    color: var(--c-text-2);
     padding: 3px 8px;
     border-radius: 4px;
-    border: 1px solid #30363d;
+    border: 1px solid var(--c-border);
 }
 
 .sort-report-filter-tag strong {
-    color: #58a6ff;
+    color: var(--c-blue);
 }
 
 .sort-report-kpi-grid {
@@ -935,8 +935,8 @@
 }
 
 .sort-report-kpi-card {
-    background-color: #161b22;
-    border: 1px solid #30363d;
+    background-color: var(--c-surface);
+    border: 1px solid var(--c-border);
     border-radius: 8px;
     padding: 12px 14px;
     position: relative;
@@ -952,14 +952,14 @@
     height: 100%;
 }
 
-.sort-report-kpi-card.kpi-blue::before { background-color: #58a6ff; }
-.sort-report-kpi-card.kpi-orange::before { background-color: #f0883e; }
+.sort-report-kpi-card.kpi-blue::before { background-color: var(--c-blue); }
+.sort-report-kpi-card.kpi-orange::before { background-color: var(--c-orange); }
 .sort-report-kpi-card.kpi-purple::before { background-color: #bc8cff; }
-.sort-report-kpi-card.kpi-green::before { background-color: #3fb950; }
+.sort-report-kpi-card.kpi-green::before { background-color: var(--c-green); }
 
 .sort-report-kpi-label {
     font-size: 11px;
-    color: #8b949e;
+    color: var(--c-text-muted);
     margin-bottom: 4px;
     font-weight: 600;
 }
@@ -967,13 +967,13 @@
 .sort-report-kpi-value {
     font-size: 1.35rem;
     font-weight: 700;
-    color: #f0f6fc;
+    color: var(--c-text-strong);
     margin-bottom: 2px;
 }
 
 .sort-report-kpi-desc {
     font-size: 11px;
-    color: #8b949e;
+    color: var(--c-text-muted);
 }
 
 .sort-report-charts-grid {
@@ -983,8 +983,8 @@
 }
 
 .sort-report-chart-card {
-    background: #161b22;
-    border: 1px solid #30363d;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
     border-radius: 8px;
     padding: 16px;
 }
@@ -992,13 +992,13 @@
 .sort-report-chart-title {
     font-size: 13px;
     font-weight: 600;
-    color: #f0f6fc;
+    color: var(--c-text-strong);
     margin: 0 0 12px 0;
 }
 
 .sort-report-insight-card {
-    background: #161b22;
-    border: 1px solid #30363d;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
     border-radius: 8px;
     padding: 18px 20px;
 }
@@ -1010,8 +1010,8 @@
 }
 
 .sort-report-rank-box {
-    background: #161b22;
-    border: 1px solid #30363d;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
     border-radius: 8px;
     padding: 14px 16px;
 }
@@ -1021,7 +1021,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 6px 0;
-    border-bottom: 1px solid #21262d;
+    border-bottom: 1px solid var(--c-surface-2);
     font-size: 12px;
 }
 
@@ -1038,8 +1038,8 @@
     border-radius: 50%;
     font-weight: 700;
     font-size: 11px;
-    background: #30363d;
-    color: #f0f6fc;
+    background: var(--c-border);
+    color: var(--c-text-strong);
     margin-right: 6px;
 }
 
@@ -1126,16 +1126,16 @@
     padding: 4px 12px;
     font-size: 12px;
     border-radius: 4px;
-    border: 1px solid #30363d;
+    border: 1px solid var(--c-border);
     background: transparent;
-    color: #8b949e;
+    color: var(--c-text-muted);
     cursor: pointer;
     white-space: nowrap;
 }
 
 .sort-stat-tab:hover {
-    color: #c9d1d9;
-    border-color: #8b949e;
+    color: var(--c-text-2);
+    border-color: var(--c-text-muted);
 }
 
 .sort-stat-tab.active {
@@ -1198,10 +1198,10 @@
     /* 왼쪽: 기본 간격 15 + 4 = 19px / 오른쪽: -11 + 기본 간격 15 + 데이터 통계 안쪽 여백 15 = 19px */
     margin: 0 -11px 0 4px;
     padding: 0;
-    border: 1px solid #30363d;
+    border: 1px solid var(--c-border);
     border-radius: 6px;
-    background: #161b22;
-    color: #8b949e;
+    background: var(--c-surface);
+    color: var(--c-text-muted);
     font-size: 10px;
     line-height: 1;
     cursor: pointer;
@@ -1249,7 +1249,7 @@
     right: 0;
     bottom: 28px !important;
     height: 1px;
-    background-color: #30363d;
+    background-color: var(--c-border);
 }
 
 #sort-monthly-detail-y-axis,
@@ -1291,14 +1291,14 @@
     font-weight: normal;
     cursor: pointer;
     border-radius: 4px;
-    border: 1px solid #30363d;
+    border: 1px solid var(--c-border);
     background: transparent;
-    color: #8b949e;
+    color: var(--c-text-muted);
 }
 
 .sort-monthly-mode-btn:hover {
-    color: #c9d1d9;
-    border-color: #8b949e;
+    color: var(--c-text-2);
+    border-color: var(--c-text-muted);
 }
 
 .sort-monthly-mode-btn.active {
@@ -1323,7 +1323,7 @@
 .sort-monthly-site-filter-label {
     font-size: 12px;
     font-weight: bold;
-    color: #8b949e;
+    color: var(--c-text-muted);
     margin-right: 4px;
 }
 
@@ -1331,16 +1331,16 @@
     padding: 3px 10px;
     font-size: 12px;
     border-radius: 12px;
-    border: 1px solid #30363d;
+    border: 1px solid var(--c-border);
     background: transparent;
-    color: #8b949e;
+    color: var(--c-text-muted);
     cursor: pointer;
     white-space: nowrap;
 }
 
 .sort-monthly-site-chip:hover {
-    color: #c9d1d9;
-    border-color: #8b949e;
+    color: var(--c-text-2);
+    border-color: var(--c-text-muted);
 }
 
 .sort-monthly-site-chip.active {
@@ -1359,7 +1359,7 @@
     border-radius: 4px;
     border: 1px solid #1f6feb;
     background: transparent;
-    color: #58a6ff;
+    color: var(--c-blue);
     cursor: pointer;
 }
 
@@ -1372,6 +1372,6 @@
 .legend-item.legend-sub {
     padding-left: 14px;
     font-size: 11px;
-    color: #8b949e;
+    color: var(--c-text-muted);
     cursor: default;
 }

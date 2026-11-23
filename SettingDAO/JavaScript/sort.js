@@ -151,16 +151,16 @@ function initSortPage() {
                         const placeholder = trigger.dataset.placeholder || '전체';
                         if (totalItems > 0 && selected.length === totalItems) {
                             trigger.textContent = placeholder;
-                            trigger.style.color = '#e6edf3';
+                            trigger.style.color = 'var(--c-text)';
                         } else if (selected.length === 0) {
                             trigger.textContent = '선택 없음';
-                            trigger.style.color = '#8b949e';
+                            trigger.style.color = 'var(--c-text-muted)';
                         } else if (selected.length === 1) {
                             trigger.textContent = selected[0].querySelector('.item-text').textContent;
-                            trigger.style.color = '#e6edf3';
+                            trigger.style.color = 'var(--c-text)';
                         } else {
                             trigger.textContent = `${selected[0].querySelector('.item-text').textContent} 외 ${selected.length - 1}개`;
-                            trigger.style.color = '#e6edf3';
+                            trigger.style.color = 'var(--c-text)';
                         }
                     }
                 }
@@ -571,16 +571,16 @@ function syncCustomMultiSelect(selectId, placeholder = '전체') {
 
         if (totalItems > 0 && selected.length === totalItems) {
             trigger.textContent = placeholder;
-            trigger.style.color = '#e6edf3';
+            trigger.style.color = 'var(--c-text)';
         } else if (selected.length === 0) {
             trigger.textContent = '선택 없음'; // [수정] 0개 선택 시 명확한 텍스트로 변경
-            trigger.style.color = '#8b949e';
+            trigger.style.color = 'var(--c-text-muted)';
         } else if (selected.length === 1) {
             trigger.textContent = selected[0].querySelector('.item-text').textContent;
-            trigger.style.color = '#e6edf3';
+            trigger.style.color = 'var(--c-text)';
         } else {
             trigger.textContent = `${selected[0].querySelector('.item-text').textContent} 외 ${selected.length - 1}개`;
-            trigger.style.color = '#e6edf3';
+            trigger.style.color = 'var(--c-text)';
         }
         trigger.title = selected.map(el => el.querySelector('.item-text').textContent).join('\n');
     };
@@ -1017,18 +1017,18 @@ function updateKeywordTrigger() {
     if (total > 0 && selected.length === total) {
         input.value = '';
         input.placeholder = '항목/내용 검색 (전체)';
-        input.style.color = '#e6edf3';
+        input.style.color = 'var(--c-text)';
         input.title = '전체 선택됨';
     } else if (selected.length > 0) {
         const uniqueSelected = Array.from(new Set(selected.map(el => el.dataset.value)));
         const text = uniqueSelected.join(', ');
         input.value = uniqueSelected.length > 1 ? `${uniqueSelected[0]} 외 ${uniqueSelected.length - 1}개` : text;
-        input.style.color = '#58a6ff';
+        input.style.color = 'var(--c-blue)';
         input.title = uniqueSelected.join('\n');
     } else {
         input.value = '';
         input.placeholder = '선택 없음';
-        input.style.color = '#8b949e';
+        input.style.color = 'var(--c-text-muted)';
         input.title = '';
     }
 }
@@ -2600,7 +2600,7 @@ function renderSortChart(results) {
                     exportBtn.className = 'btn-export-chart-csv';
                     exportBtn.innerHTML = '⬇️ CSV';
                     exportBtn.title = '차트 데이터 CSV 추출';
-                    exportBtn.style.cssText = 'padding: 2px 6px; font-size: 11px; cursor: pointer; border-radius: 4px; border: 1px solid #30363d; background: transparent; color: #8b949e; margin-left: auto;';
+                    exportBtn.style.cssText = 'padding: 2px 6px; font-size: 11px; cursor: pointer; border-radius: 4px; border: 1px solid var(--c-border); background: transparent; color: var(--c-text-muted); margin-left: auto;';
                     titleEl.appendChild(exportBtn);
                 }
 
@@ -2893,7 +2893,7 @@ function renderSortChart(results) {
                     exportBtn.className = 'btn-export-chart-csv';
                     exportBtn.innerHTML = '⬇️ CSV';
                     exportBtn.title = '차트 데이터 CSV 추출';
-                    exportBtn.style.cssText = 'padding: 2px 6px; font-size: 11px; cursor: pointer; border-radius: 4px; border: 1px solid #30363d; background: transparent; color: #8b949e; margin-left: auto;';
+                    exportBtn.style.cssText = 'padding: 2px 6px; font-size: 11px; cursor: pointer; border-radius: 4px; border: 1px solid var(--c-border); background: transparent; color: var(--c-text-muted); margin-left: auto;';
                     titleEl.appendChild(exportBtn);
                 }
             }
@@ -3130,7 +3130,7 @@ function renderSortChart(results) {
                 const labelDiv = document.createElement('div');
                 labelDiv.className = 'bar-label';
                 labelDiv.style.textAlign = 'right';
-                labelDiv.innerHTML = `<div style="color: #e6edf3; font-weight: 500;">${escapeHtml(model)}</div><div style="font-size: 10px; color: #8b949e; margin-top: 2px;">(${equipCount})</div>`;
+                labelDiv.innerHTML = `<div style="color: var(--c-text); font-weight: 500;">${escapeHtml(model)}</div><div style="font-size: 10px; color: var(--c-text-muted); margin-top: 2px;">(${equipCount})</div>`;
                 labelDiv.title = `${model} (장비 대수: ${equipCount}대)`;
                 groupDiv.appendChild(trackDiv);
                 groupDiv.appendChild(labelDiv);
@@ -3200,7 +3200,7 @@ function renderSortChart(results) {
                     exportBtn.className = 'btn-export-chart-csv';
                     exportBtn.innerHTML = '⬇️ CSV';
                     exportBtn.title = '차트 데이터 CSV 추출';
-                    exportBtn.style.cssText = 'padding: 2px 6px; font-size: 11px; cursor: pointer; border-radius: 4px; border: 1px solid #30363d; background: transparent; color: #8b949e; margin-left: auto;';
+                    exportBtn.style.cssText = 'padding: 2px 6px; font-size: 11px; cursor: pointer; border-radius: 4px; border: 1px solid var(--c-border); background: transparent; color: var(--c-text-muted); margin-left: auto;';
                     titleEl.appendChild(exportBtn);
                 }
             }
@@ -3677,8 +3677,8 @@ function renderSortChart(results) {
                     btn.style.fontWeight = 'bold';
                 } else {
                     btn.style.background = 'transparent';
-                    btn.style.borderColor = '#30363d';
-                    btn.style.color = '#8b949e';
+                    btn.style.borderColor = 'var(--c-border)';
+                    btn.style.color = 'var(--c-text-muted)';
                     btn.style.fontWeight = 'normal';
                 }
             });
@@ -3699,23 +3699,23 @@ function renderSortChart(results) {
         // 뒤로가기 버튼 이벤트 및 타이틀 설정
         if (level === 1) {
             if (backBtn) backBtn.style.display = 'none';
-            if (titleEl) titleEl.innerHTML = `[${escapeHtml(model)}] ${escapeHtml(workType)} <span style="color: #8b949e; font-weight: normal;">&gt; 세부구분 1별 빈도수</span>`;
+            if (titleEl) titleEl.innerHTML = `[${escapeHtml(model)}] ${escapeHtml(workType)} <span style="color: var(--c-text-muted); font-weight: normal;">&gt; 세부구분 1별 빈도수</span>`;
         } else if (level === 2) {
             if (isGlobalMode) {
                 if (backBtn) backBtn.style.display = 'none';
-                if (titleEl) titleEl.innerHTML = `[${escapeHtml(model)}] ${escapeHtml(workType)} <span style="color: #58a6ff;">&gt; 전체 세부구분 2별 총빈도수</span>`;
+                if (titleEl) titleEl.innerHTML = `[${escapeHtml(model)}] ${escapeHtml(workType)} <span style="color: var(--c-blue);">&gt; 전체 세부구분 2별 총빈도수</span>`;
             } else {
                 if (backBtn) {
                     backBtn.style.display = 'inline-block';
                     backBtn.textContent = '◀ 세부구분 1';
                     backBtn.onclick = () => openDrilldownChart(model, workType, 1, null, null, false);
                 }
-                if (titleEl) titleEl.innerHTML = `[${escapeHtml(model)}] ${escapeHtml(workType)} &gt; <span style="color: #58a6ff;">${escapeHtml(d1)}</span> <span style="color: #8b949e; font-weight: normal;">&gt; 세부구분 2별 빈도수</span>`;
+                if (titleEl) titleEl.innerHTML = `[${escapeHtml(model)}] ${escapeHtml(workType)} &gt; <span style="color: var(--c-blue);">${escapeHtml(d1)}</span> <span style="color: var(--c-text-muted); font-weight: normal;">&gt; 세부구분 2별 빈도수</span>`;
             }
         } else if (level === 3) {
             if (isGlobalMode) {
                 if (backBtn) backBtn.style.display = 'none';
-                if (titleEl) titleEl.innerHTML = `[${escapeHtml(model)}] ${escapeHtml(workType)} <span style="color: #58a6ff;">&gt; 전체 세부구분 3별 총빈도수</span>`;
+                if (titleEl) titleEl.innerHTML = `[${escapeHtml(model)}] ${escapeHtml(workType)} <span style="color: var(--c-blue);">&gt; 전체 세부구분 3별 총빈도수</span>`;
             } else {
                 if (backBtn) {
                     backBtn.style.display = 'inline-block';
@@ -3729,9 +3729,9 @@ function renderSortChart(results) {
                 }
                 if (titleEl) {
                     if (d1) {
-                        titleEl.innerHTML = `[${escapeHtml(model)}] ${escapeHtml(workType)} &gt; ${escapeHtml(d1)} &gt; <span style="color: #58a6ff;">${escapeHtml(d2)}</span> <span style="color: #8b949e; font-weight: normal;">&gt; 세부구분 3별 빈도수</span>`;
+                        titleEl.innerHTML = `[${escapeHtml(model)}] ${escapeHtml(workType)} &gt; ${escapeHtml(d1)} &gt; <span style="color: var(--c-blue);">${escapeHtml(d2)}</span> <span style="color: var(--c-text-muted); font-weight: normal;">&gt; 세부구분 3별 빈도수</span>`;
                     } else {
-                        titleEl.innerHTML = `[${escapeHtml(model)}] ${escapeHtml(workType)} &gt; <span style="color: #58a6ff;">${escapeHtml(d2)}</span> <span style="color: #8b949e; font-weight: normal;">&gt; 세부구분 3별 빈도수</span>`;
+                        titleEl.innerHTML = `[${escapeHtml(model)}] ${escapeHtml(workType)} &gt; <span style="color: var(--c-blue);">${escapeHtml(d2)}</span> <span style="color: var(--c-text-muted); font-weight: normal;">&gt; 세부구분 3별 빈도수</span>`;
                     }
                 }
             }
@@ -3882,7 +3882,7 @@ function renderSortChart(results) {
         }
 
         if (maxCount === 0) {
-            container.innerHTML = '<div class="list-empty-msg sort-chart-empty" style="padding: 40px; text-align: center; color: #8b949e;">해당 조건에 해당하는 세부 작업 내역이 없습니다.</div>';
+            container.innerHTML = '<div class="list-empty-msg sort-chart-empty" style="padding: 40px; text-align: center; color: var(--c-text-muted);">해당 조건에 해당하는 세부 작업 내역이 없습니다.</div>';
             if (yAxis) yAxis.innerHTML = '';
             return;
         }
@@ -4067,7 +4067,7 @@ function renderSortChart(results) {
             const labelDiv = document.createElement('div');
             labelDiv.className = 'bar-label';
             labelDiv.style.textAlign = 'right';
-            labelDiv.innerHTML = `<div style="color: #e6edf3; font-weight: 500;">${escapeHtml(cat)}</div>`;
+            labelDiv.innerHTML = `<div style="color: var(--c-text); font-weight: 500;">${escapeHtml(cat)}</div>`;
             labelDiv.title = `${cat} (총 ${total}건)` + (level < 3 ? ` - 클릭 시 세부구분 ${level + 1} 보기` : '');
             groupDiv.appendChild(trackDiv);
             groupDiv.appendChild(labelDiv);
@@ -4451,7 +4451,7 @@ function openSortHistoryModal(site, equip) {
             `;
 
             // 마우스 호버 효과
-            tr.addEventListener('mouseenter', () => { tr.style.backgroundColor = '#21262d'; });
+            tr.addEventListener('mouseenter', () => { tr.style.backgroundColor = 'var(--c-surface-2)'; });
             tr.addEventListener('mouseleave', () => { tr.style.backgroundColor = ''; });
 
             tr.onclick = () => {
@@ -4779,7 +4779,7 @@ function renderSortReportRankings(detailCounts, workerCounts, totalCount) {
     if (detailEl) {
         const sortedD = Object.entries(detailCounts).sort((a,b)=>b[1]-a[1]).slice(0, 5);
         if (sortedD.length === 0) {
-            detailEl.innerHTML = '<div style="color:#8b949e; font-size:12px; padding:10px;">데이터 없음</div>';
+            detailEl.innerHTML = '<div style="color:var(--c-text-muted); font-size:12px; padding:10px;">데이터 없음</div>';
         } else {
             detailEl.innerHTML = sortedD.map(([name, cnt], idx) => `
                 <div class="sort-report-rank-item">
@@ -4788,8 +4788,8 @@ function renderSortReportRankings(detailCounts, workerCounts, totalCount) {
                         <strong>${escapeHtml(name)}</strong>
                     </div>
                     <div>
-                        <span style="color: #58a6ff; font-weight:600;">${cnt}건</span>
-                        <span style="color: #8b949e; font-size:11px; margin-left:4px;">(${totalCount > 0 ? ((cnt/totalCount)*100).toFixed(1) : 0}%)</span>
+                        <span style="color: var(--c-blue); font-weight:600;">${cnt}건</span>
+                        <span style="color: var(--c-text-muted); font-size:11px; margin-left:4px;">(${totalCount > 0 ? ((cnt/totalCount)*100).toFixed(1) : 0}%)</span>
                     </div>
                 </div>
             `).join('');
@@ -4800,7 +4800,7 @@ function renderSortReportRankings(detailCounts, workerCounts, totalCount) {
     if (workerEl) {
         const sortedW = Object.entries(workerCounts).sort((a,b)=>b[1]-a[1]).slice(0, 5);
         if (sortedW.length === 0) {
-            workerEl.innerHTML = '<div style="color:#8b949e; font-size:12px; padding:10px;">데이터 없음</div>';
+            workerEl.innerHTML = '<div style="color:var(--c-text-muted); font-size:12px; padding:10px;">데이터 없음</div>';
         } else {
             workerEl.innerHTML = sortedW.map(([name, cnt], idx) => `
                 <div class="sort-report-rank-item">
@@ -4809,8 +4809,8 @@ function renderSortReportRankings(detailCounts, workerCounts, totalCount) {
                         <strong>${escapeHtml(name)}</strong>
                     </div>
                     <div>
-                        <span style="color: #3fb950; font-weight:600;">${cnt}건</span>
-                        <span style="color: #8b949e; font-size:11px; margin-left:4px;">(${totalCount > 0 ? ((cnt/totalCount)*100).toFixed(1) : 0}%)</span>
+                        <span style="color: var(--c-green); font-weight:600;">${cnt}건</span>
+                        <span style="color: var(--c-text-muted); font-size:11px; margin-left:4px;">(${totalCount > 0 ? ((cnt/totalCount)*100).toFixed(1) : 0}%)</span>
                     </div>
                 </div>
             `).join('');
@@ -4821,8 +4821,8 @@ function renderSortReportRankings(detailCounts, workerCounts, totalCount) {
 function parseSortMarkdownToHtml(md) {
     if (!md) return '';
     let out = md;
-    out = out.replace(/^### (.*$)/gim, '<h4 style="color:#f0f6fc; margin:10px 0 6px;">$1</h4>');
-    out = out.replace(/^## (.*$)/gim, '<h3 style="color:#58a6ff; margin:14px 0 8px; font-size:14px; border-bottom:1px solid #30363d; padding-bottom:4px;">$1</h3>');
+    out = out.replace(/^### (.*$)/gim, '<h4 style="color:var(--c-text-strong); margin:10px 0 6px;">$1</h4>');
+    out = out.replace(/^## (.*$)/gim, '<h3 style="color:var(--c-blue); margin:14px 0 8px; font-size:14px; border-bottom:1px solid var(--c-border); padding-bottom:4px;">$1</h3>');
     out = out.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     out = out.replace(/^\s*[\-\*]\s+(.*$)/gim, '<li>$1</li>');
     out = out.replace(/(<li>.*<\/li>)/gms, '<ul style="margin:4px 0 10px; padding-left:20px;">$1</ul>');

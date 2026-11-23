@@ -28,13 +28,13 @@
 .setup-btn-close {
     background: none;
     border: none;
-    color: #f85149;
+    color: var(--c-red);
     cursor: pointer;
     font-size: 16px;
 }
 
 .setup-btn-close:hover {
-    color: #ff7b72;
+    color: var(--c-red-2);
 }
 
 /* 모달 바디 (기본) */
@@ -80,13 +80,13 @@
 /* 라벨 */
 .setup-label {
     width: 80px;
-    color: #8b949e;
+    color: var(--c-text-muted);
     font-size: 13px;
     flex-shrink: 0;
 }
 
 .setup-textarea-label {
-    color: #8b949e;
+    color: var(--c-text-muted);
     margin-bottom: 5px;
     font-size: 13px;
     font-weight: bold;
@@ -108,7 +108,7 @@
     align-items: center;
     text-align: center;
     margin-bottom: 15px;
-    color: #e6edf3;
+    color: var(--c-text);
     cursor: pointer;
     font-size: 14px;
 }
@@ -124,7 +124,7 @@
 }
 
 .setup-delay-label {
-    color: #f0883e;
+    color: var(--c-orange);
     font-size: 12px;
     margin-bottom: 5px;
     display: block;
@@ -134,9 +134,9 @@
 .setup-delay-textarea {
     width: 100%;
     height: 60px;
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #fff;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-heading);
     padding: 8px;
     border-radius: 4px;
     resize: none;
@@ -146,12 +146,12 @@
 /* 셋업 이력(일지) 컨테이너 */
 .setup-log-container {
     margin-top: 10px;
-    border-top: 1px solid #30363d;
+    border-top: 1px solid var(--c-border);
     padding-top: 15px;
 }
 
 .setup-log-title {
-    color: #58a6ff;
+    color: var(--c-blue);
     font-size: 14px;
     margin-bottom: 10px;
 }
@@ -201,7 +201,7 @@
 }
 
 .modal-date-label {
-    color: #8b949e;
+    color: var(--c-text-muted);
     font-size: 13px;
     width: 60px;
     flex-shrink: 0;
@@ -225,9 +225,9 @@
 /* [추가] 작업 완료 등록 팝업창 작업자 드롭다운 스타일 강제 일치화 */
 #setup-completion-modal .log-select-trigger {
     width: 100%;
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #8b949e;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-text-muted);
     padding: 8px 10px;
     border-radius: 4px;
     height: 34px;
@@ -244,12 +244,12 @@
 }
 
 #setup-completion-modal .log-select-trigger.has-value {
-    color: #fff;
+    color: var(--c-heading);
 }
 
 .modal-checkbox-label {
     font-size: 14px;
-    color: #e6edf3;
+    color: var(--c-text);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -270,7 +270,7 @@
 
 .delay-reason-label {
     display: block;
-    color: #f0883e;
+    color: var(--c-orange);
     font-size: 12px;
     margin-bottom: 5px;
     font-weight: bold;
@@ -279,9 +279,9 @@
 .delay-reason-textarea {
     width: 100%;
     height: 60px;
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #fff;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-heading);
     padding: 8px;
     border-radius: 4px;
     resize: none;
@@ -332,9 +332,9 @@
 }
 
 .log-select-trigger {
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #fff;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-heading);
     padding: 5px;
     border-radius: 4px;
     cursor: pointer;
@@ -352,8 +352,8 @@
     top: 100%;
     left: 0;
     width: 100%;
-    background: #161b22 !important;
-    border: 1px solid #30363d !important;
+    background: var(--c-surface) !important;
+    border: 1px solid var(--c-border) !important;
     border-radius: 4px;
     z-index: 1000;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
@@ -367,7 +367,7 @@
     max-height: 200px;
     overflow-y: auto;
     padding: 5px;
-    background: #161b22;
+    background: var(--c-surface);
 }
 
 .log-select-item {
@@ -377,12 +377,12 @@
     cursor: pointer;
     border-radius: 4px;
     margin-bottom: 2px;
-    color: #e6edf3 !important;
+    color: var(--c-text) !important;
 }
 
 .log-select-item:hover {
-    background: #21262d !important;
-    color: #ffffff !important;
+    background: var(--c-surface-2) !important;
+    color: var(--c-heading) !important;
 }
 
 .log-select-item.selected {
@@ -392,9 +392,9 @@
 
 select.modal-select option,
 .modal-select option {
-    background-color: #161b22 !important;
-    background: #161b22 !important;
-    color: #e6edf3 !important;
+    background-color: var(--c-surface) !important;
+    background: var(--c-surface) !important;
+    color: var(--c-text) !important;
 }
 
 .log-select-item span {
@@ -408,8 +408,8 @@ select.modal-select option,
 /* 드롭다운 하단 푸터 및 선택 완료 버튼 넓이 확장 */
 .log-select-footer {
     padding: 8px;
-    border-top: 1px solid #30363d;
-    background: #21262d;
+    border-top: 1px solid var(--c-border);
+    background: var(--c-surface-2);
     display: flex;
 }
 
@@ -422,9 +422,9 @@ select.modal-select option,
     width: calc(100% - 10px) !important;
     margin: 5px !important;
     padding: 6px 10px !important;
-    background: #0d1117 !important;
-    border: 1px solid #30363d !important;
-    color: #e6edf3 !important;
+    background: var(--c-bg) !important;
+    border: 1px solid var(--c-border) !important;
+    color: var(--c-text) !important;
     border-radius: 4px !important;
     box-sizing: border-box !important;
 }
@@ -446,9 +446,9 @@ select.modal-select option,
     width: 100%;
     height: 34px !important;
     box-sizing: border-box !important;
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #fff;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    color: var(--c-heading);
     padding: 0 10px !important;
     border-radius: 4px;
     font-size: 13px;
@@ -465,8 +465,8 @@ select.modal-select option,
     width: 100%;
     height: 34px !important;
     box-sizing: border-box !important;
-    background: #0d1117;
-    border: 1px solid #30363d;
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
     padding: 0 10px !important;
     border-radius: 4px;
     font-size: 13px;
@@ -478,7 +478,7 @@ select.modal-select option,
     white-space: nowrap;
     text-overflow: ellipsis;
     cursor: pointer;
-    color: #8b949e;
+    color: var(--c-text-muted);
 }
 
 #setup-log-reg-site-trigger.has-value,
@@ -486,7 +486,7 @@ select.modal-select option,
 #setup-log-reg-category-trigger.has-value,
 #setup-log-reg-subcategory-trigger.has-value,
 #setup-log-reg-worker-trigger.has-value {
-    color: #fff;
+    color: var(--c-heading);
 }
 
 #setup-log-reg-site-wrapper,
@@ -516,8 +516,8 @@ select.modal-select option,
     position: absolute;
     top: 100%;
     left: 0;
-    background: #161b22;
-    border: 1px solid #30363d;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
     border-radius: 4px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
@@ -590,10 +590,10 @@ select.modal-select option,
     align-items: center;
     gap: 4px;
     padding: 3px 9px;
-    border: 1px solid #30363d;
+    border: 1px solid var(--c-border);
     border-radius: 12px;
-    background: #0d1117;
-    color: #c9d1d9;
+    background: var(--c-bg);
+    color: var(--c-text-2);
     font-size: 12px;
     cursor: pointer;
     user-select: none;
@@ -607,11 +607,11 @@ select.modal-select option,
 .setup-log-option-chip.checked {
     border-color: #1f6feb;
     background: rgba(31, 111, 235, 0.15);
-    color: #58a6ff;
+    color: var(--c-blue);
 }
 
 .setup-log-subopt {
-    color: #58a6ff;
+    color: var(--c-blue);
     font-size: 11px;
 }
 
@@ -628,7 +628,7 @@ select.modal-select option,
 
 .setup-log-label {
     width: 80px;
-    color: #8b949e;
+    color: var(--c-text-muted);
     font-size: 13px;
     font-weight: bold;
     flex-shrink: 0;
@@ -663,7 +663,7 @@ select.modal-select option,
 }
 
 .setup-log-memo-label {
-    color: #8b949e;
+    color: var(--c-text-muted);
     font-size: 13px;
     font-weight: bold;
     margin-bottom: 5px;
@@ -682,7 +682,7 @@ select.modal-select option,
 .setup-log-checkbox-label {
     font-size: 13px;
     font-weight: bold;
-    color: #58a6ff;
+    color: var(--c-blue);
     display: flex;
     align-items: center;
     cursor: pointer;
@@ -768,7 +768,7 @@ select.modal-select option,
     font-weight: bold;
     text-align: center;
     margin-bottom: 15px;
-    color: #e6edf3;
+    color: var(--c-text);
 }
 
 .setup-complete-form-row {
@@ -785,7 +785,7 @@ select.modal-select option,
     width: 120px;
     font-size: 12px;
     font-weight: normal;
-    color: #8b949e;
+    color: var(--c-text-muted);
     flex-shrink: 0;
     text-align: left;
 }
@@ -798,7 +798,7 @@ select.modal-select option,
 
 .setup-complete-hr {
     border: 0;
-    border-top: 1px solid #30363d;
+    border-top: 1px solid var(--c-border);
     margin: 15px 0;
 }
 
@@ -840,7 +840,7 @@ select.modal-select option,
 .setup-history-table-wrapper {
     flex: 1;
     overflow-y: auto;
-    border: 1px solid #30363d;
+    border: 1px solid var(--c-border);
     border-radius: 6px;
 }
 
@@ -854,11 +854,11 @@ select.modal-select option,
 .setup-history-table th {
     position: sticky;
     top: 0;
-    background: #161b22;
+    background: var(--c-surface);
     z-index: 1;
     padding: 10px;
-    border-bottom: 1px solid #30363d;
-    color: #8b949e;
+    border-bottom: 1px solid var(--c-border);
+    color: var(--c-text-muted);
     font-size: 12px;
     overflow: hidden;
     white-space: nowrap;
@@ -895,19 +895,19 @@ select.modal-select option,
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: #161b22;
-    border: 1px solid #30363d;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
     border-radius: 6px;
     overflow: hidden;
 }
 
 .setup-history-parts-title {
     padding: 8px 12px;
-    background: #21262d;
-    border-bottom: 1px solid #30363d;
+    background: var(--c-surface-2);
+    border-bottom: 1px solid var(--c-border);
     font-weight: bold;
     font-size: 13px;
-    color: #e6edf3;
+    color: var(--c-text);
 }
 
 .setup-history-parts-list {
@@ -928,7 +928,7 @@ select.modal-select option,
     margin-bottom: 5px;
     font-weight: bold;
     font-size: 13px;
-    color: #e6edf3;
+    color: var(--c-text);
 }
 
 .setup-history-memo {
@@ -985,18 +985,18 @@ select.modal-select option,
    셋업 진행률 (HOME 셋업 관리 · WORKS Setup 공용)
    ========================================================================== */
 .setup-progress { flex-direction: column; gap: 10px; padding: 10px 4px; box-sizing: border-box; overflow-y: auto; }
-.setup-progress__overall { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid #30363d; border-radius: 6px; background: #161b22; }
-.setup-progress__overall-label { flex-shrink: 0; font-size: 13px; font-weight: 600; color: #e6edf3; }
-.setup-progress__overall-label span { font-size: 11px; font-weight: 400; color: #8b949e; margin-left: 4px; }
+.setup-progress__overall { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--c-border); border-radius: 6px; background: var(--c-surface); }
+.setup-progress__overall-label { flex-shrink: 0; font-size: 13px; font-weight: 600; color: var(--c-text); }
+.setup-progress__overall-label span { font-size: 11px; font-weight: 400; color: var(--c-text-muted); margin-left: 4px; }
 .setup-progress__overall-value { flex-shrink: 0; width: 52px; text-align: right; font-size: 18px; font-weight: 700; }
-.setup-progress__bar { flex: 1; height: 10px; border-radius: 5px; background: #21262d; overflow: hidden; min-width: 80px; }
+.setup-progress__bar { flex: 1; height: 10px; border-radius: 5px; background: var(--c-surface-2); overflow: hidden; min-width: 80px; }
 .setup-progress__bar--lg { height: 14px; border-radius: 7px; }
 .setup-progress__bar > div { height: 100%; border-radius: inherit; transition: width .3s; }
 .setup-progress__list { display: flex; flex-direction: column; }
-.setup-progress__row { display: grid; grid-template-columns: 190px minmax(80px, 1fr) 90px; grid-template-areas: "stage bar value" "subs subs subs"; align-items: center; column-gap: 10px; row-gap: 6px; padding: 8px 12px; border-bottom: 1px solid #21262d; }
-.setup-progress__stage { grid-area: stage; font-size: 12px; font-weight: 600; color: #e6edf3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.setup-progress__row { display: grid; grid-template-columns: 190px minmax(80px, 1fr) 90px; grid-template-areas: "stage bar value" "subs subs subs"; align-items: center; column-gap: 10px; row-gap: 6px; padding: 8px 12px; border-bottom: 1px solid var(--c-surface-2); }
+.setup-progress__stage { grid-area: stage; font-size: 12px; font-weight: 600; color: var(--c-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .setup-progress__row > .setup-progress__bar { grid-area: bar; }
-.setup-progress__value { grid-area: value; text-align: right; font-size: 11px; color: #8b949e; }
+.setup-progress__value { grid-area: value; text-align: right; font-size: 11px; color: var(--c-text-muted); }
 .setup-progress__value strong { margin-left: 4px; font-size: 12px; }
 .setup-progress__subs { grid-area: subs; display: flex; flex-wrap: wrap; gap: 5px; }
 .setup-progress__sub { font-size: 11px; padding: 2px 8px; border: 1px solid; border-radius: 10px; cursor: pointer; white-space: nowrap; line-height: 1.5; }
@@ -1011,10 +1011,10 @@ select.modal-select option,
 .setup-sub-log-window .modal-body { display: flex; flex-direction: column; gap: 10px; min-height: 0; overflow: hidden; }
 .setup-sub-log-status { display: flex; align-items: center; gap: 10px; }
 .setup-sub-log-badge { font-size: 12px; font-weight: 600; padding: 2px 10px; border: 1px solid; border-radius: 10px; }
-.setup-sub-log-table-wrap { flex: 1; min-height: 120px; max-height: 50vh; overflow-y: auto; border: 1px solid #30363d; border-radius: 6px; }
+.setup-sub-log-table-wrap { flex: 1; min-height: 120px; max-height: 50vh; overflow-y: auto; border: 1px solid var(--c-border); border-radius: 6px; }
 .setup-sub-log-table { min-width: 0 !important; }
 .setup-sub-log-table th, .setup-sub-log-table td { text-align: center; font-size: 12px; padding: 7px 8px; }
-.setup-sub-log-table tbody tr[data-id]:hover { background: #1c2128; }
+.setup-sub-log-table tbody tr[data-id]:hover { background: var(--c-surface-3); }
 .setup-sub-log-footer { display: flex; gap: 8px; justify-content: flex-end; }
 .setup-sub-log-footer button { padding: 6px 14px; }
 
@@ -1026,13 +1026,13 @@ select.modal-select option,
     padding: 4px 12px;
     color: #ffffff;
     background: #da3633;
-    border: 1px solid #f85149;
+    border: 1px solid var(--c-red);
     border-radius: 6px;
     cursor: pointer;
 }
-.setup-sub-log-exclude:hover { background: #f85149; }
+.setup-sub-log-exclude:hover { background: var(--c-red); }
 .setup-sub-log-unexclude { margin-left: auto; }
-.setup-progress__row--excluded .setup-progress__stage { color: #6e7681; text-decoration: line-through; }
+.setup-progress__row--excluded .setup-progress__stage { color: var(--c-text-faint); text-decoration: line-through; }
 .setup-progress__row--excluded .setup-progress__bar { opacity: 0.4; }
 
 /* 진행률 없는 단계 (사전 작업): 막대 자리 비움 */
@@ -1047,7 +1047,7 @@ select.modal-select option,
     display: flex;
     align-items: center;
     font-size: 11px;
-    color: #8b949e;
+    color: var(--c-text-muted);
     white-space: nowrap;
     pointer-events: none; /* 눌러도 입력창(드롭다운)이 열리게 */
 }
@@ -1055,7 +1055,7 @@ select.modal-select option,
 /* 표시가 글자와 겹치지 않게 입력창 오른쪽 여백 */
 /* (오른쪽 여백은 진행률 표시 길이에 맞춰 JS에서 지정) */
 
-.setup-log-progress-badge b { color: #58a6ff; }
+.setup-log-progress-badge b { color: var(--c-blue); }
 #setup-log-register-modal .log-select-item {
     display: flex;
     align-items: center;
@@ -1065,7 +1065,7 @@ select.modal-select option,
 .setup-log-item-progress {
     flex-shrink: 0;
     font-size: 11px;
-    color: #58a6ff;
+    color: var(--c-blue);
     white-space: nowrap;
 }
 
@@ -1080,7 +1080,7 @@ select.modal-select option,
     flex-shrink: 0;
     width: auto !important;
     margin: 0 0 0 4px !important;
-    color: #8b949e;
+    color: var(--c-text-muted);
     font-size: 13px;
     font-weight: bold;
     white-space: nowrap;
@@ -1093,8 +1093,8 @@ select.modal-select option,
     height: 30px;
     box-sizing: border-box;
     text-align: center;
-    background: #161b22;
-    color: #c9d1d9;
+    background: var(--c-surface);
+    color: var(--c-text-2);
     cursor: default;
     pointer-events: none;
 }

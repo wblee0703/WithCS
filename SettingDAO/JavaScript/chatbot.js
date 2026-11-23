@@ -592,8 +592,8 @@
             makeDragScrollable(contentEl);
 
             if (resumeBtn) resumeBtn.style.display = 'none';
-            dateListEl.innerHTML = '<li style="color:#8b949e; font-size:12px; padding:10px; text-align:center;">목록 조회 중...</li>';
-            contentEl.innerHTML = '<div style="color:#8b949e; text-align:center; padding: 40px;">대화 기록을 불러오는 중입니다...</div>';
+            dateListEl.innerHTML = '<li style="color:var(--c-text-muted); font-size:12px; padding:10px; text-align:center;">목록 조회 중...</li>';
+            contentEl.innerHTML = '<div style="color:var(--c-text-muted); text-align:center; padding: 40px;">대화 기록을 불러오는 중입니다...</div>';
 
             let sessions = [];
 
@@ -620,8 +620,8 @@
             }
 
             if (sessions.length === 0) {
-                dateListEl.innerHTML = '<li style="color:#8b949e; font-size:12px; padding:15px 10px; text-align:center;">저장된 대화가 없습니다.</li>';
-                contentEl.innerHTML = '<div style="color:#8b949e; text-align:center; padding: 40px;">실제 대화 내용이 존재하는 기록만 이곳에 저장 관리됩니다.</div>';
+                dateListEl.innerHTML = '<li style="color:var(--c-text-muted); font-size:12px; padding:15px 10px; text-align:center;">저장된 대화가 없습니다.</li>';
+                contentEl.innerHTML = '<div style="color:var(--c-text-muted); text-align:center; padding: 40px;">실제 대화 내용이 존재하는 기록만 이곳에 저장 관리됩니다.</div>';
                 if (selectedDateEl) selectedDateEl.textContent = '선택된 대화 내역';
                 return;
             }
@@ -629,14 +629,14 @@
             sessions.forEach((sessionItem) => {
                 const li = document.createElement('li');
                 li.className = 'chatbot-history-session-item';
-                li.style.cssText = 'display: flex; flex-direction: column; padding: 9px 10px; border-radius: 6px; cursor: pointer; color: #c9d1d9; background: #161b22; border: 1px solid #30363d; font-size: 12px; gap: 5px;';
+                li.style.cssText = 'display: flex; flex-direction: column; padding: 9px 10px; border-radius: 6px; cursor: pointer; color: var(--c-text-2); background: var(--c-surface); border: 1px solid var(--c-border); font-size: 12px; gap: 5px;';
 
                 // 상단: 대화 제목 + 개별 삭제 버튼
                 const topRow = document.createElement('div');
                 topRow.style.cssText = 'display: flex; align-items: center; justify-content: space-between; gap: 6px;';
 
                 const titleSpan = document.createElement('span');
-                titleSpan.style.cssText = 'overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; font-weight: 600; color: #e6edf3; font-size: 12px;';
+                titleSpan.style.cssText = 'overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; font-weight: 600; color: var(--c-text); font-size: 12px;';
                 titleSpan.textContent = sessionItem.title || '대화 내용';
                 titleSpan.title = sessionItem.title || '';
 
@@ -674,13 +674,13 @@
 
                 // 하단: 일시 (시간 포함) + 메시지 건수 배지
                 const bottomRow = document.createElement('div');
-                bottomRow.style.cssText = 'display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: #8b949e;';
+                bottomRow.style.cssText = 'display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: var(--c-text-muted);';
 
                 const timeSpan = document.createElement('span');
                 timeSpan.textContent = sessionItem.created_at || sessionItem.date;
 
                 const countBadge = document.createElement('span');
-                countBadge.style.cssText = 'background: #21262d; padding: 1px 5px; border-radius: 3px; color: #58a6ff; font-weight: 500; font-size: 10px;';
+                countBadge.style.cssText = 'background: var(--c-surface-2); padding: 1px 5px; border-radius: 3px; color: var(--c-blue); font-weight: 500; font-size: 10px;';
                 countBadge.textContent = `💬 ${sessionItem.message_count}건`;
 
                 bottomRow.appendChild(timeSpan);
@@ -698,7 +698,7 @@
                         selectedDateEl.textContent = `💬 ${sessionItem.title}`;
                         selectedDateEl.title = sessionItem.title;
                     }
-                    contentEl.innerHTML = '<div style="color:#8b949e; text-align:center; padding: 30px;">대화 내용을 불러오는 중...</div>';
+                    contentEl.innerHTML = '<div style="color:var(--c-text-muted); text-align:center; padding: 30px;">대화 내용을 불러오는 중...</div>';
 
                     let messages = null;
                     try {
@@ -714,7 +714,7 @@
                     }
 
                     if (!messages || messages.length === 0) {
-                        contentEl.innerHTML = '<div style="color:#8b949e; text-align:center; padding: 30px;">대화 내용이 존재하지 않습니다.</div>';
+                        contentEl.innerHTML = '<div style="color:var(--c-text-muted); text-align:center; padding: 30px;">대화 내용이 존재하지 않습니다.</div>';
                         if (resumeBtn) resumeBtn.style.display = 'none';
                         return;
                     }
@@ -723,7 +723,7 @@
                         contentEl.innerHTML = '';
                         messages.forEach((m) => {
                             const itemDiv = document.createElement('div');
-                            itemDiv.style.cssText = 'margin-bottom: 14px; border-bottom: 1px solid #21262d; padding-bottom: 10px; position: relative;';
+                            itemDiv.style.cssText = 'margin-bottom: 14px; border-bottom: 1px solid var(--c-surface-2); padding-bottom: 10px; position: relative;';
 
                             const headerDiv = document.createElement('div');
                             headerDiv.style.cssText = 'display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;';
@@ -731,7 +731,7 @@
                             const leftSpan = document.createElement('div');
                             const senderName = m.sender === 'user' ? '👤 사용자' : '🤖 AI 비서';
                             const color = m.sender === 'user' ? '#58a6ff' : '#3fb950';
-                            const timeStr = m.created_at ? `<span style="font-size:11px; color:#8b949e; margin-left:8px; font-weight:normal;">${escapeHtml(m.created_at)}</span>` : '';
+                            const timeStr = m.created_at ? `<span style="font-size:11px; color:var(--c-text-muted); margin-left:8px; font-weight:normal;">${escapeHtml(m.created_at)}</span>` : '';
                             leftSpan.innerHTML = `<strong style="color:${color};">${senderName}:</strong>${timeStr}`;
 
                             const copyBtn = document.createElement('button');
@@ -747,7 +747,7 @@
 
                             const bodyDiv = document.createElement('div');
                             bodyDiv.className = 'chatbot-md';
-                            bodyDiv.style.cssText = 'margin-top: 4px; color:#c9d1d9; font-size: 13px; line-height: 1.5;';
+                            bodyDiv.style.cssText = 'margin-top: 4px; color:var(--c-text-2); font-size: 13px; line-height: 1.5;';
                             bodyDiv.innerHTML = parseMarkdown(fullText);
 
                             itemDiv.appendChild(headerDiv);
@@ -755,7 +755,7 @@
                             contentEl.appendChild(itemDiv);
                         });
                     } catch (e) {
-                        contentEl.innerHTML = '<div style="color:#f85149;">대화 기록을 렌더링하는 도중 오류가 발생했습니다.</div>';
+                        contentEl.innerHTML = '<div style="color:var(--c-red);">대화 기록을 렌더링하는 도중 오류가 발생했습니다.</div>';
                     }
                 };
 

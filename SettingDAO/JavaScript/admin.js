@@ -96,8 +96,8 @@ function updateMaintBtnUI(isMaint) {
         toggleBtn.style.color = '#ffffff';
     } else {
         toggleBtn.textContent = 'OFF';
-        toggleBtn.style.background = '#21262d';
-        toggleBtn.style.color = '#c9d1d9';
+        toggleBtn.style.background = 'var(--c-surface-2)';
+        toggleBtn.style.color = 'var(--c-text-2)';
     }
 }
 
@@ -1188,9 +1188,9 @@ function setupEquipMgmt() {
                 btnCsvExport.style.padding = '2px 6px';
                 btnCsvExport.style.borderRadius = '4px';
                 btnCsvExport.style.cursor = 'pointer';
-                btnCsvExport.style.border = '1px solid #30363d';
-                btnCsvExport.style.background = '#21262d';
-                btnCsvExport.style.color = '#e6edf3';
+                btnCsvExport.style.border = '1px solid var(--c-border)';
+                btnCsvExport.style.background = 'var(--c-surface-2)';
+                btnCsvExport.style.color = 'var(--c-text)';
                 btnCsvExport.textContent = 'CSV 내보내기';
                 btnCsvExport.title = '등록된 전체 장비 데이터를 CSV 양식으로 내보냅니다.';
 
@@ -1202,9 +1202,9 @@ function setupEquipMgmt() {
                 btnCsvImport.style.padding = '2px 6px';
                 btnCsvImport.style.borderRadius = '4px';
                 btnCsvImport.style.cursor = 'pointer';
-                btnCsvImport.style.border = '1px solid #30363d';
-                btnCsvImport.style.background = '#21262d';
-                btnCsvImport.style.color = '#e6edf3';
+                btnCsvImport.style.border = '1px solid var(--c-border)';
+                btnCsvImport.style.background = 'var(--c-surface-2)';
+                btnCsvImport.style.color = 'var(--c-text)';
                 btnCsvImport.textContent = 'CSV 불러오기';
                 btnCsvImport.title = 'CSV 양식: 사업장, 장비명, Serial No, 고객사 장비명, 프로젝트 번호, 장비 구분, 납품일, 워런티시작일, 워런티 기한, 건물, 층, 세부위치, 담당자, 연락처, E-mail';
 
@@ -1271,7 +1271,7 @@ function setupEquipMgmt() {
                 });
                 suggestionList.style.display = 'block';
             } else {
-                suggestionList.innerHTML = '<li class="suggestion-item" style="text-align:center; color:#8b949e; cursor:default;">검색 결과가 없습니다.</li>';
+                suggestionList.innerHTML = '<li class="suggestion-item" style="text-align:center; color:var(--c-text-muted); cursor:default;">검색 결과가 없습니다.</li>';
                 suggestionList.style.display = 'block';
             }
         };
@@ -1719,21 +1719,21 @@ function syncAdminSiteFilterState(skipRender = false) {
     if (totalItems > 0 && selectedItems.length === totalItems) {
         triggerTextSpan.textContent = '전체 사업장';
         trigger.title = '전체 사업장';
-        trigger.style.color = '#e6edf3';
+        trigger.style.color = 'var(--c-text)';
     } else if (selectedItems.length === 0) {
         triggerTextSpan.textContent = '선택 없음';
         trigger.title = '선택 없음';
-        trigger.style.color = '#8b949e';
+        trigger.style.color = 'var(--c-text-muted)';
     } else if (selectedItems.length === 1) {
         const itemText = selectedItems[0].querySelector('.sort-item-text') ? selectedItems[0].querySelector('.sort-item-text').textContent : selectedItems[0].dataset.value;
         triggerTextSpan.textContent = itemText;
         trigger.title = itemText;
-        trigger.style.color = '#e6edf3';
+        trigger.style.color = 'var(--c-text)';
     } else {
         const firstText = selectedItems[0].querySelector('.sort-item-text') ? selectedItems[0].querySelector('.sort-item-text').textContent : selectedItems[0].dataset.value;
         triggerTextSpan.textContent = `${firstText} 외 ${selectedItems.length - 1}개`;
         trigger.title = selectedItems.map(el => (el.querySelector('.sort-item-text') ? el.querySelector('.sort-item-text').textContent : el.dataset.value)).join('\n');
-        trigger.style.color = '#e6edf3';
+        trigger.style.color = 'var(--c-text)';
     }
 
     if (nativeSelect) {
@@ -1827,7 +1827,7 @@ function updateEquipSiteSelect() {
     // 4. 리스트 아이템 렌더링
     list.innerHTML = '';
     if (allSites.length === 0) {
-        list.innerHTML = '<div style="padding: 10px; color: #8b949e; text-align: center; font-size: 12px;">등록된 사업장이 없습니다.</div>';
+        list.innerHTML = '<div style="padding: 10px; color: var(--c-text-muted); text-align: center; font-size: 12px;">등록된 사업장이 없습니다.</div>';
     } else {
         allSites.forEach(site => {
             let siteGroup = '기타사업장';
@@ -1981,9 +1981,9 @@ function renderAdminEquipList() {
         // [수정] 고객사 장비명 또는 시리얼 표시
         let subInfo = '';
         if (custEquipName) {
-            subInfo = ` <span style="color:#58a6ff; font-size:12px;">[${escapeHtml(custEquipName)}]</span>`;
+            subInfo = ` <span style="color:var(--c-blue); font-size:12px;">[${escapeHtml(custEquipName)}]</span>`;
         } else if (serial) {
-            subInfo = ` <span style="color:#8b949e; font-size:12px;">(${escapeHtml(serial)})</span>`;
+            subInfo = ` <span style="color:var(--c-text-muted); font-size:12px;">(${escapeHtml(serial)})</span>`;
         }
 
         if (equipStatus) {
@@ -1998,7 +1998,7 @@ function renderAdminEquipList() {
 
         let content = `<span>${displayName}</span>${subInfo}`;
         if (!currentAdminEquipSites || currentAdminEquipSites.length !== 1) {
-            content = `<div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:11px; color:#8b949e;">${site}</span><div>${content}</div></div>`;
+            content = `<div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:11px; color:var(--c-text-muted);">${site}</span><div>${content}</div></div>`;
         } else {
             content = `<div>${content}</div>`;
         }
@@ -2708,8 +2708,8 @@ function selectAdminParamModel(model) {
     if (btnExport) btnExport.style.display = 'inline-block';
 
     if (titleEl) {
-        const abbrText = model.abbr ? `<span style="font-size:13px; color:#8b949e; margin-left: 6px;">(${escapeHtml(model.abbr)})</span>` : '';
-        titleEl.innerHTML = `<span style="color:#58a6ff;">${escapeHtml(model.name)}</span>${abbrText} 기본 Parameter`;
+        const abbrText = model.abbr ? `<span style="font-size:13px; color:var(--c-text-muted); margin-left: 6px;">(${escapeHtml(model.abbr)})</span>` : '';
+        titleEl.innerHTML = `<span style="color:var(--c-blue);">${escapeHtml(model.name)}</span>${abbrText} 기본 Parameter`;
     }
 
     renderAdminParamTable();
@@ -2735,7 +2735,7 @@ function renderAdminParamTable() {
     if (items.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="6" style="padding: 35px; text-align: center; color: #8b949e; line-height: 1.6;">
+                <td colspan="6" style="padding: 35px; text-align: center; color: var(--c-text-muted); line-height: 1.6;">
                     <strong>[${escapeHtml(currentAdminParamModel.name)}]</strong> 모델에 등록된 기본 Parameter 항목이 없습니다.<br>
                     우측 상단의 <strong>[➕ 항목 추가]</strong> 버튼을 눌러 점검 항목을 추가하고 <strong>[💾 설정 저장]</strong>을 눌러주세요.
                 </td>
@@ -2756,7 +2756,7 @@ function renderAdminParamTable() {
 
         tbodyHtml += `
             <tr class="admin-param-row" data-row-idx="${idx}" data-param-id="${escapeHtml(item.id || '')}">
-                <td style="text-align: center; color: #8b949e; user-select: none; font-size: 11px;">
+                <td style="text-align: center; color: var(--c-text-muted); user-select: none; font-size: 11px;">
                     <div class="admin-param-drag-cell">
                         <span class="admin-param-drag-handle" title="드래그하여 순서 변경">⠿</span>
                         <span class="admin-param-row-num">${idx + 1}</span>
@@ -4161,7 +4161,7 @@ function setupItemMgmt() {
                 const btnCsvExport = document.createElement('button');
                 btnCsvExport.id = 'btn-export-item-csv';
                 btnCsvExport.className = 'btn-settings item-csv-export-btn';
-                btnCsvExport.style.cssText = 'font-size: 12px; padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid #30363d; background: #21262d; color: #e6edf3; margin-left: 5px;';
+                btnCsvExport.style.cssText = 'font-size: 12px; padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid var(--c-border); background: var(--c-surface-2); color: var(--c-text); margin-left: 5px;';
                 btnCsvExport.textContent = '내보내기';
                 btnCsvExport.title = '등록된 물품 데이터를 CSV 양식으로 내보냅니다.';
                 btnCsvExport.addEventListener('click', exportItemCsv);
@@ -4173,7 +4173,7 @@ function setupItemMgmt() {
             if (userRole === 'superadmin' && !listHeader.querySelector('.item-csv-import-btn')) {
                 const btnCsvImport = document.createElement('button');
                 btnCsvImport.className = 'btn-settings item-csv-import-btn';
-                btnCsvImport.style.cssText = 'font-size: 12px; padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid #30363d; background: #21262d; color: #e6edf3; margin-left: 5px;';
+                btnCsvImport.style.cssText = 'font-size: 12px; padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid var(--c-border); background: var(--c-surface-2); color: var(--c-text); margin-left: 5px;';
                 btnCsvImport.textContent = 'CSV 불러오기';
                 btnCsvImport.title = 'CSV 양식: 품번, 코드명, 물품명, 세부규격';
 
@@ -5374,9 +5374,9 @@ function renderCheckTypeEquipList() {
         const li = document.createElement('li');
         li.dataset.equipKey = fullKey;
 
-        let content = `<span>${displayName}</span> <span style="color:#8b949e; font-size:12px;">${serial ? '(' + serial + ')' : ''}</span>`;
+        let content = `<span>${displayName}</span> <span style="color:var(--c-text-muted); font-size:12px;">${serial ? '(' + serial + ')' : ''}</span>`;
         if (!currentCheckTypeSiteContext) {
-            content = `<div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:11px; color:#8b949e;">${site}</span><div>${content}</div></div>`;
+            content = `<div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:11px; color:var(--c-text-muted);">${site}</span><div>${content}</div></div>`;
         } else {
             content = `<div>${content}</div>`;
         }
@@ -6122,7 +6122,7 @@ function updateSetupTemplateDirtyStatus() {
     if (btn) btn.disabled = !isSetupTemplateDirty();
     if (statusEl && isSetupTemplateDirty()) {
         statusEl.textContent = '● 저장되지 않은 변경 사항이 있습니다. [저장]을 눌러야 반영됩니다.';
-        statusEl.style.color = '#d29922';
+        statusEl.style.color = 'var(--c-yellow)';
     }
 }
 
@@ -6185,13 +6185,13 @@ function updateSetupTemplateTypeNote() {
     if (!note) return;
     if (!currentSetupTemplateType) {
         note.textContent = '셋업 구분이 없는 장비와, 전용 일정이 없는 셋업 구분에 적용됩니다.';
-        note.style.color = '#8b949e';
+        note.style.color = 'var(--c-text-muted)';
     } else if (hasOwnSetupTypeTemplate()) {
         note.textContent = `셋업 구분이 '${currentSetupTemplateType}'인 장비에 적용되는 전용 일정입니다.`;
-        note.style.color = '#3fb950';
+        note.style.color = 'var(--c-green)';
     } else {
         note.textContent = `아직 공통 일정을 사용 중입니다. 수정 후 [저장]을 누르면 '${currentSetupTemplateType}' 전용 일정으로 저장됩니다.`;
-        note.style.color = '#d29922';
+        note.style.color = 'var(--c-yellow)';
     }
 }
 
@@ -6322,7 +6322,7 @@ function renderSetupTemplateSubCategoryList() {
         const isPlaceholder = currentCatItems.length === 0;
         if (setupSubcategorySettingsMode && isUserAdminRole() && !isPlaceholder) {
             li.innerHTML = `
-                <span class="subcat-drag-handle" title="끌어서 순서 변경" style="flex-shrink: 0; cursor: grab; color: #8b949e; padding: 0 6px 0 0; user-select: none;">⠿</span>
+                <span class="subcat-drag-handle" title="끌어서 순서 변경" style="flex-shrink: 0; cursor: grab; color: var(--c-text-muted); padding: 0 6px 0 0; user-select: none;">⠿</span>
                 <span class="subcat-text" style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(sub)}</span>
                 <button class="subcat-edit-btn" style="flex-shrink: 0; margin-right: 4px; background: none; border: none; outline: none; box-shadow: none; cursor: pointer; padding: 0 2px; font-size: 13px; line-height: 1;" title="세부 구분 이름 수정">✏️</button>
                 <button class="btn-del-sm" style="flex-shrink: 0;" title="세부 구분 삭제">✕</button>
@@ -6396,7 +6396,7 @@ function renderSetupTemplateOptionList() {
     const cat = currentSetupCategory;
     const sub = currentSetupSubCategory;
     const template = getCommonSetupTemplate();
-    const msg = (text) => { listEl.innerHTML = `<li class="empty-msg" style="color:#8b949e; cursor:default; font-size:12px; white-space:normal;">${escapeHtml(text)}</li>`; };
+    const msg = (text) => { listEl.innerHTML = `<li class="empty-msg" style="color:var(--c-text-muted); cursor:default; font-size:12px; white-space:normal;">${escapeHtml(text)}</li>`; };
 
     const usable = isSetupOptionStage(cat) && isRealSetupSubcategory(template, cat, sub);
     if (footer) footer.style.display = (setupOptionSettingsMode && usable) ? 'block' : 'none';
@@ -6660,7 +6660,7 @@ async function renameSetupTemplateSubcategory(oldName, newNameInput, categoryInp
     if (statusEl) {
         const now = new Date();
         statusEl.textContent = `✓ 저장됨 (${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')})`;
-        statusEl.style.color = '#3fb950';
+        statusEl.style.color = 'var(--c-green)';
     }
     if (typeof addSystemLog === 'function') {
         addSystemLog('RENAME_SETUP_SUBCATEGORY', cat, `${oldName} → ${newName} (작업 ${res.details}건, 일지 ${res.logs}건)`);
@@ -6674,7 +6674,7 @@ async function saveSetupTemplateToServer(silent = false) {
     if (!isSetupTemplateDirty()) { if (!silent) alert('저장할 변경 사항이 없습니다.'); return true; }
     const template = getCommonSetupTemplate();
     const statusEl = document.getElementById('setup-template-save-status');
-    if (statusEl) { statusEl.textContent = '저장 중...'; statusEl.style.color = '#8b949e'; }
+    if (statusEl) { statusEl.textContent = '저장 중...'; statusEl.style.color = 'var(--c-text-muted)'; }
 
     // 빈 항목 검증
     for (const item of template) {
@@ -6708,12 +6708,12 @@ async function saveSetupTemplateToServer(silent = false) {
         if (statusEl) {
             const now = new Date();
             statusEl.textContent = `✓ 저장됨 (${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')})`;
-            statusEl.style.color = '#3fb950';
+            statusEl.style.color = 'var(--c-green)';
         }
         if (!silent) alert(`셋업 일정 ${currentSetupTemplateType ? `'${currentSetupTemplateType}'` : '공통'} 템플릿이 저장되었습니다.`);
         return true;
     }
-    if (statusEl) { statusEl.textContent = '⚠ 저장 실패 - 다시 시도해주세요'; statusEl.style.color = '#f85149'; }
+    if (statusEl) { statusEl.textContent = '⚠ 저장 실패 - 다시 시도해주세요'; statusEl.style.color = 'var(--c-red)'; }
     alert('서버 저장 중 오류가 발생했습니다. 다시 시도해주세요.');
     return false;
 }
