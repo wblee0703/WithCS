@@ -1281,6 +1281,19 @@ function selectSetupLog(id) {
         replacedPartsContainer.style.overflow = 'hidden';
         replacedPartsContainer.style.minHeight = '0';
 
+        // [추가] 모바일: 셋업 물품이 없으면 접어 두고 이 버튼만 표시, 누르면 펼침 (PC에서는 숨김)
+        const partsOpenBtn = document.createElement('button');
+        partsOpenBtn.type = 'button';
+        partsOpenBtn.id = 'setup-parts-open-btn';
+        partsOpenBtn.className = 'btn-gray setup-log-part-open-btn';
+        partsOpenBtn.textContent = '+ 셋업 물품 추가';
+        partsOpenBtn.onclick = () => {
+            replacedPartsContainer.classList.remove('parts-collapsed');
+            const search = document.getElementById('setup-parts-search');
+            if (search && !search.disabled) search.focus();
+        };
+        replacedPartsContainer.appendChild(partsOpenBtn);
+
         const partsTitle = document.createElement('div');
         partsTitle.style.padding = '8px 12px';
         partsTitle.style.background = 'var(--c-surface-2)';
@@ -1368,6 +1381,19 @@ function renderSetupLogParts(log) {
     if (!partsList) return;
 
     const parts = log ? parseSetupParts(log.parts) : [];
+
+    // [추가] 모바일 접기: 다른 일지를 고르면 물품 유무로 다시 정함 (물품 없으면 접힘), 같은 일지에서는 물품이 생기면 펼침
+    const container = document.getElementById('setup-replaced-parts-container');
+    if (container) {
+        const logKey = log ? String(log.id) : '';
+        if (container.dataset.logId !== logKey) {
+            container.dataset.logId = logKey;
+            container.classList.toggle('parts-collapsed', !parts.length);
+        } else if (parts.length) {
+            container.classList.remove('parts-collapsed');
+        }
+    }
+
     partsList.innerHTML = '';
     if (!parts.length) {
         partsList.innerHTML = '<li style="padding:20px; text-align:center; color:var(--c-text-muted); font-size:12px;">선택된 물품 없음</li>';

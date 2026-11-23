@@ -1324,3 +1324,11 @@ body.role-user #event-detail-modal button[style*="display: inline-block"] {
 @media (max-width: 768px) {
     #gantt-wrapper .setup-progress__row { grid-template-columns: 130px minmax(60px, 1fr) 84px; }
 }
+
+/* [추가] 모바일: 장비 점검 일정 캘린더의 '운영 관리 이동' 버튼과 '달력 상세 검색' 버튼 숨김 */
+@media (max-width: 950px) {
+    .calendar-center-title .title-right-align,
+    .calendar-title-wrapper #calendar-target-info {
+        display: none !important;
+    }
+}

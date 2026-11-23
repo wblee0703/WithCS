@@ -530,11 +530,11 @@ body.role-superadmin .btn-setup-csv-import {
     .memo-container {
         min-height: 300px;
     }
-    /* [수정] 모바일 작업 내용 메모 높이 2배 (300px → 600px) */
+    /* 모바일 작업 내용 메모 높이 150px */
     #setup-log-detail-memo {
         flex: none !important;
-        height: 600px !important;
-        max-height: 1200px !important;
+        height: 150px !important;
+        max-height: 800px !important;
         overflow-y: auto !important;
     }
     /* [추가] 모바일 셋업 이슈 높이 2배 (기본 2줄 약 60px → 120px) */
@@ -968,5 +968,59 @@ body[class*="role-"] #setup-detail-card.edit-mode .btn-add-category {
 @media (max-width: 950px) {
     #setup-progress-card .setup-card-header h3 {
         font-size: 14px;
+    }
+}
+
+/* [추가] 모바일: 셋업 진행률 카드 높이 400px 고정, 넘치는 내용은 카드 안에서 스크롤 (접으면 제목 줄만) */
+@media (max-width: 950px) {
+    #setup-progress-card {
+        display: flex !important;
+        flex-direction: column !important;
+        height: 400px !important;
+        overflow: hidden !important;
+    }
+    #setup-progress-card:has(> .setup-card-body[style*="display: none"]) {
+        height: auto !important;
+    }
+    #setup-progress-card > .setup-card-header {
+        flex-shrink: 0;
+    }
+    #setup-progress-card > .setup-card-body {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        overflow-y: auto !important;
+    }
+    #setup-progress-card #setup-progress-body {
+        height: auto !important;
+    }
+}
+
+/* [추가] 모바일: 셋업 진행률 단계별 진행률 바를 줄이고(60px), 줄어든 폭만큼 단계 제목을 넓게 표시 */
+@media (max-width: 950px) {
+    #setup-progress-body .setup-progress__row {
+        grid-template-columns: minmax(0, 1fr) 60px 84px;
+    }
+    #setup-progress-body .setup-progress__row > .setup-progress__bar {
+        min-width: 0;
+    }
+}
+
+/* [추가] 셋업 물품 접기 버튼: PC에서는 숨김 */
+#setup-parts-open-btn {
+    display: none;
+}
+/* 모바일: 셋업 물품이 없으면 [+ 셋업 물품 추가] 버튼만 보이게 접음, 누르면 펼침 */
+@media (max-width: 950px) {
+    #setup-replaced-parts-container.parts-collapsed {
+        background: none !important;
+        border: none !important;
+        border-radius: 0 !important;
+    }
+    #setup-replaced-parts-container.parts-collapsed > :not(#setup-parts-open-btn) {
+        display: none !important;
+    }
+    #setup-replaced-parts-container.parts-collapsed > #setup-parts-open-btn {
+        display: inline-block;
+        align-self: flex-start;
     }
 }

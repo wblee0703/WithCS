@@ -1462,7 +1462,7 @@ function restructureHomeMaintenance() {
             <a href="/tracking" class="btn-move" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); font-size: 11px; padding: 2px 8px; text-decoration: none;">Tracking 이동</a>
         </div>
         <div class="status-list-container" style="flex: 1; min-height: 0; width: 100%; border: none; overflow: hidden; display: flex; flex-direction: column;">
-            <ul id="home-issue-list" class="upcoming-list" style="padding: 0 5px; margin: 0; list-style: none; flex: 1; min-height: 0; overflow-y: auto;"></ul>
+            <ul id="home-issue-list" class="upcoming-list" style="padding: 0; margin: 0; list-style: none; flex: 1; min-height: 0; overflow-y: auto;"></ul>
         </div>
     `;
 
