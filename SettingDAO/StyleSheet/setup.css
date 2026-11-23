@@ -530,9 +530,17 @@ body.role-superadmin .btn-setup-csv-import {
     .memo-container {
         min-height: 300px;
     }
+    /* [수정] 모바일 작업 내용 메모 높이 2배 (300px → 600px) */
     #setup-log-detail-memo {
-        height: 300px !important;
-        max-height: 800px !important;
+        flex: none !important;
+        height: 600px !important;
+        max-height: 1200px !important;
+        overflow-y: auto !important;
+    }
+    /* [추가] 모바일 셋업 이슈 높이 2배 (기본 2줄 약 60px → 120px) */
+    #setup-equip-issue-memo {
+        flex: none !important;
+        height: 120px !important;
         overflow-y: auto !important;
     }
 

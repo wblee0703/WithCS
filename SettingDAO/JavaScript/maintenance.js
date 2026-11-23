@@ -2112,6 +2112,38 @@ function applyMaintMemoMode(structured) {
     if (toggleBtn) toggleBtn.textContent = structured ? '메모 입력' : '증상·원인·조치 입력';
 }
 
+// [추가] 모바일: 전체 지움 / 전환 버튼을 교체 물품 리스트 아래(메모 위)에 오른쪽 정렬로 배치, PC: 저장 버튼 왼쪽
+const MAINT_MEMO_MOBILE_MQ = window.matchMedia('(max-width: 950px)');
+function placeMaintMemoButtons() {
+    const memoInput = document.getElementById('device-memo');
+    const box = document.getElementById('device-memo-parts');
+    const saveBtn = document.getElementById('btn-save-memo');
+    const clearBtn = document.getElementById('btn-clear-maint-memo');
+    const toggleBtn = document.getElementById('btn-toggle-maint-memo-mode');
+    if (!memoInput || !saveBtn || !clearBtn || !toggleBtn) return;
+
+    let bar = document.getElementById('maint-memo-mobile-btns');
+    if (!bar) {
+        bar = document.createElement('div');
+        bar.id = 'maint-memo-mobile-btns';
+    }
+    const anchor = (box && box.parentNode === memoInput.parentNode) ? box : memoInput;
+    if (bar.parentNode !== anchor.parentNode || bar.nextSibling !== anchor) {
+        anchor.parentNode.insertBefore(bar, anchor);
+    }
+
+    if (MAINT_MEMO_MOBILE_MQ.matches) {
+        bar.appendChild(clearBtn);
+        bar.appendChild(toggleBtn);
+        bar.style.display = clearBtn.style.display === 'none' ? 'none' : 'flex';
+    } else {
+        saveBtn.parentNode.insertBefore(clearBtn, saveBtn);
+        saveBtn.parentNode.insertBefore(toggleBtn, saveBtn);
+        bar.style.display = 'none';
+    }
+}
+MAINT_MEMO_MOBILE_MQ.addEventListener('change', placeMaintMemoButtons);
+
 function renderMaintMemoParts(logItem) {
     const memoInput = document.getElementById('device-memo');
     if (!memoInput) return;
@@ -2169,6 +2201,7 @@ function renderMaintMemoParts(logItem) {
     }
     if (clearBtn) clearBtn.style.display = logItem ? '' : 'none';
     if (toggleBtn) toggleBtn.style.display = logItem ? '' : 'none';
+    placeMaintMemoButtons();
 
     // 값 채우기
     const it = logItem || {};

@@ -1400,3 +1400,15 @@ body[class*="role-"] #maint-table-body .btn-del-sm {
 #btn-clear-maint-memo {
     margin-left: auto;
 }
+/* [추가] 모바일: 교체 물품 리스트 아래 전체 지움 / 전환 버튼 줄 (오른쪽 정렬) */
+#maint-memo-mobile-btns {
+    justify-content: flex-end;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+    flex-shrink: 0;
+}
+#maint-memo-mobile-btns #btn-clear-maint-memo,
+#maint-memo-mobile-btns #btn-toggle-maint-memo-mode {
+    margin: 0;
+}
