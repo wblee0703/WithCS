@@ -2587,23 +2587,32 @@ def _usage_parse_items(content):
     return items
 
 
-def _usage_find_stock(site_group, site_name, item):
-    """차감할 재고 행 찾기: 같은 사업장 > 사업장 구분 공통, 수량 있는 행 우선, 등급 A > B > C"""
-    q = ItemStock.query.filter(ItemStock.site_group == site_group)
+def _usage_find_stock(site_group, site_name, item, why=None):
+    """차감할 재고 행 찾기: 같은 사업장 > 사업장 구분 공통, 수량 있는 행 우선, 등급 A > B > C
+    - [수정] 사업장·코드명 비교 시 앞뒤 공백 무시
+    - why(dict)를 넘기면 못 찾은 이유를 기록 (화면에 '재고 없음' 이유 표시용)"""
+    norm = lambda v: (v or '').strip()
+    q = ItemStock.query.filter(db.func.trim(ItemStock.site_group) == norm(site_group))
     by_id = q.filter(ItemStock.item_id == str(item['admin_id'])).all() if item.get('admin_id') else []
-    cands = by_id or q.filter(ItemStock.code == item['code']).all()
+    cands = by_id or q.filter(db.func.trim(ItemStock.code) == norm(item['code'])).all()
     if not cands and item.get('part'):
-        cands = q.filter(ItemStock.part == item['part']).all()
+        cands = q.filter(db.func.trim(ItemStock.part) == norm(item['part'])).all()
     if not cands:
+        if why is not None:
+            why['reason'] = '물품 관리 현황에 미등록'
         return None
+    my_site = norm(site_name)
     cands.sort(key=lambda s: (
-        0 if (s.site_name or '') == (site_name or '') else (1 if not s.site_name else 2),
+        0 if norm(s.site_name) == my_site else (1 if not norm(s.site_name) else 2),
         0 if (s.quantity or 0) > 0 else 1,
         (s.grade or 'A').upper()
     ))
     best = cands[0]
     # 다른 사업장 전용 재고는 차감하지 않음
-    if best.site_name and best.site_name != (site_name or ''):
+    if norm(best.site_name) and norm(best.site_name) != my_site:
+        if why is not None:
+            others = sorted({norm(s.site_name) for s in cands if norm(s.site_name)})
+            why['reason'] = f"다른 사업장({', '.join(others)}) 재고만 있음 · 작업 사업장: {my_site or '-'}"
         return None
     return best
 
@@ -2614,7 +2623,9 @@ def _usage_build_work(log, eq_map, site_group_map):
     site_group = site_group_map.get(site_name, '')
     items = _usage_parse_items(log.content or '')
     for it in items:
-        st = _usage_find_stock(site_group, site_name, it) if site_group else None
+        why = {}
+        st = _usage_find_stock(site_group, site_name, it, why) if site_group else None
+        it['stock_reason'] = '' if st else (why.get('reason') or '사업장 구분 없음')  # [추가] 재고 없음 이유
         it['stock_id'] = st.id if st else None
         it['stock_qty'] = (st.quantity or 0) if st else None
         it['stock_grade'] = (st.grade or 'A') if st else ''

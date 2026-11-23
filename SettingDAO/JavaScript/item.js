@@ -354,7 +354,8 @@ function renderUsageWorkList(works) {
             let stock;
             if (it.excluded) stock = '<span class="usage-stock usage-stock-excluded">반영 제외</span>';
             else if (it.stock_id) stock = `<span class="usage-stock"><span class="usage-stock-label">현재 재고 </span>${it.stock_qty}개</span>`;
-            else stock = '<span class="usage-stock usage-stock-none">재고 없음</span>';
+            // [수정] 재고 없음 이유 표시 (미등록 / 다른 사업장 재고만 있음 등)
+            else stock = `<span class="usage-stock usage-stock-none" title="${escapeHtml(it.stock_reason || '')}">재고 없음${it.stock_reason ? ` <span class="usage-stock-reason">(${escapeHtml(it.stock_reason)})</span>` : ''}</span>`;
             const cost = it.cost ? `<span class="usage-cost${it.excluded ? ' excluded' : ''}">[${escapeHtml(it.cost)}]</span> ` : '';
             return `<li class="${it.excluded ? 'usage-item-excluded' : ''}">${cost}<strong>${escapeHtml(it.code)}</strong>${it.detail ? ` <span class="usage-spec">[${escapeHtml(it.detail)}]</span>` : ''} ${stock}</li>`;
         }).join('');
