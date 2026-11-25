@@ -1332,3 +1332,16 @@ body.role-user #event-detail-modal button[style*="display: inline-block"] {
         display: none !important;
     }
 }
+
+/* [추가] 모바일 가로 모드: 장비 정보 카드 높이 = 사업장 및 장비 현황 카드 (index.js 에서 높이 지정), 리스트는 남은 높이에서 스크롤 */
+.status-group.equip-card-landscape-fixed {
+    justify-content: flex-start;
+    overflow: hidden;
+}
+.status-group.equip-card-landscape-fixed #equip-detail-container {
+    flex: 1 1 auto !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+}

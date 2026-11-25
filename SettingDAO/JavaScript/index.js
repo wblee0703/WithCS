@@ -1576,3 +1576,32 @@ function populateEquipmentIssues() {
     });
 }
 window.populateEquipmentIssues = populateEquipmentIssues;
+
+// [추가] 모바일 가로 모드: 운영관리 '장비 정보' 카드 높이를 '사업장 및 장비 현황' 카드와 같게 맞추고, 넘치는 리스트는 스크롤
+(function () {
+    const mq = window.matchMedia('(max-width: 950px) and (orientation: landscape)');
+    const sync = () => {
+        const siteList = document.getElementById('site-status-list');
+        const equipContainer = document.getElementById('equip-detail-container');
+        const siteCard = siteList ? siteList.closest('.status-group') : null;
+        const equipCard = equipContainer ? equipContainer.closest('.status-group') : null;
+        if (!siteCard || !equipCard) return;
+        if (mq.matches && siteCard.offsetHeight > 0) {
+            equipCard.style.setProperty('height', siteCard.offsetHeight + 'px', 'important');
+            equipCard.classList.add('equip-card-landscape-fixed');
+        } else {
+            equipCard.style.removeProperty('height');
+            equipCard.classList.remove('equip-card-landscape-fixed');
+        }
+    };
+    const init = () => {
+        sync();
+        const siteList = document.getElementById('site-status-list');
+        const siteCard = siteList ? siteList.closest('.status-group') : null;
+        if (siteCard && window.ResizeObserver) new ResizeObserver(sync).observe(siteCard);
+        mq.addEventListener('change', sync);
+        window.addEventListener('resize', sync);
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+})();
