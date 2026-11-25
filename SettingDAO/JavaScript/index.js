@@ -1577,9 +1577,9 @@ function populateEquipmentIssues() {
 }
 window.populateEquipmentIssues = populateEquipmentIssues;
 
-// [추가] 모바일 가로 모드: 운영관리 '장비 정보' 카드 높이를 '사업장 및 장비 현황' 카드와 같게 맞추고, 넘치는 리스트는 스크롤
+// [추가] 모바일(세로·가로, 폴드 펼침 포함): 운영관리 '장비 정보' 카드 높이를 '사업장 및 장비 현황' 카드와 같게 맞추고, 넘치는 리스트는 스크롤
 (function () {
-    const mq = window.matchMedia('(max-width: 950px) and (orientation: landscape)');
+    const mq = window.matchMedia('(max-width: 950px), (orientation: landscape) and (max-height: 500px)');
     const sync = () => {
         const siteList = document.getElementById('site-status-list');
         const equipContainer = document.getElementById('equip-detail-container');

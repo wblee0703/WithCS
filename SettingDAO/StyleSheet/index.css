@@ -1345,3 +1345,13 @@ body.role-user #event-detail-modal button[style*="display: inline-block"] {
     min-height: 0 !important;
     overflow-y: auto !important;
 }
+
+/* [추가] 모바일(세로·가로, 폴드 펼침 포함) 보강: JS 높이 맞춤이 안 될 때도 장비 정보 리스트를 사업장 리스트와 같은 높이(225px)로 고정하고 스크롤 */
+@media (min-width: 769px) and (max-width: 950px), (min-width: 769px) and (orientation: landscape) and (max-height: 500px) {
+    #equip-detail-container {
+        flex: none !important;
+        height: 225px !important;
+        max-height: 225px !important;
+        overflow-y: auto !important;
+    }
+}
