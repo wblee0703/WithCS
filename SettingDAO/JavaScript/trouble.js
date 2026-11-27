@@ -32,7 +32,6 @@ function initTroublePage() {
     initTroubleSearchableFilters(); // [추가] 사업장·모델·장비 드롭다운 검색 기능
     
     const cachedFilter = localStorage.getItem('lastTroubleFilter');
-    const cachedCompletedOnly = localStorage.getItem('lastTroubleCompletedOnly');
     const cachedKeyword = localStorage.getItem('lastTroubleKeyword');
     const cachedList = sessionStorage.getItem('lastTroubleList');
     
@@ -50,14 +49,10 @@ function initTroublePage() {
             currentTroubleFilter.startDate = '';
             currentTroubleFilter.endDate = '';
         }
-        if (cachedCompletedOnly) {
-            showCompletedOnly = JSON.parse(cachedCompletedOnly);
-            const btnToggleCompleted = document.getElementById('btn-toggle-completed-trouble');
-            if (btnToggleCompleted) {
-                if (showCompletedOnly) btnToggleCompleted.classList.add('active');
-                else btnToggleCompleted.classList.remove('active');
-            }
-        }
+        // [수정] 화면에 들어올 때(작업 상세 정보에서 넘어온 경우 포함) 작성완료 필터는 항상 꺼진 상태로 시작
+        showCompletedOnly = false;
+        const btnToggleCompleted = document.getElementById('btn-toggle-completed-trouble');
+        if (btnToggleCompleted) btnToggleCompleted.classList.remove('active');
         const searchInput = document.getElementById('trouble-search-input');
         if (searchInput && cachedKeyword) searchInput.value = cachedKeyword;
 
@@ -656,7 +651,6 @@ function setupTroubleEvents() {
                 symptom: symptomEl ? symptomEl.value : '',
                 cause: causeEl ? causeEl.value : '',
                 measure: actionEl ? actionEl.value : '',
-                prevent: preventionEl ? preventionEl.value : '',
                 occur_date: occurDateVal,
                 action_date: document.getElementById('trouble-modal-action-date') ? document.getElementById('trouble-modal-action-date').value : '',
                 trouble_details: memoVal, // 세부사항 창(trouble-modal-content)의 텍스트만 전달
@@ -669,6 +663,8 @@ function setupTroubleEvents() {
             };
 
             // detail_type 1,2,3는 모달 요소에 유효한 값이 존재할 때만 전송 (기존값 삭제 방지)
+            // [수정] 재발방지 대책 칸이 화면에 없으면 보내지 않음 (기존 저장값 유지)
+            if (preventionEl) payload.prevent = preventionEl.value;
             if (dt1El && dt1El.value) payload.detail_type = dt1El.value;
             if (dt2El && dt2El.value) payload.detail_type2 = dt2El.value;
             if (dt3El && dt3El.value) payload.detail_type3 = dt3El.value;

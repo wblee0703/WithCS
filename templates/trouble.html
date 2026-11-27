@@ -147,7 +147,7 @@
                         <table class="ts-table ts-body-table ts-img-enabled">
                             <colgroup><col class="ts-col-label"><col></colgroup>
                             <tr>
-                                <th>트러블 상황</th>
+                                <th>이슈 내용</th>
                                 <td><textarea id="trouble-modal-situation" class="ts-input ts-area" rows="2"></textarea></td>
                             </tr>
                             <tr>
@@ -175,12 +175,8 @@
                                 <td><textarea id="trouble-modal-action-taken" class="ts-input ts-area" rows="4"></textarea></td>
                             </tr>
                             <tr>
-                                <th>조치결과</th>
+                                <th>조치결과 /<br>예정사항</th>
                                 <td><textarea class="ts-input ts-area" rows="3" data-sheet="result"></textarea></td>
-                            </tr>
-                            <tr>
-                                <th>재발방지 대책</th>
-                                <td><textarea id="trouble-modal-preventive" class="ts-input ts-area" rows="2"></textarea></td>
                             </tr>
                         </table>
 
@@ -233,7 +229,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('SettingDAO', filename='JavaScript/trouble.js') }}?v=1.1.7-ss1"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/trouble.js') }}?v=1.1.9-done0"></script>
 <script>
     // 백엔드에서 원본 데이터를 유지하여 팝업 폼 데이터가 날아가는 현상을 방지하고,
     // 화면에 렌더링된 직후에만 테이블의 텍스트를 '증상'으로 변환해주는 스크립트입니다.
