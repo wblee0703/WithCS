@@ -149,12 +149,14 @@ window.setupWorkMemoStructured = function (item) {
     const it = item || {};
     box.querySelectorAll('textarea[data-key]').forEach(t => { t.value = it[t.dataset.key] || ''; });
 
-    // 화면: 증상/원인/조치사항이 있으면 그 화면, 내용만 있으면 내용 화면, 둘 다 비면 마지막으로 쓴 화면
+    // 화면: 증상/원인/조치사항이 있으면 그 화면, 내용만 있으면 내용 화면,
+    //       둘 다 비면 작업 구분이 비정기이면 증상/원인/조치사항 화면, 그 외는 마지막으로 쓴 화면
     const hasParts = window.WORK_MEMO_SECTIONS.some(sec => String(it[sec.key] || '').trim());
     let pref = 'free';
     try { pref = localStorage.getItem('workMemoMode') || 'free'; } catch (e) { }
     if (hasParts) applyMode(true);
     else if (String(memoInput.value || '').trim()) applyMode(false);
+    else if (it.type === '비정기') applyMode(true);
     else applyMode(pref === 'structured');
     syncMemoHeadBtns();
 };
@@ -966,6 +968,8 @@ function openEventDetailModal(site, equip, id, isCompleted, options = {}) {
     }
 
     memoInput.value = item.memo || '';
+    memoInput.dataset.autoMemo = '';
+    // [수정] 이전 작업 메모 불러오기: 비정기 작업은 따로 관리하므로 불러오지 않음
     if (!isCompleted && !item.memo) {
         let lastMemo = '';
         if (data.logs && data.logs.length > 0) {
@@ -976,7 +980,8 @@ function openEventDetailModal(site, equip, id, isCompleted, options = {}) {
             });
             if (sortedLogs.length > 0) lastMemo = sortedLogs[0].memo || '';
         }
-        memoInput.value = lastMemo;
+        memoInput.dataset.autoMemo = lastMemo; // 구분을 바꿀 때 다시 넣거나 뺄 수 있도록 보관
+        memoInput.value = (item.type === '비정기') ? '' : lastMemo;
     }
     memoInput.disabled = false;
     if (typeof window.setupWorkMemoStructured === 'function') window.setupWorkMemoStructured(item); // [추가] 증상/원인/조치사항 입력
@@ -1186,7 +1191,18 @@ function openEventDetailModal(site, equip, id, isCompleted, options = {}) {
             }
         };
 
-        typeSelect.onchange = updateDetailTypes;
+        typeSelect.onchange = () => {
+            updateDetailTypes();
+            // [추가] 구분 변경 시 이전 작업 메모: 비정기로 바꾸면 불러온 메모를 빼고, 다른 구분으로 바꾸면 다시 불러옴
+            const autoMemo = memoInput.dataset.autoMemo || '';
+            if (!item.memo && autoMemo && !memoInput.disabled) {
+                if (typeSelect.value === '비정기') {
+                    if (memoInput.value.trim() === autoMemo.trim()) memoInput.value = '';
+                } else if (!memoInput.value.trim()) {
+                    memoInput.value = autoMemo;
+                }
+            }
+        };
         detailTypeSelect.onchange = updateDetailType2s;
         if (detailType2Select) detailType2Select.onchange = updateDetailType3s;
         if (detailType3Select) detailType3Select.onchange = () => buildDetailDropdown(item, site, equip);

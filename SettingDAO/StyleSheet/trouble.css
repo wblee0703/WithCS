@@ -2,104 +2,13 @@
    Trouble 이력 관리 전용 StyleSheet
    ========================================================================== */
 
-/* 1. 전체 레이아웃 */
+/* 1. 전체 레이아웃 (사이드바 없이 리스트를 가로 전체 사용) */
 .trouble-dashboard-wrapper {
     display: flex;
     overflow: hidden;
 }
 
-/* 2. 왼쪽 사이드바 (한 화면 비율 조정) */
-.trouble-sidebar {
-    width: 280px;
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    height: 100%;
-    min-height: 0;
-    /* 브라우저 높이가 작아져도 전체 컨테이너가 줄어들 수 있게 함 */
-    overflow: hidden;
-    /* 사이드바 전체가 창을 뚫고 나가지 않도록 확실히 제한 */
-}
-
-/* 사이드바 내 각 필터 그룹 비율 지정 */
-.trouble-sidebar-group {
-    display: flex;
-    flex-direction: column;
-    background-color: var(--c-surface);
-    border: 1px solid var(--c-border);
-    border-radius: 6px;
-    min-height: 0;
-    /* 부모 크기에 맞춰 내부 스크롤이 생성되도록 강제 높이 제거 */
-    margin-bottom: 0;
-    overflow: hidden;
-}
-
-.site-group {
-    flex: 1 1 0;
-}
-
-.model-group {
-    flex: 1 1 0;
-}
-
-.equip-group {
-    flex: 1.5 1 0;
-}
-
-/* 장비가 가장 많으므로 공간을 더 할당 */
-
-.trouble-sidebar-group .group-header {
-    padding: 10px 15px;
-    background: var(--c-surface-2);
-    border-bottom: 1px solid var(--c-border);
-    border-radius: 6px 6px 0 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    flex-shrink: 0;
-    /* 제목 헤더가 찌그러지거나 레이아웃을 밀어내지 않도록 보호 */
-}
-
-.trouble-sidebar-group .group-header h3 {
-    margin: 0;
-    font-size: 13px;
-    color: var(--c-text);
-    white-space: nowrap;
-    flex-shrink: 0;
-    /* 라벨 텍스트가 줄어들지 않도록 보호 */
-}
-
-.trouble-sidebar-group ul.list-data {
-    flex: 1 1 0;
-    overflow-y: auto;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    min-height: 0;
-    /* 내부 리스트 항목이 많아질 때 부모 비율을 무시하고 무한정 늘어나는 현상 방지 */
-}
-
-/* 장비 검색 필터 영역 */
-.equip-search-wrapper {
-    flex: 1;
-    min-width: 0;
-    /* 검색창이 카드를 벗어나지 않게 축소 허용 */
-    padding: 0;
-    background: transparent;
-    border: none;
-}
-
-.equip-search-wrapper input {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 4px 8px;
-    font-size: 12px;
-    height: 26px;
-}
-
-/* 3. 오른쪽 메인 영역 */
+/* 2. 메인 영역 */
 .trouble-main {
     flex: 1;
     padding: 20px;
@@ -224,16 +133,182 @@
     flex-shrink: 0;
 }
 
-.trouble-filters input {
-    width: 250px;
-    margin-right: 10px;
-}
-
-/* [추가] 필터 그룹 레이아웃 및 버튼 스타일 */
+/* 필터 한 줄: 사업장 · 모델 · 장비 · 날짜 · 검색 (Tracking 화면과 동일한 방식) */
 .trouble-filters {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.trouble-filters .date-filter-group,
+#trouble-date-filter-inputs {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.trouble-filters .input-dark {
+    height: 32px;
+    box-sizing: border-box;
+    border-radius: 4px;
+    font-size: 13px;
+    outline: none;
+}
+
+.trouble-filters select.input-dark {
+    cursor: pointer;
+}
+
+#trouble-site-filter,
+#trouble-model-filter {
+    width: 140px;
+}
+
+#trouble-equip-filter {
+    width: 220px;
+}
+
+/* [추가] 검색 가능한 드롭다운 (사업장 · 모델 · 장비) */
+.ss-wrap {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.ss-wrap[data-for="trouble-site-filter"],
+.ss-wrap[data-for="trouble-model-filter"] {
+    width: 140px;
+}
+
+.ss-wrap[data-for="trouble-equip-filter"] {
+    width: 320px; /* [수정] 장비명이 길어 더 넓게 */
+}
+
+.ss-wrap[data-for="trouble-equip-filter"] .ss-panel {
+    max-width: 480px;
+}
+
+.ss-native {
+    display: none !important;
+}
+
+.trouble-filters .ss-trigger {
+    width: 100%;
+    height: 32px;
+    box-sizing: border-box;
+    text-align: left;
+    padding: 0 30px 0 10px;
+    border: 1px solid var(--c-border);
+    border-radius: 4px;
+    background-color: var(--c-bg);
+    color: var(--c-heading);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16' fill='%238b949e'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+}
+
+.trouble-filters .ss-trigger:hover {
+    border-color: var(--c-border-2, var(--c-border));
+}
+
+.ss-wrap.open .ss-trigger {
+    border-color: var(--c-blue);
+}
+
+.ss-panel {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 1000;
+    min-width: 100%;
+    width: max-content;
+    max-width: 360px;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    padding: 6px;
+    box-sizing: border-box;
+}
+
+.ss-wrap.open .ss-panel {
+    display: block;
+}
+
+.ss-search {
+    width: 100%;
+    height: 30px;
+    box-sizing: border-box;
+    padding: 0 8px;
+    margin-bottom: 6px;
+    border: 1px solid var(--c-border);
+    border-radius: 4px;
+    background: var(--c-bg);
+    color: var(--c-text);
+    font-size: 13px;
+    outline: none;
+}
+
+.ss-search:focus {
+    border-color: var(--c-blue);
+}
+
+.ss-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.ss-item {
+    padding: 7px 10px;
+    font-size: 13px;
+    color: var(--c-text);
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ss-item:hover,
+.ss-item.active {
+    background: var(--c-surface-2);
+}
+
+.ss-item.selected {
+    color: var(--c-blue);
+    font-weight: bold;
+}
+
+.ss-empty {
+    padding: 10px;
+    font-size: 12px;
+    color: var(--c-text-muted);
+    text-align: center;
+}
+
+#trouble-date-filter-type {
+    width: 110px;
+}
+
+#trouble-search-input {
+    width: 220px;
+}
+
+#btn-trouble-search {
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 #btn-toggle-completed-trouble {
@@ -246,7 +321,7 @@
     font-weight: bold;
     cursor: pointer;
     transition: all 0.2s;
-    height: 34px;
+    height: 32px;
 }
 
 #btn-toggle-completed-trouble:hover {
@@ -267,26 +342,6 @@
         overflow: auto;
     }
 
-    .trouble-sidebar {
-        width: 100%;
-        height: auto;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 15px;
-    }
-
-    .trouble-sidebar-group {
-        height: 300px;
-        /* 항목이 많아도 화면을 다 덮지 않도록 고정 */
-        min-height: 0;
-        flex: none;
-    }
-
-    .equip-group {
-        grid-column: 1 / span 2;
-        height: 300px !important;
-    }
-
     .trouble-table-wrapper {
         height: 450px !important;
         max-height: 60vh;
@@ -297,19 +352,6 @@
         padding: 1px 0px !important;
         font-size: 13px !important;
         line-height: 0.8 !important;
-    }
-
-    /* Trouble 상세 정보 팝업창 모바일 위아래 배치 */
-    .trouble-modal-large .modal-body {
-        flex-direction: column !important;
-        overflow-y: auto !important;
-    }
-
-    .trouble-modal-large .modal-body>div {
-        width: 100% !important;
-        height: auto !important;
-        padding-right: 0 !important;
-        overflow-y: visible !important;
     }
 
     /* [개선] Trouble 검색 영역 모바일 반응형 정렬 최적화 (한 줄 맞춤) */
@@ -324,12 +366,57 @@
         width: 100%;
     }
 
-    .trouble-filters input {
-        flex: 1;
-        min-width: 0;
+    /* 드롭다운은 1줄에 2개씩, 검색창 + 버튼은 마지막 줄 */
+    /* [추가] 모바일: 검색 목록은 드롭다운 너비에 맞추고 긴 이름은 줄바꿈 (화면 밖으로 나가지 않게) */
+    .ss-panel {
+        width: 100%;
+        max-width: none;
+    }
+
+    .ss-item {
+        white-space: normal;
+        word-break: break-all;
+    }
+
+    .trouble-filters select.input-dark,
+    .trouble-filters .ss-wrap,
+    .trouble-filters .date-filter-group {
+        flex: 1 1 calc(50% - 4px);
         width: auto;
-        margin-right: 0;
-        /* flex gap을 활용하므로 기존 우측 마진 제거 */
+        min-width: 0;
+    }
+
+    /* [추가] 장비 필터는 한 줄 전체 너비 */
+    .trouble-filters .ss-wrap[data-for="trouble-equip-filter"] {
+        flex: 1 1 100%;
+    }
+
+    /* [수정] 날짜 필터(구분 + 년/월/기간 입력)는 한 줄 전체, 검색창·버튼은 다음 줄 */
+    .trouble-filters .date-filter-group {
+        flex: 1 1 100%;
+    }
+
+    .trouble-filters .date-filter-group select.input-dark {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    #trouble-date-filter-inputs {
+        flex: 2 1 0;
+        min-width: 0;
+    }
+
+    #trouble-date-filter-inputs select,
+    #trouble-date-filter-inputs input[type="date"] {
+        flex: 1 1 0;
+        min-width: 0;
+        width: auto !important;
+    }
+
+    #trouble-search-input {
+        flex: 1 1 0;
+        width: auto;
+        min-width: 0;
     }
 
     /* [개선] 모바일 전체 너비 확장 및 여백 최소화 */
@@ -352,80 +439,513 @@
         margin-top: 15px;
     }
 
-    .trouble-modal-large textarea {
-        resize: none !important;
-    }
 }
 
-/* 사이드바 리스트 아이템 선택 효과 (필터) */
-#trouble-site-list li,
-#trouble-model-list li,
-#trouble-equip-list li {
-    cursor: pointer;
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--c-border);
-    color: var(--c-text-muted);
-    font-size: 13px;
-    transition: background 0.2s, color 0.2s;
-}
-
-#trouble-site-list li:hover,
-#trouble-model-list li:hover,
-#trouble-equip-list li:hover {
-    background: var(--c-surface-2);
-    color: var(--c-text);
-}
-
-#trouble-site-list li.active,
-#trouble-model-list li.active,
-#trouble-equip-list li.active {
-    background: rgba(88, 166, 255, 0.1);
-    color: var(--c-blue);
-    font-weight: bold;
-    border-left: 3px solid var(--c-blue);
-}
-
-/* Trouble 전용 대형 모달 (카드 크기 정도) */
+/* ==========================================================================
+   Trouble 상세 정보: 운영설비 이슈 내부 공유 시트 (출력 양식과 같은 흰 종이 모양)
+   ========================================================================== */
 .trouble-modal-large {
     width: 100% !important;
-    height: 85vh !important;
-    max-width: 1500px;
+    max-width: 1900px;
+    height: 92vh !important;
     display: flex;
     flex-direction: column;
 }
 
-.trouble-modal-large .modal-body {
+/* 시트 밖 관리 영역 (완료 여부·조치 일·버튼) - 출력 제외 */
+.ts-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--c-border);
+    flex-shrink: 0;
+}
+
+.ts-toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.ts-updated {
+    font-size: 12px;
+    color: var(--c-text-muted);
+    white-space: nowrap;
+    margin-right: 4px;
+}
+
+.ts-toolbar-label {
+    font-size: 12px;
+    color: var(--c-text-muted);
+    white-space: nowrap;
+}
+
+.ts-toolbar .input-dark {
+    height: 30px;
+    box-sizing: border-box;
+    font-size: 13px;
+    border-radius: 4px;
+}
+
+.ts-toolbar select.input-dark {
+    width: 110px;
+}
+
+.ts-toolbar input[type="date"].input-dark {
+    width: 140px;
+    padding: 0 8px;
+}
+
+.ts-toolbar .btn-gray-sm,
+.ts-toolbar .btn-blue-sm,
+.ts-toolbar .btn-del,
+.ts-toolbar .btn-del-sm {
+    height: 30px;
+    padding: 0 12px;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    margin: 0;
+}
+
+.ts-file-btn {
+    cursor: pointer;
+}
+
+.ts-body {
     flex: 1;
     overflow-y: auto;
+    padding: 15px !important;
+    background: var(--c-bg);
 }
 
-.trouble-modal-large textarea {
-    flex: none !important;
-    resize: none !important;
+/* 1 페이지(공유 시트) + 2 페이지(첨부 자료)를 좌우로 배치 */
+.ts-pages {
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    gap: 16px;
 }
 
-/* 사진 첨부 영역 */
-.trouble-image-upload-wrapper {
+.ts-pages > .ts-sheet {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+/* 첨부 자료 페이지 */
+.ts-page-attach {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    margin-bottom: 5px;
+    outline: none;
+    cursor: text;
 }
 
+.ts-page-attach:focus-within,
+.ts-page-attach:focus {
+    box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.45);
+}
+
+.ts-title-spaced {
+    letter-spacing: 6px;
+}
+
+/* 첨부 자료 제목 줄: 제목은 가운데, [사진 첨부] 버튼은 오른쪽 */
+.ts-title-attach {
+    position: relative;
+}
+
+.ts-title-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    letter-spacing: normal;
+    font-size: 12px;
+    font-weight: normal;
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: 4px;
+    padding: 4px 10px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.ts-title-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.ts-page-attach .ts-img-list {
+    align-items: center;
+}
+
+.ts-attach-empty {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    color: #8c959f;
+    font-size: 13px;
+    text-align: center;
+    padding: 20px;
+}
+
+.ts-page-attach .ts-img-list:not(:empty) + .ts-attach-empty {
+    display: none;
+}
+
+/* 시트 본체 */
+.ts-sheet {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #ffffff;
+    color: #1f2328;
+    border: 2px solid #1f3864;
+    font-size: 13px;
+    box-sizing: border-box;
+}
+
+.ts-title {
+    background: #2f3e55;
+    color: #ffffff;
+    text-align: center;
+    font-size: 19px;
+    font-weight: bold;
+    padding: 9px 10px;
+    letter-spacing: 1px;
+}
+
+.ts-section {
+    background: #44546a;
+    color: #ffffff;
+    font-weight: bold;
+    font-size: 13px;
+    padding: 6px 12px;
+}
+
+.ts-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.ts-table th,
+.ts-table td {
+    border: 1px solid #a6a6a6;
+    padding: 0;
+    vertical-align: middle;
+}
+
+.ts-table th {
+    background: #e7e9ee;
+    color: #1f2328;
+    font-weight: bold;
+    font-size: 13px;
+    text-align: center;
+    padding: 8px 6px;
+    line-height: 1.4;
+}
+
+.ts-table .ts-col-label {
+    width: 150px;
+}
+
+.ts-sub {
+    font-size: 11px;
+    font-weight: normal;
+}
+
+/* 시트 입력 칸: 종이처럼 테두리 없이, 포커스 시에만 표시 */
+.ts-input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #1f2328;
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 20px;
+    padding: 6px 8px;
+    outline: none;
+    resize: none;
+    color-scheme: light;
+}
+
+.ts-input:hover {
+    background: #f6f8fa;
+}
+
+.ts-input:focus {
+    background: #fffbe6;
+    border-color: #4a90d9;
+}
+
+.ts-info .ts-input {
+    text-align: center;
+}
+
+.ts-info td {
+    height: 36px;
+}
+
+.ts-center {
+    text-align: center;
+}
+
+.ts-area {
+    overflow: hidden;
+    white-space: pre-wrap;
+}
+
+/* 협의 이력 */
+.ts-consult .ts-col-date {
+    width: 150px;
+}
+
+.ts-consult .ts-col-target {
+    width: 240px;
+}
+
+.ts-consult .ts-col-del {
+    width: 36px;
+}
+
+.ts-consult td {
+    height: 40px;
+}
+
+.ts-consult .ts-consult-del {
+    padding: 2px 6px;
+    font-size: 11px;
+    margin: 0 auto;
+    display: block;
+}
+
+.ts-consult-add {
+    padding: 6px;
+    text-align: center;
+    border-left: 1px solid #a6a6a6;
+    border-right: 1px solid #a6a6a6;
+    background: #fafbfc;
+}
+
+.ts-consult-add .btn-gray-sm {
+    font-size: 12px;
+    padding: 4px 12px;
+}
+
+/* 첨부 사진 (설비 상태 및 점검내역 칸 안) */
 .trouble-image-preview-container {
     display: none;
-    background: var(--c-bg);
-    border: 1px solid var(--c-border);
-    border-radius: 4px;
-    padding: 10px;
+    padding: 6px 8px 10px;
     text-align: center;
 }
 
 .trouble-image-preview {
     max-width: 100%;
     max-height: 450px;
-    border-radius: 4px;
     object-fit: contain;
+    border: 1px solid #d0d7de;
+}
+
+/* [추가] 이상 현상 / 조치내용 칸에 붙여넣은 이미지 (원본 크기, 칸 너비를 넘지 않게) */
+.ts-img-list:empty {
+    display: none;
+}
+
+.ts-img-list {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 2px 8px 8px;
+}
+
+.ts-img-item {
+    position: relative;
+    max-width: 100%;
+}
+
+.ts-img-item img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border: 1px solid #d0d7de;
+}
+
+.ts-img-del {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 22px;
+    height: 22px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(207, 34, 46, 0.85);
+    color: #fff;
+    font-size: 11px;
+    line-height: 22px;
+    text-align: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.ts-img-item:hover .ts-img-del {
+    opacity: 1;
+}
+
+@media (hover: none) {
+    .ts-img-del {
+        opacity: 1;
+    }
+}
+
+/* 출력 시 관리용 요소 숨김 */
+@media print {
+    .ts-no-print {
+        display: none !important;
+    }
+}
+
+/* 화면이 좁으면 첨부 자료를 아래로 */
+@media (max-width: 1400px) {
+    .ts-pages {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .ts-pages > .ts-sheet {
+        flex: none;
+        width: 100%;
+    }
+}
+
+@media (max-width: 950px) {
+    .trouble-modal-large {
+        height: 100vh !important;
+        max-width: 100%;
+    }
+
+    /* 모바일: 시트와 첨부 자료를 위아래로 이어서 길게 스크롤 */
+    .ts-pages {
+        gap: 12px;
+    }
+
+    .ts-pages > .ts-sheet {
+        max-width: 100%;
+    }
+
+    .ts-title {
+        font-size: 16px;
+    }
+
+    /* 기본정보: 한 줄에 '항목 | 값' 하나씩 */
+    .ts-info,
+    .ts-info tbody {
+        display: block;
+    }
+
+    .ts-info colgroup {
+        display: none;
+    }
+
+    .ts-info tr {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .ts-info th {
+        flex: 0 0 32%;
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .ts-info td {
+        flex: 0 0 68%;
+        box-sizing: border-box;
+        height: auto;
+        min-height: 34px;
+    }
+
+    .ts-info .ts-input {
+        text-align: left;
+    }
+
+    /* 협의 이력: 1줄째 일시 · 대상 · 삭제, 2줄째 협의 내용 */
+    .ts-consult thead,
+    .ts-consult colgroup {
+        display: none;
+    }
+
+    .ts-consult,
+    .ts-consult tbody {
+        display: block;
+    }
+
+    .ts-consult tr {
+        display: grid;
+        grid-template-columns: 42% 1fr 36px;
+        grid-template-areas:
+            "date target del"
+            "content content content";
+        border-bottom: 2px solid #a6a6a6;
+    }
+
+    .ts-consult td {
+        height: auto;
+        min-height: 34px;
+    }
+
+    .ts-consult td:nth-child(1) { grid-area: date; }
+    .ts-consult td:nth-child(2) { grid-area: target; }
+    .ts-consult td:nth-child(3) { grid-area: content; }
+    .ts-consult td:nth-child(4) {
+        grid-area: del;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .ts-title-btn {
+        right: 6px;
+        padding: 3px 8px;
+        font-size: 11px;
+    }
+
+    .ts-body {
+        padding: 6px !important;
+    }
+
+    .ts-table .ts-col-label {
+        width: 90px;
+    }
+
+    .ts-table th {
+        font-size: 12px;
+        padding: 6px 3px;
+    }
+
+    .ts-consult .ts-col-date {
+        width: 115px;
+    }
+
+    .ts-consult .ts-col-target {
+        width: 110px;
+    }
+
+    .ts-input {
+        font-size: 12px;
+        padding: 5px 5px;
+    }
 }
 
 /* 완료 여부 등 드롭다운(Select) 다크 테마 공통 적용 */

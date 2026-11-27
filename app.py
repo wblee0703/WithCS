@@ -647,6 +647,64 @@ class TroubleLog(db.Model):
     trouble_details = db.Column(db.Text, nullable=True) # [이동] 트러블 진행 경과 (JSON)
     status = db.Column(db.String(50), default='미기록')
     image_data = db.Column(db.Text(length=2000000), nullable=True) # [추가] 사진 Base64 저장 컬럼
+    sheet_data = db.Column(db.Text(length=2000000), nullable=True) # [추가] 이슈 공유 시트 항목 (JSON: 기본정보·점검내역·조치결과·협의 이력)
+    updated_by = db.Column(db.String(100), default='')  # [추가] Trouble 상세 정보 최종 수정자
+    updated_at = db.Column(db.String(30), default='')   # [추가] Trouble 상세 정보 최종 수정일 (KST, YYYY-MM-DD HH:MM)
+
+# [추가] Trouble 완료 여부(status): 발생 일시가 없으면 '미기록', 있으면 '조치중' / '조치완료'
+# - requested: Trouble 상세 정보에서 선택한 완료 여부, current: 저장되어 있던 값 (이전 '기록완료'는 그대로 유지)
+SHEET_IMG_PREFIXES = ('data:image/png;base64,', 'data:image/jpeg;base64,')
+SHEET_IMG_MAX_BYTES = 500 * 1024             # 이미지 1장 최대 500KB
+SHEET_IMG_MAX_PER_FIELD = 5                   # 칸당 최대 5장
+SHEET_IMG_MAX_TOTAL_BYTES = 10 * 1024 * 1024  # 시트 전체 최대 10MB
+
+def _clean_sheet_images(images):
+    """[추가] 붙여넣은 이미지: PNG/JPG만, 1장 500KB·칸당 5장·전체 10MB 이내만 저장"""
+    if not isinstance(images, dict):
+        return {}
+    out, total = {}, 0
+    for key, arr in images.items():
+        if not isinstance(arr, list):
+            continue
+        kept = []
+        max_count = 10 if str(key) == 'attach' else SHEET_IMG_MAX_PER_FIELD  # 첨부 자료 페이지는 최대 10장
+        for src in arr[:max_count]:
+            if not isinstance(src, str) or not src.startswith(SHEET_IMG_PREFIXES):
+                continue
+            size = (len(src) - src.index(',') - 1) * 3 // 4
+            if size > SHEET_IMG_MAX_BYTES or total + size > SHEET_IMG_MAX_TOTAL_BYTES:
+                continue
+            total += size
+            kept.append(src)
+        if kept:
+            out[str(key)[:50]] = kept
+    return out
+
+def normalize_sheet_data(val):
+    """[추가] 이슈 공유 시트 항목을 JSON 문자열로 저장"""
+    if val is None or val == '':
+        return ''
+    if isinstance(val, str):
+        try:
+            val = json.loads(val)
+        except Exception:
+            return ''
+    if isinstance(val, dict):
+        if 'images' in val:
+            val['images'] = _clean_sheet_images(val.get('images'))
+        return json.dumps(val, ensure_ascii=False)
+    return ''
+
+def resolve_trouble_status(occur_date, requested=None, current=None):
+    if not (occur_date and str(occur_date).strip() not in ('', '-')):
+        return '미기록'
+    req = str(requested or '').strip()
+    if req in ('조치중', '조치완료'):
+        return req
+    cur = str(current or '').strip()
+    if cur in ('조치중', '조치완료', '기록완료'):
+        return cur
+    return '조치중'
 
 # [추가] 장비 Working Report 저장 및 관리 모델 (EquipmentReport)
 class EquipmentReport(db.Model):
@@ -5073,6 +5131,8 @@ def reassign_child_extra_works(equip_id, deleted_ids):
                     new_trouble.image_data = old_trouble.image_data
                 if old_trouble.status:
                     new_trouble.status = old_trouble.status
+                if getattr(old_trouble, 'sheet_data', None):
+                    new_trouble.sheet_data = old_trouble.sheet_data
 
             # 3. 나머지 추가작업들의 original_log_id를 추가작업 1의 ID로 수정
             for child in children[1:]:
@@ -5169,6 +5229,7 @@ def history_transaction():
     try:
         # 1. log_upserts (작업 완료 처리)
         completed_orig_ids = set()
+        newly_completed_ids = set()  # [추가] 이번 요청에서 새로 작업 완료된 작업 (Trouble 자동 입력 대상)
         for l in log_upserts:
             l_id = str(l.get('id', ''))
             orig_id = str(l.get('originalLogId') or '').strip()
@@ -5190,6 +5251,9 @@ def history_transaction():
             if not item:
                 item = LogItem(id=l_id, equip_id=equip_id, status='조치완료')
                 db.session.add(item)
+                newly_completed_ids.add(str(item.id))
+            elif str(item.status or '').strip() in ('작업예정', '연기됨'):
+                newly_completed_ids.add(str(item.id))
             audit_targets.append((item, _audit_fields(item)))
 
             # [수정] 원본 작업예정 레코드(orig_id)가 별도 신규 l_id로 조치완료된 경우 원본 작업예정 레코드 삭제 (유령 데이터 방지)
@@ -5632,6 +5696,34 @@ def history_transaction():
                     pass
             return val_str
 
+        # [추가] 작업 완료된 비정기 작업의 트러블 상황: 내용(점검 항목)을 " - 항목" 형식으로, 내용이 없으면 세부 구분3
+        def build_trouble_situation(log_obj):
+            raw = str(log_obj.content or '').strip()
+            items = []
+            if raw and raw != '-' and not (raw.startswith('{') or raw.startswith('[')):
+                items = [x.strip() for x in raw.split(',') if x.strip() and x.strip() != '-']
+            if not items:
+                dt3 = str(getattr(log_obj, 'detail_type3', '') or '').strip()
+                if dt3 and dt3 != '-':
+                    items = [dt3]
+            return chr(10).join(f" - {x}" for x in items)
+
+        def fill_trouble_from_completed_log(t_obj, log_obj):
+            # 이번에 새로 작업 완료된 작업만 대상 (이전에 완료·작성된 이력은 그대로 유지)
+            if str(log_obj.id) not in newly_completed_ids:
+                return
+            if str(log_obj.status or '').strip() in ('작업예정', '연기됨'):
+                return
+            # Trouble 상세 정보에서 직접 입력한 값은 유지하고, 비어 있는 항목만 자동 입력
+            if not str(t_obj.situation or '').strip():
+                t_obj.situation = build_trouble_situation(log_obj)
+            if not str(t_obj.symptom or '').strip() and str(log_obj.symptom or '').strip():
+                t_obj.symptom = str(log_obj.symptom).strip()
+            if not str(t_obj.cause or '').strip() and str(log_obj.cause or '').strip():
+                t_obj.cause = str(log_obj.cause).strip()
+            if not str(t_obj.measure or '').strip() and str(log_obj.action or '').strip():
+                t_obj.measure = str(log_obj.action).strip()
+
         for p_id, p_log in parent_logs.items():
             t_item = trouble_logs_map.get(p_id)
             
@@ -5682,8 +5774,10 @@ def history_transaction():
                 t_item.action_date = p_log.date or p_log.scheduled_date or t_item.action_date
                 if combined_details_str:
                     t_item.trouble_details = combined_details_str
-                t_item.status = '기록완료' if (t_item.occur_date and str(t_item.occur_date).strip() not in ('', '-')) else '미기록'
+                t_item.status = resolve_trouble_status(t_item.occur_date, None, t_item.status)
                 t_item.image_data = getattr(p_log, 'image_data', '') or t_item.image_data
+
+            fill_trouble_from_completed_log(t_item, p_log)
 
         # [유령데이터 방지] parent_logs에 속하지 않는 장비 내 잔재 고아(Orphan) TroubleLog 유령 레코드 완전 제거
         for t_id in list(trouble_logs_map.keys()):
@@ -5927,6 +6021,22 @@ def get_trouble_list():
 
     equips = {eq.id: eq for eq in Equipment.query.all()}
 
+    # [추가] 이슈 공유 시트 자동 입력용 장비 정보 (ADMIN 장비 정보)
+    def get_eq_detail(equip_id):
+        eq = equips.get(equip_id) if equip_id else None
+        if not eq:
+            return {}
+        return {
+            "site_name": eq.site_name or '',
+            "name": eq.name or '',
+            "serial": eq.serial or '',
+            "cust_equip_name": eq.cust_equip_name or '',
+            "delivery_date": eq.delivery_date or '',
+            "building": eq.building or '',
+            "floor": eq.floor or '',
+            "detail_loc": eq.detail_loc or '',
+        }
+
     def get_eq_info(equip_id):
         if equip_id:
             eq = equips.get(equip_id)
@@ -5975,8 +6085,12 @@ def get_trouble_list():
             "log_cause": (m_log.cause if m_log else '') or '',
             "log_action": (m_log.action if m_log else '') or '',
             "worker": (m_log.worker if m_log else '') or '',
-            "status": "기록완료" if (t.occur_date and str(t.occur_date).strip() not in ('', '-')) else "미기록",
+            "status": resolve_trouble_status(t.occur_date, None, t.status),
             "image_data": t.image_data or (getattr(m_log, 'image_data', '') if m_log else ''),
+            "sheet_data": getattr(t, 'sheet_data', '') or '',
+            "updated_by": getattr(t, 'updated_by', '') or '',
+            "updated_at": getattr(t, 'updated_at', '') or '',
+            "equip_info": get_eq_detail(t.equip_id),
             "group_key": f"trouble_{t.id}"
         })
 
@@ -6004,6 +6118,7 @@ def get_trouble_list():
         else:
             group_key = f"log_{l_id}"
 
+        site_name, equip_name = get_eq_info(l.equip_id)  # [수정] 작업 이력 항목도 자신의 장비 정보로 표시
         text_val = str(l.memo or l.content or '').strip()
         safe_content = json.dumps({'situation': text_val}, ensure_ascii=False) if text_val and text_val != '-' else ''
 
@@ -6029,6 +6144,8 @@ def get_trouble_list():
             "worker": l.worker,
             "status": "미기록",
             "image_data": getattr(l, 'image_data', ''),
+            "sheet_data": '',
+            "equip_info": get_eq_detail(l.equip_id),
             "group_key": group_key,
             "original_log_id": orig_id if orig_id else None
         })
@@ -6133,7 +6250,53 @@ def get_trouble_list():
         
     final_result.sort(key=lambda x: x.get('action_date') or x.get('occur_date') or '', reverse=True)
     
+    # [수정] 목록에는 이미지를 보내지 않음 (상세 정보를 열 때 /api/trouble/images 로 1건만 불러옴)
+    for item in final_result:
+        has_image = bool(item.pop('image_data', None))
+        sheet_raw = item.get('sheet_data') or ''
+        if sheet_raw:
+            try:
+                sheet_obj = json.loads(sheet_raw)
+                if isinstance(sheet_obj, dict) and 'images' in sheet_obj:
+                    imgs = sheet_obj.get('images')
+                    if isinstance(imgs, dict) and any(imgs.values()):
+                        has_image = True
+                    sheet_obj.pop('images', None)
+                    item['sheet_data'] = json.dumps(sheet_obj, ensure_ascii=False)
+            except Exception:
+                item['sheet_data'] = ''
+        item['has_image'] = has_image
+
     return jsonify({"status": "success", "data": final_result})
+
+
+# [추가] Trouble 상세 정보 이미지 1건 조회 (시트에 붙여넣은 이미지 + 예전 사진 첨부)
+@app.route('/api/trouble/images', methods=['GET'])
+@login_required
+def get_trouble_images():
+    t_id = str(request.args.get('id', '') or '').strip()
+    source = str(request.args.get('source', '') or 'trouble').strip()
+    if not t_id:
+        return jsonify({"status": "fail", "message": "id가 없습니다."}), 400
+
+    sheet_images = {}
+    image_data = ''
+    if source == 'trouble':
+        t = TroubleLog.query.filter_by(id=t_id).first()
+        if t:
+            image_data = t.image_data or ''
+            try:
+                sheet_obj = json.loads(t.sheet_data) if t.sheet_data else {}
+                if isinstance(sheet_obj, dict) and isinstance(sheet_obj.get('images'), dict):
+                    sheet_images = sheet_obj['images']
+            except Exception:
+                sheet_images = {}
+    if not image_data:
+        m_log = LogItem.query.filter_by(id=t_id).first()
+        if m_log:
+            image_data = getattr(m_log, 'image_data', '') or ''
+
+    return jsonify({"status": "success", "data": {"sheet_images": sheet_images, "image_data": image_data}})
 
 # [추가] Trouble 이력 CRUD(등록/수정/삭제) 통합 API
 @app.route('/api/trouble/crud', methods=['POST'])
@@ -6146,6 +6309,14 @@ def trouble_crud():
     user = User.query.filter_by(id=session.get('user_id')).first()
     worker_name = user.name if user and user.name else session.get('user_id')
     
+    # [추가] Trouble 상세 정보 저장한 사람·시각 (KST)
+    stamp_at = (datetime.now(timezone.utc) + timedelta(hours=9)).strftime('%Y-%m-%d %H:%M')
+
+    def stamp_trouble(t_obj):
+        if t_obj is not None:
+            t_obj.updated_by = worker_name or ''
+            t_obj.updated_at = stamp_at
+
     try:
         if action == 'CREATE':
             content_val = payload.get('content', '')
@@ -6167,7 +6338,7 @@ def trouble_crud():
                 equip_id = lookup_equipment_id(equip_id, payload.get('site'), payload.get('equip'))
 
             occ_val = payload.get('occur_date', '')
-            status_val = '기록완료' if (occ_val and str(occ_val).strip() not in ('', '-')) else '미기록'
+            status_val = resolve_trouble_status(occ_val, payload.get('status'))
 
             sit_val = payload.get('situation', '')
             sym_val = payload.get('symptom', '')
@@ -6198,8 +6369,10 @@ def trouble_crud():
                 prevent=pre_val,
                 trouble_details=trouble_details_val,
                 status=status_val, 
-                image_data=payload.get('image_data', '')
+                image_data=payload.get('image_data', ''),
+                sheet_data=normalize_sheet_data(payload.get('sheet_data'))
             )
+            stamp_trouble(new_log)
             db.session.add(new_log)
 
             # maint_log에도 기본 작업 정보 동기화 유지
@@ -6263,8 +6436,10 @@ def trouble_crud():
                     if 'trouble_details' in payload:
                         log.trouble_details = str(payload.get('trouble_details') or '')
                     if 'image_data' in payload: log.image_data = payload.get('image_data')
+                    if 'sheet_data' in payload: log.sheet_data = normalize_sheet_data(payload.get('sheet_data'))
 
-                    log.status = '기록완료' if (log.occur_date and str(log.occur_date).strip() not in ('', '-')) else '미기록'
+                    log.status = resolve_trouble_status(log.occur_date, payload.get('status'), log.status)
+                    stamp_trouble(log)
 
                 if m_item:
                     if 'action_date' in payload: m_item.date = payload.get('action_date')
@@ -6314,8 +6489,9 @@ def trouble_crud():
                                 measure=payload.get('measure', payload.get('action', c_dict.get('action', ''))),
                                 prevent=payload.get('prevent', payload.get('prevention', c_dict.get('prevention', ''))),
                                 trouble_details=td_val,
-                                status='기록완료' if (occ_val and str(occ_val).strip() not in ('', '-')) else '미기록',
-                                image_data=log_item.image_data
+                                status=resolve_trouble_status(occ_val, payload.get('status')),
+                                image_data=log_item.image_data,
+                                sheet_data=normalize_sheet_data(payload.get('sheet_data'))
                             )
                             db.session.add(t_log)
                         else:
@@ -6328,17 +6504,12 @@ def trouble_crud():
                             if 'prevent' in payload or payload.get('prevention') or c_dict.get('prevention'): t_log.prevent = payload.get('prevent') or payload.get('prevention') or c_dict.get('prevention', t_log.prevent)
                             if 'trouble_details' in payload: t_log.trouble_details = td_val
                             if 'image_data' in payload: t_log.image_data = payload.get('image_data')
+                            if 'sheet_data' in payload: t_log.sheet_data = normalize_sheet_data(payload.get('sheet_data'))
 
-                            t_log.status = '기록완료' if (t_log.occur_date and str(t_log.occur_date).strip() not in ('', '-')) else '미기록'
+                            t_log.status = resolve_trouble_status(t_log.occur_date, payload.get('status'), t_log.status)
+                        stamp_trouble(t_log)
 
                     db.session.add(SystemLog(action='UPDATE_LOG', target=log_item.equip_id, details=f"점검 이력 수정(Trouble 팝업)", worker=worker_name))
-        elif action == 'DELETE':
-            log = TroubleLog.query.filter_by(id=str(payload.get('id'))).first()
-            if log:
-                equip_id = log.equip_id; content = log.content
-                db.session.delete(log)
-                db.session.add(SystemLog(action='DELETE_TROUBLE', target=equip_id, details=f"Trouble 삭제: {content}", worker=worker_name))
-            
         db.session.commit()
         return jsonify({"status": "success"})
     except Exception as e:
@@ -6705,7 +6876,7 @@ def sync_all_trouble_logs_migration():
                 t_item.action_date = p_log.date or p_log.scheduled_date or t_item.action_date
                 if combined_details_str:
                     t_item.trouble_details = combined_details_str
-                t_item.status = '기록완료' if (t_item.occur_date and str(t_item.occur_date).strip() not in ('', '-')) else '미기록'
+                t_item.status = resolve_trouble_status(t_item.occur_date, None, t_item.status)
                 t_item.image_data = getattr(p_log, 'image_data', '') or t_item.image_data
 
         # [유령데이터 방지] parent_logs에 속하지 않는 고아(Orphan) TroubleLog 유령 레코드 일괄 정비
@@ -7030,7 +7201,10 @@ def init_db():
             ('cause', 'TEXT'),
             ('measure', 'TEXT'),
             ('prevent', 'TEXT'),
-            ('trouble_details', 'TEXT')
+            ('trouble_details', 'TEXT'),
+            ('sheet_data', 'LONGTEXT'),  # [추가] 이슈 공유 시트 항목
+            ('updated_by', 'VARCHAR(100) DEFAULT ""'),  # [추가] 최종 수정자
+            ('updated_at', 'VARCHAR(30) DEFAULT ""')    # [추가] 최종 수정일
         ]
         for col, col_type in trouble_log_cols:
             try:
@@ -7322,6 +7496,34 @@ def replace_setup_stage_items_v2():
 
 
 replace_setup_stage_items_v2()
+
+
+# [추가] 1회 변환: 이미 기록여부 녹색불(발생 일시 입력됨)인 Trouble 이력은 완료 여부를 '조치완료'로 저장
+TROUBLE_STATUS_DONE_KEY = 'migrated_trouble_status_done_v1'
+
+def migrate_recorded_trouble_status_once():
+    with app.app_context():
+        try:
+            if db.session.get(SystemSetting, TROUBLE_STATUS_DONE_KEY):
+                return
+            targets = TroubleLog.query.filter(
+                TroubleLog.occur_date.isnot(None),
+                db.func.trim(TroubleLog.occur_date) != '',
+                db.func.trim(TroubleLog.occur_date) != '-',
+                db.or_(TroubleLog.status.is_(None), TroubleLog.status.notin_(['조치중', '조치완료']))
+            ).all()
+            for t in targets:
+                t.status = '조치완료'
+            db.session.add(SystemSetting(key=TROUBLE_STATUS_DONE_KEY,
+                                         value=json.dumps({'at': get_utc_now().isoformat(), 'count': len(targets)})))
+            db.session.commit()
+            app.logger.warning(f"[Trouble] 기록완료 이력 완료 여부 '조치완료' 변환: {len(targets)}건")
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"[Trouble] 완료 여부 변환 실패: {e}", exc_info=True)
+
+
+migrate_recorded_trouble_status_once()
 
 if __name__ == '__main__':
     # 로컬과 서버 환경을 분리하기 위해 .env 파일에서 APP_PORT 값을 읽어옵니다. (기본값: 8080)

@@ -2207,13 +2207,15 @@ function renderMaintMemoParts(logItem) {
     const it = logItem || {};
     box.querySelectorAll('textarea[data-key]').forEach(t => { t.value = it[t.dataset.key] || ''; });
 
-    // 화면: 증상/원인/조치사항이 있으면 그 화면, 메모만 있으면 메모 화면, 둘 다 비면 마지막으로 쓴 화면
+    // 화면: 증상/원인/조치사항이 있으면 그 화면, 메모만 있으면 메모 화면,
+    //       둘 다 비면 비정기는 증상/원인/조치사항 화면, 그 외는 마지막으로 쓴 화면
     const hasParts = MAINT_MEMO_SECTIONS().some(sec => String(it[sec.key] || '').trim());
     let pref = 'free';
     try { pref = localStorage.getItem('workMemoMode') || 'free'; } catch (e) { }
     if (!logItem) applyMaintMemoMode(false);
     else if (hasParts) applyMaintMemoMode(true);
     else if (String(it.memo || '').trim()) applyMaintMemoMode(false);
+    else if (it.type === '비정기') applyMaintMemoMode(true); // 비정기 작업은 증상/원인/조치사항 화면으로 시작
     else applyMaintMemoMode(pref === 'structured');
 
     originalMaintMemoState = JSON.stringify(getMaintMemoValues());
