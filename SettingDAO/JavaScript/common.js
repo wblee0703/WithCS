@@ -5235,7 +5235,13 @@ window.openTrackingCloseModal = function (site, equip, familyId, opts = {}) {
                     </div>
                     <div class="modal-body" style="flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 10px; overflow-y: auto;">
                         <div id="tracking-close-target" style="font-size: 12px; color: var(--c-text-muted);"></div>
-                        ${field('tracking-close-symptom', '최종 증상', '최종 확인된 증상')}
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px;">
+                                <label for="tracking-close-symptom" style="font-size: 12px; font-weight: 700; color: var(--c-text);">최종 증상</label>
+                                <button type="button" class="btn-gray-sm" data-act="load-initial" title="Tracking 레포트의 초기 이슈 상황(증상)을 '초기 이슈 증상과 동일' 표기와 함께 입력" style="font-size: 11px; padding: 3px 8px;">초기 이슈 상황 불러오기</button>
+                            </div>
+                            <textarea id="tracking-close-symptom" rows="3" placeholder="최종 확인된 증상" style="${taStyle}"></textarea>
+                        </div>
                         ${field('tracking-close-cause', '최종 원인', '최종 확인된 원인')}
                         ${field('tracking-close-action', '최종 조치사항', '정상화를 위해 최종 진행한 조치')}
                         <div id="tracking-close-notice" style="font-size: 11px; color: var(--c-orange);"></div>
@@ -5248,7 +5254,10 @@ window.openTrackingCloseModal = function (site, equip, familyId, opts = {}) {
             document.body.appendChild(modal);
             // 글자에 맞춰 높이 자동 확장
             modal.addEventListener('input', (e) => {
-                if (e.target.tagName === 'TEXTAREA') window._trackingCloseAutoGrow(e.target);
+                if (e.target.tagName === 'TEXTAREA') {
+                    window._trackingCloseAutoGrow(e.target);
+                    if (e.target.value.trim()) window._trackingCloseMarkRequired(e.target, false);
+                }
             });
         }
 
@@ -5257,7 +5266,8 @@ window.openTrackingCloseModal = function (site, equip, familyId, opts = {}) {
         $('tracking-close-notice').textContent = opts.notice || '';
         $('tracking-close-symptom').value = latest('symptom');
         $('tracking-close-cause').value = latest('cause');
-        $('tracking-close-action').value = latest('action');
+        $('tracking-close-action').value = ''; // [수정] 최종 조치사항은 불러오지 않고 직접 입력
+        ['tracking-close-symptom', 'tracking-close-cause', 'tracking-close-action'].forEach(id => window._trackingCloseMarkRequired($(id), false));
         modal.style.display = 'flex';
         const grow = () => ['tracking-close-symptom', 'tracking-close-cause', 'tracking-close-action']
             .forEach(id => window._trackingCloseAutoGrow($(id)));
@@ -5275,6 +5285,33 @@ window.openTrackingCloseModal = function (site, equip, familyId, opts = {}) {
         modal.onclick = async (e) => {
             const act = e.target && e.target.dataset ? e.target.dataset.act : '';
             if (act === 'cancel') { finish(false); return; }
+            // [추가] 초기 이슈 상황 불러오기: 레포트의 초기 이슈 증상을 '초기 이슈 증상과 동일' 표기와 함께 최종 증상에 입력
+            if (act === 'load-initial') {
+                const loadBtn = e.target;
+                loadBtn.disabled = true;
+                try {
+                    const equipId = typeof window.getEquipmentDbId === 'function' ? window.getEquipmentDbId(site, equip) : `${site}::${equip}`;
+                    const res = await fetch(`/api/tracking/report?equipId=${encodeURIComponent(equipId)}&familyId=${encodeURIComponent(fid)}`,
+                        { headers: { 'X-CSRFToken': getCookie('csrf_token') } });
+                    const d = await res.json().catch(() => ({}));
+                    const initial = (res.ok && d.status === 'success' && d.report) ? String(d.report.symptom || '').trim() : '';
+                    if (!initial) {
+                        alert('Tracking 레포트에 입력된 초기 이슈 증상이 없습니다.');
+                        return;
+                    }
+                    const target = $('tracking-close-symptom');
+                    if (target.value.trim() && !confirm('최종 증상에 입력된 내용을 초기 이슈 증상으로 바꾸시겠습니까?')) return;
+                    target.value = `[초기 이슈 증상과 동일]\n${initial}`;
+                    window._trackingCloseAutoGrow(target);
+                    target.focus();
+                } catch (err) {
+                    console.error('Tracking initial symptom load failed:', err);
+                    alert('초기 이슈 상황을 불러오지 못했습니다.');
+                } finally {
+                    loadBtn.disabled = false;
+                }
+                return;
+            }
             if (act !== 'ok') return;
 
             const body = {
@@ -5284,10 +5321,12 @@ window.openTrackingCloseModal = function (site, equip, familyId, opts = {}) {
                 finalCause: $('tracking-close-cause').value.trim(),
                 finalAction: $('tracking-close-action').value.trim()
             };
-            if (!body.finalSymptom || !body.finalCause || !body.finalAction) {
-                const empty = !body.finalSymptom ? 'symptom' : (!body.finalCause ? 'cause' : 'action');
-                alert('최종 증상, 원인, 조치사항을 모두 입력해주세요.');
-                $(`tracking-close-${empty}`).focus();
+            // [수정] 비어 있는 칸은 빨간 테두리와 안내 문구로 표시
+            const required = [['symptom', body.finalSymptom], ['cause', body.finalCause], ['action', body.finalAction]];
+            const empties = required.filter(([, v]) => !v).map(([k]) => k);
+            required.forEach(([k, v]) => window._trackingCloseMarkRequired($(`tracking-close-${k}`), !v));
+            if (empties.length) {
+                $(`tracking-close-${empties[0]}`).focus();
                 return;
             }
             okBtn.disabled = true;
@@ -5320,6 +5359,32 @@ window.openTrackingCloseModal = function (site, equip, familyId, opts = {}) {
             }
         };
     });
+};
+
+// [추가] 정상화 완료 팝업 필수 칸 표시 (빨간 테두리 + 칸 아래 안내 문구)
+window._trackingCloseMarkRequired = function (el, on) {
+    if (!el) return;
+    const MSG = {
+        'tracking-close-symptom': '최종 증상을 입력해주세요.',
+        'tracking-close-cause': '최종 원인을 입력해주세요.',
+        'tracking-close-action': '최종 조치사항을 입력해주세요.'
+    };
+    let hint = el.parentNode.querySelector('.tracking-close-required-msg');
+    if (on) {
+        el.style.borderColor = 'var(--c-red, #f85149)';
+        el.style.boxShadow = '0 0 0 1px var(--c-red, #f85149)';
+        if (!hint) {
+            hint = document.createElement('span');
+            hint.className = 'tracking-close-required-msg';
+            hint.style.cssText = 'font-size: 11px; color: var(--c-red, #f85149);';
+            el.insertAdjacentElement('afterend', hint);
+        }
+        hint.textContent = MSG[el.id] || '내용을 입력해주세요.';
+    } else {
+        el.style.borderColor = 'var(--c-border)'; // 원래 테두리 색으로
+        el.style.boxShadow = '';
+        if (hint) hint.remove();
+    }
 };
 
 window._trackingCloseAutoGrow = function (el) {
