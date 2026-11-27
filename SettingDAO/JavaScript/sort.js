@@ -1737,7 +1737,7 @@ function executeSortSearch() {
                             return `${costPrefix}${prefix}${displayPart}${spec}`;
                         };
 
-                        const rowSearchTargetBase = `${workerText} ${displayEquipName} ${serialNo} ${custEquipName} ${siteGroup} ${site} ${equipBuilding} ${itemType} ${dt1} ${dt2} ${itemObj.memo || ''}`.toLowerCase();
+                        const rowSearchTargetBase = `${workerText} ${displayEquipName} ${serialNo} ${custEquipName} ${siteGroup} ${site} ${equipBuilding} ${itemType} ${dt1} ${dt2} ${buildSortMemoText(itemObj)}`.toLowerCase();
 
                         for (const rawItem of rawItemsList) {
                             let isItemMatch = true;
@@ -1849,7 +1849,7 @@ function executeSortSearch() {
                             costType: finalCostType,
                             itemDetailType: matchedItemDetailType,
                             status: isLog ? '완료' : '예정',
-                            memo: itemObj.memo || '',
+                            memo: buildSortMemoText(itemObj), // [수정] 내용 + 증상/원인/조치사항 (줄바꿈 형식)
                             originalLogId: itemObj.originalLogId || null
                         };
                     } catch (e) {
@@ -4098,6 +4098,19 @@ function renderSortChart(results) {
 /* ==========================================================================
    6. 데이터 내보내기 및 헬퍼 (Export & Helpers)
    ========================================================================== */
+// [추가] 작업 이력의 메모 + 증상/원인/조치사항을 한 칸에 줄바꿈 형식으로 합침
+// - 증상/원인/조치사항 중 하나라도 있으면 " >증상 : ...\n >원인 : ...\n >조치사항 : ..." 형식
+// - 내용(memo)도 함께 있으면 내용을 위에 두고 한 줄 띄움
+function buildSortMemoText(item) {
+    const it = item || {};
+    const memo = String(it.memo || '').trim();
+    const secs = [['symptom', '증상'], ['cause', '원인'], ['action', '조치사항']];
+    const hasParts = secs.some(([k]) => String(it[k] || '').trim());
+    if (!hasParts) return memo;
+    const partsText = secs.map(([k, label]) => ` >${label} : ${String(it[k] || '').trim()}`).join('\n');
+    return memo ? `${memo}\n\n${partsText}` : partsText;
+}
+
 // [6.1] 검색된 결과를 Excel 파일 양식으로 변환 및 다운로드 추출 (진짜 셀 병합 적용)
 function exportSortResultsToCSV(results) {
     if (typeof XLSX === 'undefined') {
@@ -4242,14 +4255,16 @@ function exportSortResultsToCSV(results) {
         if (!cell.s) cell.s = {};
 
         // 수직/수평 가운데 맞춤 및 텍스트 자동 줄바꿈 지정
+        // 헤더 행 스타일링 (폰트 볼드, 연한 회색 배경, 하단 굵은 실선 테두리)
+        const rowNum = parseInt(ref.replace(/[^0-9]/g, ''));
+        // [수정] 상세메모 열(Q, index 16)은 여러 줄(증상/원인/조치사항)이라 본문만 왼쪽 정렬
+        const isMemoBody = rowNum > 1 && ref.replace(/[0-9]/g, '') === 'Q';
         cell.s.alignment = {
             vertical: 'center',
-            horizontal: 'center',
+            horizontal: isMemoBody ? 'left' : 'center',
             wrapText: true
         };
 
-        // 헤더 행 스타일링 (폰트 볼드, 연한 회색 배경, 하단 굵은 실선 테두리)
-        const rowNum = parseInt(ref.replace(/[^0-9]/g, ''));
         if (rowNum === 1) {
             cell.s.font = { bold: true, name: '맑은 고딕', sz: 10 };
             cell.s.fill = { fgColor: { rgb: "EAEAEA" } };

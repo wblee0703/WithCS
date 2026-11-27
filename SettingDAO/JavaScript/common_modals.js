@@ -19,7 +19,7 @@ window.removeCostLabels = function (content) {
 /* --------------------------------------------------------------------------
    [추가] 점검 결과: 내용(memo) / 증상 / 원인 / 조치사항
    - DB maint_log 의 memo, symptom, cause, action 컬럼에 각각 저장
-   - 작업 상세 정보 창에서 버튼으로 [내용] ↔ [증상·원인·조치사항] 입력 화면 전환 (값은 서로 덮어쓰지 않음)
+   - 작업 상세 정보 창에서 버튼으로 [내용] ↔ [증상·원인·조치사항] 입력 화면 전환 (전환하면 이전 화면 내용은 지움)
    - Trouble 상세 정보·Tracking 레포트가 이 값으로 자동 입력
    -------------------------------------------------------------------------- */
 window.WORK_MEMO_SECTIONS = [
@@ -65,6 +65,12 @@ window.setupWorkMemoStructured = function (item) {
         if (label) label.textContent = structured ? '점검 결과 (증상 / 원인 / 조치사항)' : '점검 결과 / 메모';
     };
 
+    // [추가] 작업 완료 처리로 메모 칸이 잠기면 [전체 지움]·[증상·원인·조치 입력] 버튼 숨김
+    function syncMemoHeadBtns() {
+        const grp = document.querySelector('#event-detail-modal .work-memo-head-btns');
+        if (grp) grp.style.display = memoInput.disabled ? 'none' : '';
+    }
+
     if (!box) {
         box = document.createElement('div');
         box.id = 'detail-work-memo-structured';
@@ -78,6 +84,7 @@ window.setupWorkMemoStructured = function (item) {
         // 메모 칸이 잠기면(완료 후 보기 등) 증상/원인/조치사항 칸도 함께 잠금
         new MutationObserver(() => {
             box.querySelectorAll('textarea').forEach(t => { t.disabled = memoInput.disabled; });
+            syncMemoHeadBtns(); // [추가] 완료(잠금) 시 전체 지움·전환 버튼 숨김
         }).observe(memoInput, { attributes: true, attributeFilter: ['disabled'] });
     }
 
@@ -116,6 +123,15 @@ window.setupWorkMemoStructured = function (item) {
             btnGroup.appendChild(toggleBtn);
             toggleBtn.addEventListener('click', () => {
                 const toStructured = box.style.display === 'none';
+                // [추가] 다른 입력 화면으로 넘어가면 이전 화면에 쓴 내용은 전체 지움 (내용이 있으면 확인 후)
+                const prevTargets = toStructured ? [memoInput] : Array.from(box.querySelectorAll('textarea'));
+                if (prevTargets.some(t => t.value.trim())) {
+                    const msg = toStructured
+                        ? '증상·원인·조치 입력으로 바꾸면 지금 작성한 내용이 모두 지워집니다.\n계속하시겠습니까?'
+                        : '내용 입력으로 바꾸면 지금 작성한 증상 / 원인 / 조치사항이 모두 지워집니다.\n계속하시겠습니까?';
+                    if (!confirm(msg)) return;
+                    prevTargets.forEach(t => { t.value = ''; t.dispatchEvent(new Event('input', { bubbles: true })); });
+                }
                 applyMode(toStructured);
                 try { localStorage.setItem('workMemoMode', toStructured ? 'structured' : 'free'); } catch (e) { }
             });
@@ -140,6 +156,7 @@ window.setupWorkMemoStructured = function (item) {
     if (hasParts) applyMode(true);
     else if (String(memoInput.value || '').trim()) applyMode(false);
     else applyMode(pref === 'structured');
+    syncMemoHeadBtns();
 };
 
 window.restoreTaskSearchModal = function () {
