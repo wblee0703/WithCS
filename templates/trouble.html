@@ -2,7 +2,8 @@
 {% set active_page = 'trouble' %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/trouble.css') }}?v=4-ss3">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/trouble.css') }}?v=5-split1">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/trouble_sheet.css') }}?v=1-split1">
 {% endblock %}
 
 {% block content %}
@@ -76,160 +77,14 @@
             </div>
         </div>
 
-        <!-- Trouble 상세 정보: 운영설비 이슈 내부 공유 시트 양식 -->
-        <div id="trouble-detail-modal" class="modal-overlay" style="display: none;">
-            <div class="modal-window trouble-modal-large">
-                <div class="modal-header">
-                    <h3 id="trouble-modal-title">Trouble 상세 정보</h3>
-                    <button id="btn-close-trouble-modal" class="btn-del-sm">✕</button>
-                </div>
-
-                <!-- 시트 밖 관리 영역 (출력 제외) -->
-                <div class="ts-toolbar">
-                    <div class="ts-toolbar-group">
-                        <label class="ts-toolbar-label">완료 여부</label>
-                        <select id="trouble-modal-status" class="input-dark">
-                            <option value="조치중">조치중</option>
-                            <option value="조치완료">조치완료</option>
-                        </select>
-                        <label class="ts-toolbar-label">조치 일</label>
-                        <input type="date" id="trouble-modal-action-date" class="input-dark" readonly>
-                    </div>
-                    <div class="ts-toolbar-group">
-                        <span id="trouble-modal-updated" class="ts-updated">최종 수정 : -</span>
-                        <button id="btn-save-trouble" class="btn-blue-sm">저장</button>
-                    </div>
-                </div>
-
-                <!-- 원본 장비/작업 정보 (장비 연결용, 화면 표시 안 함) -->
-                <input type="hidden" id="trouble-modal-site">
-                <input type="hidden" id="trouble-modal-equip">
-                <input type="hidden" id="trouble-modal-worker">
-
-                <div class="modal-body ts-body">
-                    <div class="ts-pages" id="trouble-sheet">
-                    <!-- 1 페이지: 공유 시트 -->
-                    <div class="ts-sheet ts-page-main">
-                        <div class="ts-title">운영설비 이슈 내부 공유 시트</div>
-
-                        <!-- 1. 기본정보 -->
-                        <div class="ts-section">1. 설비 및 이슈 발생 기본정보</div>
-                        <table class="ts-table ts-info">
-                            <colgroup><col class="ts-col-label"><col><col class="ts-col-label"><col></colgroup>
-                            <tr>
-                                <th>사업장</th><td><input type="text" class="ts-input" data-sheet="customer"></td>
-                                <th>Site</th><td><input type="text" class="ts-input" data-sheet="site"></td>
-                            </tr>
-                            <tr>
-                                <th>Line</th><td><input type="text" class="ts-input" data-sheet="line"></td>
-                                <th>이슈 발생일</th><td><input type="datetime-local" id="trouble-modal-occur-date" class="ts-input" lang="en-GB"></td>
-                            </tr>
-                            <tr>
-                                <th>점검자</th><td><input type="text" class="ts-input" data-sheet="inspector"></td>
-                                <th>설비명</th><td><input type="text" class="ts-input" data-sheet="equip_name"></td>
-                            </tr>
-                            <tr>
-                                <th>모델명</th><td><input type="text" class="ts-input" data-sheet="model"></td>
-                                <th>납품연도</th><td><input type="text" class="ts-input" data-sheet="delivery"></td>
-                            </tr>
-                            <tr>
-                                <th>검출기 Serial</th><td><input type="text" class="ts-input" data-sheet="detector_serial"></td>
-                                <th>설비 Serial</th><td><input type="text" class="ts-input" data-sheet="equip_serial"></td>
-                            </tr>
-                            <tr>
-                                <th>관련부서</th><td><textarea class="ts-input ts-area" rows="1" data-sheet="dept"></textarea></td>
-                                <th>관련 부서 담당자</th><td><textarea class="ts-input ts-area" rows="1" data-sheet="dept_manager"></textarea></td>
-                            </tr>
-                        </table>
-
-                        <!-- 2. 이상 현상 / 원인 분석 -->
-                        <div class="ts-section">2. 이상 현상, 설비 증상, S/W Log 비교 및 원인 분석</div>
-                        <table class="ts-table ts-body-table ts-img-enabled">
-                            <colgroup><col class="ts-col-label"><col></colgroup>
-                            <tr>
-                                <th>이슈 내용</th>
-                                <td><textarea id="trouble-modal-situation" class="ts-input ts-area" rows="2"></textarea></td>
-                            </tr>
-                            <tr>
-                                <th>발생 증상</th>
-                                <td><textarea id="trouble-modal-symptom" class="ts-input ts-area" rows="3"></textarea></td>
-                            </tr>
-                            <tr>
-                                <th>설비 상태 및<br>점검내역<br><span class="ts-sub">(Para. Log.등 비교)</span></th>
-                                <td>
-                                    <textarea class="ts-input ts-area" rows="4" data-sheet="inspection"></textarea>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th>발생 원인</th>
-                                <td><textarea id="trouble-modal-cause" class="ts-input ts-area" rows="3"></textarea></td>
-                            </tr>
-                        </table>
-
-                        <!-- 3. 조치내용 / 조치결과 -->
-                        <div class="ts-section">3. 조치내용 및 조치결과</div>
-                        <table class="ts-table ts-body-table ts-img-enabled">
-                            <colgroup><col class="ts-col-label"><col></colgroup>
-                            <tr>
-                                <th>조치내용</th>
-                                <td><textarea id="trouble-modal-action-taken" class="ts-input ts-area" rows="4"></textarea></td>
-                            </tr>
-                            <tr>
-                                <th>조치결과 /<br>예정사항</th>
-                                <td><textarea class="ts-input ts-area" rows="3" data-sheet="result"></textarea></td>
-                            </tr>
-                        </table>
-
-                        <!-- 4. 협의 이력 -->
-                        <div class="ts-section">4. 유선 / 부서 간 협의 이력 기록</div>
-                        <table class="ts-table ts-consult">
-                            <colgroup><col class="ts-col-date"><col class="ts-col-target"><col><col class="ts-col-del"></colgroup>
-                            <thead>
-                                <tr>
-                                    <th>협의 일시</th>
-                                    <th>협의 대상 (부서 / 담당자)</th>
-                                    <th>유선 협의 내용 및 진행 사항</th>
-                                    <th class="ts-no-print"></th>
-                                </tr>
-                            </thead>
-                            <tbody id="trouble-consult-tbody"></tbody>
-                        </table>
-                        <div class="ts-consult-add ts-no-print">
-                            <button type="button" id="btn-add-trouble-consult" class="btn-gray-sm">+ 협의 이력 추가</button>
-                        </div>
-
-                        <!-- 5. 작업 이력 (작업 상세 정보에서 자동 기록) -->
-                        <div class="ts-section">5. 작업 이력 / 세부 메모</div>
-                        <table class="ts-table ts-body-table">
-                            <tr>
-                                <td><textarea id="trouble-modal-content" class="ts-input ts-area" rows="3"
-                                        placeholder="세부 내용(메모)을 자유롭게 입력하세요..."></textarea></td>
-                            </tr>
-                        </table>
-                    </div>
-
-                    <!-- 2 페이지: 첨부 자료 (캡처 이미지 Ctrl+V 붙여넣기 / 사진 첨부) -->
-                    <div class="ts-sheet ts-page-attach ts-img-enabled" tabindex="0">
-                        <div class="ts-title ts-title-attach">
-                            <span class="ts-title-spaced">첨 부 자 료</span>
-                            <label for="trouble-modal-image" class="ts-title-btn ts-no-print" title="첨부 자료에 이미지 추가 (PNG/JPG, 500KB 이하)">📷 사진 첨부</label>
-                            <input type="file" id="trouble-modal-image" accept=".jpg, .jpeg, .png, image/png, image/jpeg" multiple style="display: none;">
-                        </div>
-                        <textarea class="ts-input ts-area" rows="2" data-sheet="attach_note" data-img-key="attach"
-                            placeholder="첨부 자료 설명 입력 · 이 영역을 클릭한 뒤 캡처 이미지를 Ctrl+V로 붙여넣기 (PNG/JPG, 500KB 이하, 최대 10장)"></textarea>
-                        <div class="ts-attach-empty ts-no-print">이 영역을 클릭하고 Ctrl+V로 이미지를 붙여넣거나 [📷 사진 첨부]로 추가하세요.</div>
-                    </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        {% include '_trouble_detail_modal.html' %}
     </div>
 
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('SettingDAO', filename='JavaScript/trouble.js') }}?v=1.1.9-done0"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/trouble.js') }}?v=1.2.1-home1"></script>
 <script>
     // 백엔드에서 원본 데이터를 유지하여 팝업 폼 데이터가 날아가는 현상을 방지하고,
     // 화면에 렌더링된 직후에만 테이블의 텍스트를 '증상'으로 변환해주는 스크립트입니다.

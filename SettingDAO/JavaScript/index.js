@@ -1459,6 +1459,8 @@ function restructureHomeMaintenance() {
 
     if (!maintLeftCharts) return;
 
+    loadHomeTroubleShares(); // [추가] Trouble 이슈 공유 카드
+
     if (maintLeftCharts.querySelector('#home-issue-card')) {
         populateEquipmentIssues();
         return;
@@ -1506,6 +1508,74 @@ function restructureHomeMaintenance() {
     populateEquipmentIssues();
 }
 window.restructureHomeMaintenance = restructureHomeMaintenance; // UI 렌더링 후 호출용 유지
+
+/* ==========================================================================
+   [추가] Trouble 이슈 공유 (Trouble 상세 정보에서 '이슈 내부 공유'한 이력)
+   ========================================================================== */
+let homeTroubleShareLoading = false;
+
+async function loadHomeTroubleShares() {
+    const listEl = document.getElementById('home-trouble-share-list');
+    if (!listEl || homeTroubleShareLoading) return;
+    if (sessionStorage.getItem('isLoggedIn') !== 'true') return;
+    homeTroubleShareLoading = true;
+    try {
+        const res = await fetch('/api/trouble/shared', { headers: { 'X-CSRFToken': getCookie('csrf_token') } });
+        const json = await res.json();
+        renderHomeTroubleShares(json.status === 'success' ? (json.data || []) : []);
+    } catch (e) {
+        console.error('Trouble share load error:', e);
+        listEl.innerHTML = '<li class="list-empty-msg">Trouble 이슈 공유 목록을 불러오지 못했습니다.</li>';
+    } finally {
+        homeTroubleShareLoading = false;
+    }
+}
+window.loadHomeTroubleShares = loadHomeTroubleShares;
+
+function renderHomeTroubleShares(items) {
+    const listEl = document.getElementById('home-trouble-share-list');
+    if (!listEl) return;
+    const countEl = document.getElementById('home-trouble-share-count');
+    if (countEl) countEl.textContent = `(${items.length})`;
+
+    if (!items.length) {
+        listEl.innerHTML = "<li class=\"list-empty-msg\"><span>공유된 Trouble 이슈가 없습니다.</span><span class=\"home-trouble-share-empty-sub\">Trouble 상세 정보의 [📢 이슈 내부 공유]로 공유할 수 있습니다.</span></li>";
+        return;
+    }
+
+    const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
+    listEl.innerHTML = '';
+    items.forEach(t => {
+        const matched = equipmentModels.find(m => m.name === t.model || m.abbr === t.model);
+        const modelName = (matched && matched.abbr) ? matched.abbr : (t.model || '-');
+        const sub = t.cust_equip_name ? `[${t.cust_equip_name}]` : (t.serial ? `(${t.serial})` : '');
+        const done = t.status === '조치완료' || t.status === '기록완료';
+        const color = done ? 'var(--c-green)' : 'var(--c-orange)';
+        const dateVal = String(t.occur_date || t.action_date || '').slice(0, 10) || '-';
+        // [수정] 이슈 내용(트러블 상황)만 표시, 비어 있으면 '이슈 내용 미입력'
+        const issueRaw = String(t.situation || '').split('\n').map(s => s.trim()).filter(Boolean).join(' ');
+        const issue = issueRaw || '이슈 내용 미입력';
+        const sharedText = t.shared_by ? `공유 ${t.shared_by}${t.shared_at ? ` · ${t.shared_at}` : ''}` : '';
+
+        const li = document.createElement('li');
+        li.className = 'upcoming-item home-trouble-share-item';
+        li.style.borderLeft = `4px solid ${color}`;
+        li.title = `${t.site || ''} ${modelName} ${sub}\n발생 ${dateVal} · ${done ? '조치완료' : '조치중'}\n${issue}${sharedText ? `\n${sharedText}` : ''}`;
+        li.innerHTML = `
+            <div class="home-trouble-share-state" style="color: ${color};">${done ? '완료' : '조치중'}</div>
+            <div class="home-trouble-share-main">
+                <span class="home-trouble-share-equip">${escapeHtml(t.site || '-')} · ${escapeHtml(modelName)} <span class="equip-serial">${escapeHtml(sub)}</span></span>
+                <span class="home-trouble-share-issue${issueRaw ? '' : ' is-empty'}">${escapeHtml(issue)}</span>
+                <span class="home-trouble-share-meta">발생 ${escapeHtml(dateVal)}${sharedText ? ` · ${escapeHtml(sharedText)}` : ''}</span>
+            </div>`;
+        // [수정] Trouble 메뉴로 이동하지 않고 Home에서 Trouble 상세 정보 창만 열기
+        li.onclick = () => {
+            if (typeof window.openTroubleDetailById === 'function') window.openTroubleDetailById(t.id);
+            else window.location.href = `/trouble?open=${encodeURIComponent(t.id)}`;
+        };
+        listEl.appendChild(li);
+    });
+}
 
 // [Tracking] 레포트(조치 예정일) 캐시 - 로그인 시 1회 로드
 let homeTrackingReports = null;   // Map(`${equipId}|${familyId}` -> report), 미로드 시 null
@@ -1650,31 +1720,4 @@ function populateEquipmentIssues() {
 }
 window.populateEquipmentIssues = populateEquipmentIssues;
 
-// [추가] 모바일(세로·가로, 폴드 펼침 포함): 운영관리 '장비 정보' 카드 높이를 '사업장 및 장비 현황' 카드와 같게 맞추고, 넘치는 리스트는 스크롤
-(function () {
-    const mq = window.matchMedia('(max-width: 950px), (orientation: landscape) and (max-height: 500px)');
-    const sync = () => {
-        const siteList = document.getElementById('site-status-list');
-        const equipContainer = document.getElementById('equip-detail-container');
-        const siteCard = siteList ? siteList.closest('.status-group') : null;
-        const equipCard = equipContainer ? equipContainer.closest('.status-group') : null;
-        if (!siteCard || !equipCard) return;
-        if (mq.matches && siteCard.offsetHeight > 0) {
-            equipCard.style.setProperty('height', siteCard.offsetHeight + 'px', 'important');
-            equipCard.classList.add('equip-card-landscape-fixed');
-        } else {
-            equipCard.style.removeProperty('height');
-            equipCard.classList.remove('equip-card-landscape-fixed');
-        }
-    };
-    const init = () => {
-        sync();
-        const siteList = document.getElementById('site-status-list');
-        const siteCard = siteList ? siteList.closest('.status-group') : null;
-        if (siteCard && window.ResizeObserver) new ResizeObserver(sync).observe(siteCard);
-        mq.addEventListener('change', sync);
-        window.addEventListener('resize', sync);
-    };
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-    else init();
-})();
+// [삭제] 운영관리 '장비 정보' 카드 삭제로 모바일 카드 높이 맞춤 코드 제거

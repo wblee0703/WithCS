@@ -650,6 +650,9 @@ class TroubleLog(db.Model):
     sheet_data = db.Column(db.Text(length=2000000), nullable=True) # [추가] 이슈 공유 시트 항목 (JSON: 기본정보·점검내역·조치결과·협의 이력)
     updated_by = db.Column(db.String(100), default='')  # [추가] Trouble 상세 정보 최종 수정자
     updated_at = db.Column(db.String(30), default='')   # [추가] Trouble 상세 정보 최종 수정일 (KST, YYYY-MM-DD HH:MM)
+    is_shared = db.Column(db.Boolean, default=False)     # [추가] Home 'Trouble 이슈 공유' 카드에 공유 여부
+    shared_by = db.Column(db.String(100), default='')   # [추가] 공유한 사람
+    shared_at = db.Column(db.String(30), default='')    # [추가] 공유 일시 (KST, YYYY-MM-DD HH:MM)
 
 # [추가] Trouble 완료 여부(status): 발생 일시가 없으면 '미기록', 있으면 '조치중' / '조치완료'
 # - requested: Trouble 상세 정보에서 선택한 완료 여부, current: 저장되어 있던 값 (이전 '기록완료'는 그대로 유지)
@@ -6090,6 +6093,9 @@ def get_trouble_list():
             "sheet_data": getattr(t, 'sheet_data', '') or '',
             "updated_by": getattr(t, 'updated_by', '') or '',
             "updated_at": getattr(t, 'updated_at', '') or '',
+            "is_shared": bool(getattr(t, 'is_shared', False)),
+            "shared_by": getattr(t, 'shared_by', '') or '',
+            "shared_at": getattr(t, 'shared_at', '') or '',
             "equip_info": get_eq_detail(t.equip_id),
             "group_key": f"trouble_{t.id}"
         })
@@ -6297,6 +6303,70 @@ def get_trouble_images():
             image_data = getattr(m_log, 'image_data', '') or ''
 
     return jsonify({"status": "success", "data": {"sheet_images": sheet_images, "image_data": image_data}})
+
+
+# [추가] Trouble 이슈 내부 공유 / 공유 해제 (Home 운영관리 'Trouble 이슈 공유' 카드)
+@app.route('/api/trouble/share', methods=['POST'])
+@login_required
+def share_trouble():
+    data = request.json or {}
+    t_id = str(data.get('id', '') or '').strip()
+    shared = bool(data.get('shared'))
+    t = TroubleLog.query.filter_by(id=t_id).first() if t_id else None
+    if not t:
+        return jsonify({"status": "fail", "message": "Trouble 이력을 먼저 저장해 주세요."}), 404
+    user = User.query.filter_by(id=session.get('user_id')).first()
+    worker_name = user.name if user and user.name else session.get('user_id')
+    try:
+        t.is_shared = shared
+        if shared:
+            t.shared_by = worker_name or ''
+            t.shared_at = (datetime.now(timezone.utc) + timedelta(hours=9)).strftime('%Y-%m-%d %H:%M')
+        db.session.add(SystemLog(action='SHARE_TROUBLE' if shared else 'UNSHARE_TROUBLE', target=(t.equip_id or '')[:100],
+                                 details=f"Trouble 이슈 {'공유' if shared else '공유 해제'}: {t_id}", worker=worker_name))
+        db.session.commit()
+        return jsonify({"status": "success", "data": {"is_shared": bool(t.is_shared), "shared_by": t.shared_by or '', "shared_at": t.shared_at or ''}})
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Trouble share error: {e}", exc_info=True)
+        return jsonify({"status": "fail", "message": str(e)}), 500
+
+
+# [추가] Home 'Trouble 이슈 공유' 카드 목록 (공유된 Trouble 이력만, 이미지 제외)
+@app.route('/api/trouble/shared', methods=['GET'])
+@login_required
+def get_shared_troubles():
+    rows = TroubleLog.query.filter(TroubleLog.is_shared == True).all()
+    equips = {eq.id: eq for eq in Equipment.query.filter(Equipment.id.in_([r.equip_id for r in rows if r.equip_id])).all()} if rows else {}
+    result = []
+    for t in rows:
+        eq = equips.get(t.equip_id)
+        if eq:
+            site, model, serial, cust = eq.site_name or '', eq.name or '', eq.serial or '', eq.cust_equip_name or ''
+        else:
+            parts = str(t.equip_id or '').split('::')
+            site = parts[0] if parts else ''
+            model = parts[1] if len(parts) > 1 else ''
+            serial = parts[2] if len(parts) > 2 else ''
+            cust = parts[3] if len(parts) > 3 else ''
+        result.append({
+            "id": t.id,
+            "site": site,
+            "model": model,
+            "serial": serial,
+            "cust_equip_name": cust,
+            "occur_date": t.occur_date or '',
+            "action_date": t.action_date or '',
+            "detail_type3": t.detail_type3 or '',
+            "situation": t.situation or '',
+            "status": resolve_trouble_status(t.occur_date, None, t.status),
+            "shared_by": t.shared_by or '',
+            "shared_at": t.shared_at or '',
+        })
+    # 조치중 먼저, 그 안에서 최근 발생(없으면 조치일) 순
+    result.sort(key=lambda x: (x['occur_date'] or x['action_date'] or ''), reverse=True)
+    result.sort(key=lambda x: 0 if x['status'] in ('조치중', '미기록') else 1)
+    return jsonify({"status": "success", "data": result})
 
 # [추가] Trouble 이력 CRUD(등록/수정/삭제) 통합 API
 @app.route('/api/trouble/crud', methods=['POST'])
@@ -7204,7 +7274,10 @@ def init_db():
             ('trouble_details', 'TEXT'),
             ('sheet_data', 'LONGTEXT'),  # [추가] 이슈 공유 시트 항목
             ('updated_by', 'VARCHAR(100) DEFAULT ""'),  # [추가] 최종 수정자
-            ('updated_at', 'VARCHAR(30) DEFAULT ""')    # [추가] 최종 수정일
+            ('updated_at', 'VARCHAR(30) DEFAULT ""'),   # [추가] 최종 수정일
+            ('is_shared', 'BOOLEAN DEFAULT 0'),           # [추가] Home 이슈 공유 여부
+            ('shared_by', 'VARCHAR(100) DEFAULT ""'),     # [추가] 공유한 사람
+            ('shared_at', 'VARCHAR(30) DEFAULT ""')       # [추가] 공유 일시
         ]
         for col, col_type in trouble_log_cols:
             try:

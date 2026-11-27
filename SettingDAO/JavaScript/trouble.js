@@ -20,12 +20,37 @@ let showCompletedOnly = false; // [추가] 작성완료 필터 상태
 let currentTroubleImageBase64 = ''; // 사진 Base64 저장 변수
 
 document.addEventListener('DOMContentLoaded', () => {
+    // [추가] Home 화면: Trouble 상세 정보 창만 사용 (목록·필터 초기화 안 함)
+    if (!isTroubleListPage()) {
+        if (document.getElementById('trouble-detail-modal')) setupTroubleEvents();
+        return;
+    }
     if (window.isDataLoaded) {
         initTroublePage();
     } else {
         window.addEventListener('DataLoaded', initTroublePage);
     }
 });
+
+function isTroubleListPage() {
+    return !!document.getElementById('trouble-tbody');
+}
+
+// [추가] 다른 화면(Home)에서 Trouble 상세 정보 창 열기
+function openTroubleDetailById(id) {
+    return fetchTroubles().then(() => {
+        const t = allTroubles.find(x => String(x.id) === String(id) && x.source === 'trouble');
+        if (!t) {
+            alert('Trouble 이력을 찾을 수 없습니다. (삭제되었거나 다른 작업으로 옮겨졌을 수 있습니다.)');
+            return;
+        }
+        openTroubleModal('edit', t.id, 'trouble');
+    }).catch(err => {
+        console.error(err);
+        alert('Trouble 상세 정보를 불러오지 못했습니다.');
+    });
+}
+window.openTroubleDetailById = openTroubleDetailById;
 
 function initTroublePage() {
     setupTroubleEvents();
@@ -287,14 +312,16 @@ function getSiteGroup(siteName) {
 }
 
 function fetchTroubles() {
-    fetch('/api/trouble/list', { headers: { 'X-CSRFToken': getCookie('csrf_token') } })
+    return fetch('/api/trouble/list', { headers: { 'X-CSRFToken': getCookie('csrf_token') } })
         .then(res => res.json())
         .then(data => {
             if (data.status === 'success') {
                 allTroubles = data.data || [];
+                if (!isTroubleListPage()) return; // [추가] Home 등 다른 화면에서는 데이터만 갱신
                 sessionStorage.setItem('lastTroubleList', JSON.stringify(allTroubles));
                 checkQueryStringFilters();
                 applyTroubleFilter();
+                openTroubleFromQueryOnce(); // [추가] Home 'Trouble 이슈 공유'에서 넘어오면 해당 상세 정보 바로 열기
             }
         })
         .catch(err => {
@@ -593,103 +620,17 @@ function setupTroubleEvents() {
     }
 
     setupTroubleSheetEvents();
+    setupTroubleShareEvent(); // [추가] 이슈 내부 공유 버튼
 
     // 모달 내부 저장 버튼 클릭
     const btnSave = document.getElementById('btn-save-trouble');
     if (btnSave) {
         btnSave.addEventListener('click', () => {
-            const modal = document.getElementById('trouble-detail-modal');
-            // [추가] 이미지를 다 불러온 뒤에만 저장 (덜 불러온 채 저장하면 이미지가 지워짐)
-            if (modal.dataset.imagesLoaded === 'loading') {
-                alert('이미지를 불러오는 중입니다. 잠시 후 다시 저장해 주세요.');
-                return;
-            }
-            if (modal.dataset.imagesLoaded === 'error') {
-                alert('이미지를 불러오지 못해 저장할 수 없습니다.\n창을 닫고 다시 열어 주세요. (저장하면 기존 이미지가 지워질 수 있습니다.)');
-                return;
-            }
+            if (!checkTroubleImagesReady()) return;
             // [추가] 저장한 사람이 이력으로 남는다는 확인 팝업
             const saverName = sessionStorage.getItem('userName') || sessionStorage.getItem('userId') || '로그인 사용자';
             if (!confirm(`저장하면 저장한 사람(${saverName})과 저장 시각이 최종 수정 이력으로 남습니다.\n저장하시겠습니까?`)) return;
-
-            const mode = modal.dataset.mode || 'add';
-            const troubleId = modal.dataset.troubleId || Date.now();
-            const equipId = modal.dataset.equipId || '';
-            const source = modal.dataset.source || 'trouble';
-
-            // [추가] 5개 항목(JSON) 및 진행경과(memo) 분리 수집
-            const situationEl = document.getElementById('trouble-modal-situation');
-            const symptomEl = document.getElementById('trouble-modal-symptom');
-            const causeEl = document.getElementById('trouble-modal-cause');
-            const actionEl = document.getElementById('trouble-modal-action-taken'); // [수정] 올바른 HTML ID 매핑
-            const preventionEl = document.getElementById('trouble-modal-preventive'); // [수정] 올바른 HTML ID 매핑
-            const memoEl = document.getElementById('trouble-modal-content'); // [수정] 우측 세부내용(메모) 영역
-
-            const memoVal = memoEl ? memoEl.value : '';
-            const siteVal = document.getElementById('trouble-modal-site') ? document.getElementById('trouble-modal-site').value : '';
-            const equipVal = document.getElementById('trouble-modal-equip') ? document.getElementById('trouble-modal-equip').value : '';
-
-            const typeEl = document.getElementById('trouble-modal-type');
-            const dt1El = document.getElementById('trouble-modal-detail-type');
-            const dt2El = document.getElementById('trouble-modal-detail-type2');
-            const dt3El = document.getElementById('trouble-modal-detail-type3');
-
-            const occurDateVal = document.getElementById('trouble-modal-occur-date') ? document.getElementById('trouble-modal-occur-date').value : '';
-            // [수정] 완료 여부: 발생 일시가 있으면 선택한 값(조치중 / 조치완료), 없으면 미기록
-            const statusSel = document.getElementById('trouble-modal-status');
-            const statusVal = (occurDateVal && occurDateVal.trim() !== '' && occurDateVal !== '-')
-                ? (statusSel && statusSel.value ? statusSel.value : '조치중') : '미기록';
-
-            // [독립 저장 및 오염 방지] 5개 항목은 오직 trouble_log의 전용 컬럼으로만 저장
-            const payload = {
-                id: troubleId,
-                equip_id: equipId,
-                site: siteVal,
-                equip: equipVal,
-                type: typeEl && typeEl.value ? typeEl.value : '비정기',
-                situation: situationEl ? situationEl.value : '',
-                symptom: symptomEl ? symptomEl.value : '',
-                cause: causeEl ? causeEl.value : '',
-                measure: actionEl ? actionEl.value : '',
-                occur_date: occurDateVal,
-                action_date: document.getElementById('trouble-modal-action-date') ? document.getElementById('trouble-modal-action-date').value : '',
-                trouble_details: memoVal, // 세부사항 창(trouble-modal-content)의 텍스트만 전달
-                memo: memoVal, // maint_log.memo에도 순수 세부사항만 전달 (situation 전이 완전 차단)
-                worker: document.getElementById('trouble-modal-worker') ? document.getElementById('trouble-modal-worker').value : '',
-                status: statusVal,
-                image_data: currentTroubleImageBase64,
-                sheet_data: collectTroubleSheet(), // [추가] 공유 시트 항목
-                source: source
-            };
-
-            // detail_type 1,2,3는 모달 요소에 유효한 값이 존재할 때만 전송 (기존값 삭제 방지)
-            // [수정] 재발방지 대책 칸이 화면에 없으면 보내지 않음 (기존 저장값 유지)
-            if (preventionEl) payload.prevent = preventionEl.value;
-            if (dt1El && dt1El.value) payload.detail_type = dt1El.value;
-            if (dt2El && dt2El.value) payload.detail_type2 = dt2El.value;
-            if (dt3El && dt3El.value) payload.detail_type3 = dt3El.value;
-
-            const action = mode === 'add' ? 'CREATE' : 'UPDATE';
-
-            fetch('/api/trouble/crud', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
-                body: JSON.stringify({ action: action, payload: payload })
-            })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        alert('저장되었습니다.');
-                        closeTroubleModal();
-                        fetchTroubles();
-                    } else {
-                        alert('저장 실패: ' + data.message);
-                    }
-                })
-                .catch(err => {
-                    console.error(err);
-                    alert('통신 중 오류가 발생했습니다.');
-                });
+            saveTroubleDetail({ keepOpen: false });
         });
     }
 
@@ -911,6 +852,7 @@ function openTroubleModal(mode, id = null, source = null) {
 
             // [추가] 최종 수정일 · 수정자
             setTroubleUpdatedInfo(troubleData.updated_at, troubleData.updated_by);
+            setTroubleShareButton(source === 'trouble', !!troubleData.is_shared, troubleData.shared_by, troubleData.shared_at);
 
 
 
@@ -921,6 +863,7 @@ function openTroubleModal(mode, id = null, source = null) {
     }
     if (mode !== 'edit') {
         setTroubleUpdatedInfo('', '');
+        setTroubleShareButton(false, false);
         troubleImageRequestSeq++; // 진행 중인 이미지 불러오기 무시
         setTroubleImagesState('1');
     }
@@ -1257,6 +1200,187 @@ function fillTroubleSheet(t) {
    - 이미지를 다 받기 전에는 저장을 막음 (이미지가 빈 채로 저장되어 지워지는 것 방지)
    -------------------------------------------------------------------------- */
 let troubleImageRequestSeq = 0;
+
+/* --------------------------------------------------------------------------
+   [수정] Trouble 상세 정보 저장 (저장 버튼 · 이슈 공유 시 공통)
+   - keepOpen: true 이면 저장 후 창을 닫지 않음 (이슈 공유 전 저장)
+   - 결과: Promise<boolean>
+   -------------------------------------------------------------------------- */
+function checkTroubleImagesReady() {
+    const modal = document.getElementById('trouble-detail-modal');
+    // 이미지를 다 불러온 뒤에만 저장 (덜 불러온 채 저장하면 이미지가 지워짐)
+    if (modal.dataset.imagesLoaded === 'loading') {
+        alert('이미지를 불러오는 중입니다. 잠시 후 다시 시도해 주세요.');
+        return false;
+    }
+    if (modal.dataset.imagesLoaded === 'error') {
+        alert('이미지를 불러오지 못해 저장할 수 없습니다.\n창을 닫고 다시 열어 주세요. (저장하면 기존 이미지가 지워질 수 있습니다.)');
+        return false;
+    }
+    return true;
+}
+
+function saveTroubleDetail({ keepOpen = false } = {}) {
+    const modal = document.getElementById('trouble-detail-modal');
+    const mode = modal.dataset.mode || 'add';
+    const troubleId = modal.dataset.troubleId || Date.now();
+    const equipId = modal.dataset.equipId || '';
+    const source = modal.dataset.source || 'trouble';
+
+    // [추가] 5개 항목(JSON) 및 진행경과(memo) 분리 수집
+    const situationEl = document.getElementById('trouble-modal-situation');
+    const symptomEl = document.getElementById('trouble-modal-symptom');
+    const causeEl = document.getElementById('trouble-modal-cause');
+    const actionEl = document.getElementById('trouble-modal-action-taken'); // [수정] 올바른 HTML ID 매핑
+    const preventionEl = document.getElementById('trouble-modal-preventive'); // [수정] 올바른 HTML ID 매핑
+    const memoEl = document.getElementById('trouble-modal-content'); // [수정] 우측 세부내용(메모) 영역
+
+    const memoVal = memoEl ? memoEl.value : '';
+    const siteVal = document.getElementById('trouble-modal-site') ? document.getElementById('trouble-modal-site').value : '';
+    const equipVal = document.getElementById('trouble-modal-equip') ? document.getElementById('trouble-modal-equip').value : '';
+
+    const typeEl = document.getElementById('trouble-modal-type');
+    const dt1El = document.getElementById('trouble-modal-detail-type');
+    const dt2El = document.getElementById('trouble-modal-detail-type2');
+    const dt3El = document.getElementById('trouble-modal-detail-type3');
+
+    const occurDateVal = document.getElementById('trouble-modal-occur-date') ? document.getElementById('trouble-modal-occur-date').value : '';
+    // [수정] 완료 여부: 발생 일시가 있으면 선택한 값(조치중 / 조치완료), 없으면 미기록
+    const statusSel = document.getElementById('trouble-modal-status');
+    const statusVal = (occurDateVal && occurDateVal.trim() !== '' && occurDateVal !== '-')
+        ? (statusSel && statusSel.value ? statusSel.value : '조치중') : '미기록';
+
+    // [독립 저장 및 오염 방지] 5개 항목은 오직 trouble_log의 전용 컬럼으로만 저장
+    const payload = {
+        id: troubleId,
+        equip_id: equipId,
+        site: siteVal,
+        equip: equipVal,
+        type: typeEl && typeEl.value ? typeEl.value : '비정기',
+        situation: situationEl ? situationEl.value : '',
+        symptom: symptomEl ? symptomEl.value : '',
+        cause: causeEl ? causeEl.value : '',
+        measure: actionEl ? actionEl.value : '',
+        occur_date: occurDateVal,
+        action_date: document.getElementById('trouble-modal-action-date') ? document.getElementById('trouble-modal-action-date').value : '',
+        trouble_details: memoVal, // 세부사항 창(trouble-modal-content)의 텍스트만 전달
+        memo: memoVal, // maint_log.memo에도 순수 세부사항만 전달 (situation 전이 완전 차단)
+        worker: document.getElementById('trouble-modal-worker') ? document.getElementById('trouble-modal-worker').value : '',
+        status: statusVal,
+        image_data: currentTroubleImageBase64,
+        sheet_data: collectTroubleSheet(), // [추가] 공유 시트 항목
+        source: source
+    };
+
+    // detail_type 1,2,3는 모달 요소에 유효한 값이 존재할 때만 전송 (기존값 삭제 방지)
+    // [수정] 재발방지 대책 칸이 화면에 없으면 보내지 않음 (기존 저장값 유지)
+    if (preventionEl) payload.prevent = preventionEl.value;
+    if (dt1El && dt1El.value) payload.detail_type = dt1El.value;
+    if (dt2El && dt2El.value) payload.detail_type2 = dt2El.value;
+    if (dt3El && dt3El.value) payload.detail_type3 = dt3El.value;
+
+    const action = mode === 'add' ? 'CREATE' : 'UPDATE';
+
+    return fetch('/api/trouble/crud', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
+        body: JSON.stringify({ action: action, payload: payload })
+    })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status !== 'success') {
+                alert('저장 실패: ' + data.message);
+                return false;
+            }
+            if (keepOpen) {
+                // 신규 등록이었다면 이후 수정으로 처리
+                modal.dataset.mode = 'edit';
+                modal.dataset.troubleId = String(troubleId);
+                return fetchTroubles().then(() => {
+                    const t = allTroubles.find(x => String(x.id) === String(troubleId) && x.source === source);
+                    if (t) setTroubleUpdatedInfo(t.updated_at, t.updated_by);
+                    return true;
+                });
+            }
+            alert('저장되었습니다.');
+            closeTroubleModal();
+            fetchTroubles();
+            if (typeof window.loadHomeTroubleShares === 'function') window.loadHomeTroubleShares(); // Home 공유 카드 갱신
+            return true;
+        })
+        .catch(err => {
+            console.error(err);
+            alert('통신 중 오류가 발생했습니다.');
+            return false;
+        });
+}
+
+// [추가] 이슈 내부 공유 버튼 상태 (공유 중이면 강조 표시)
+function setTroubleShareButton(enabled, shared, by, at) {
+    const btn = document.getElementById('btn-share-trouble');
+    if (!btn) return;
+    btn.disabled = !enabled;
+    btn.classList.toggle('active', !!shared);
+    btn.textContent = shared ? '📢 이슈 공유 중' : '📢 이슈 내부 공유';
+    if (!enabled) btn.title = '저장한 Trouble 이력만 공유할 수 있습니다.';
+    else if (shared) btn.title = `Home 'Trouble 이슈 공유'에 공유 중${at ? ` (${at}${by ? ` · ${by}` : ''})` : ''}\n누르면 공유를 해제합니다.`;
+    else btn.title = "Home 운영관리 'Trouble 이슈 공유' 카드에 공유";
+}
+
+function setupTroubleShareEvent() {
+    const btn = document.getElementById('btn-share-trouble');
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+        const modal = document.getElementById('trouble-detail-modal');
+        const id = modal.dataset.troubleId;
+        if (!id || modal.dataset.source !== 'trouble') return;
+        const toShare = !btn.classList.contains('active');
+        if (toShare && !checkTroubleImagesReady()) return;
+        const msg = toShare
+            ? "이 Trouble 이력을 Home 운영관리 'Trouble 이슈 공유'에 공유하시겠습니까?\n\n지금 입력한 내용이 먼저 저장되고, 저장·공유한 사람과 시각이 기록됩니다."
+            : "'Trouble 이슈 공유'에서 공유를 해제하시겠습니까?";
+        if (!confirm(msg)) return;
+        btn.disabled = true;
+        // [수정] 공유 전에 현재 입력 내용 저장 (이슈 내용 등을 저장하지 않고 공유하는 것 방지)
+        const before = toShare ? saveTroubleDetail({ keepOpen: true }) : Promise.resolve(true);
+        before
+            .then(saved => {
+                if (!saved) throw new Error('저장하지 못해 공유하지 않았습니다.');
+                return fetch('/api/trouble/share', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
+                    body: JSON.stringify({ id: id, shared: toShare })
+                });
+            })
+            .then(res => res.json())
+            .then(json => {
+                if (json.status !== 'success') throw new Error(json.message || '공유 처리 실패');
+                const d = json.data || {};
+                const t = allTroubles.find(x => String(x.id) === String(id) && x.source === 'trouble');
+                if (t) { t.is_shared = d.is_shared; t.shared_by = d.shared_by; t.shared_at = d.shared_at; }
+                setTroubleShareButton(true, d.is_shared, d.shared_by, d.shared_at);
+                if (typeof window.loadHomeTroubleShares === 'function') window.loadHomeTroubleShares(); // Home 공유 카드 갱신
+                alert(d.is_shared ? '저장 후 이슈 내부 공유되었습니다.' : '공유를 해제했습니다.');
+            })
+            .catch(err => {
+                console.error(err);
+                setTroubleShareButton(true, !toShare);
+                alert('공유 처리 중 오류가 발생했습니다.\n' + (err.message || ''));
+            });
+    });
+}
+
+// [추가] /trouble?open=<id> 로 들어오면 해당 Trouble 상세 정보를 한 번 열기
+let troubleOpenFromQueryDone = false;
+function openTroubleFromQueryOnce() {
+    if (troubleOpenFromQueryDone) return;
+    troubleOpenFromQueryDone = true;
+    const openId = new URLSearchParams(window.location.search).get('open');
+    if (!openId) return;
+    const t = allTroubles.find(x => String(x.id) === String(openId) && x.source === 'trouble');
+    if (t) openTroubleModal('edit', t.id, 'trouble');
+    else alert('공유된 Trouble 이력을 찾을 수 없습니다. (삭제되었거나 다른 작업으로 옮겨졌을 수 있습니다.)');
+}
 
 // [추가] 상세 정보 창 오른쪽 위 최종 수정일 · 수정자 표시
 function setTroubleUpdatedInfo(at, by) {

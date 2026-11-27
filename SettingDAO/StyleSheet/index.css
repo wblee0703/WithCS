@@ -1070,8 +1070,14 @@ body {
 
 
     /* [추가] 장비 이슈 공유 카드 모바일 고정 높이 및 스크롤 (약 3개 항목 표시) */
-    #home-issue-card {
+    #home-issue-card,
+    #home-trouble-share-card {
         height: 300px !important;
+    }
+
+    #home-trouble-share-card .status-list-container {
+        height: auto !important;
+        max-height: none !important;
     }
 
     #home-issue-card .status-list-container {
@@ -1348,10 +1354,147 @@ body.role-user #event-detail-modal button[style*="display: inline-block"] {
 
 /* [추가] 모바일(세로·가로, 폴드 펼침 포함) 보강: JS 높이 맞춤이 안 될 때도 장비 정보 리스트를 사업장 리스트와 같은 높이(225px)로 고정하고 스크롤 */
 @media (min-width: 769px) and (max-width: 950px), (min-width: 769px) and (orientation: landscape) and (max-height: 500px) {
+    /* [추가] 갤럭시 울트라 가로 모드·폴더블 펼침: 점검 리스트(셋업 완료 장비 포함) 카드 높이 고정, 리스트는 스크롤 */
+    .upcoming-container {
+        width: 100% !important;
+        height: 300px !important;
+        flex: none !important;
+    }
+
+    .upcoming-container .upcoming-list {
+        flex: 1 1 auto !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow-y: auto !important;
+    }
+
     #equip-detail-container {
         flex: none !important;
         height: 225px !important;
         max-height: 225px !important;
         overflow-y: auto !important;
     }
+}
+
+/* ==========================================================================
+   [추가] Home 운영관리 - Trouble 이슈 공유 카드
+   ========================================================================== */
+#home-trouble-share-card {
+    justify-content: flex-start;
+}
+
+.home-trouble-share-head {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 26px;
+    width: 100%;
+    align-self: stretch;
+    box-sizing: border-box;
+}
+
+.home-trouble-share-head .status-group-title {
+    color: var(--c-orange, #f0883e);
+    margin: 0;
+    width: 100%;
+    text-align: center;
+    padding: 0 90px;
+    box-sizing: border-box;
+}
+
+.home-trouble-share-count {
+    font-size: 12px;
+    color: var(--c-text-muted);
+}
+
+.home-trouble-share-move {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 11px;
+    padding: 2px 8px;
+    text-decoration: none;
+}
+
+.home-trouble-share-body {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    border: none;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+#home-trouble-share-list {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.home-trouble-share-item {
+    cursor: pointer;
+}
+
+.home-trouble-share-state {
+    font-size: 12px;
+    font-weight: 800;
+    min-width: 44px;
+    flex-shrink: 0;
+}
+
+.home-trouble-share-main {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    overflow: hidden;
+    flex: 1;
+    min-width: 0;
+}
+
+.home-trouble-share-equip {
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--c-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.home-trouble-share-issue {
+    font-size: 12px;
+    color: var(--c-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.home-trouble-share-meta {
+    font-size: 11px;
+    color: var(--c-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* [수정] 공유 목록이 비었을 때: 안내 문구 아래 줄에 설명 */
+#home-trouble-share-list .list-empty-msg {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 4px;
+}
+
+.home-trouble-share-empty-sub {
+    font-size: 11px;
+}
+
+.home-trouble-share-issue.is-empty {
+    color: var(--c-text-muted);
+    font-style: italic;
 }

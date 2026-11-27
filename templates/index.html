@@ -2,7 +2,8 @@
 {% set active_page = 'home' %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/index.css') }}?v=11-m12">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/index.css') }}?v=11-ts4">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/trouble_sheet.css') }}?v=1-split1">
 <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/calendar.css') }}?v=7-t2">
 <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/gantt.css') }}?v=2-t2">
 <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/integ.css') }}?v=t3">
@@ -137,8 +138,18 @@
                         <button id="btn-mobile-register-task" class="btn-green-sm">➕ 작업 등록</button>
                     </div>
                     <div class="maint-split-view">
-                        <!-- 왼쪽: 차트 영역 -->
+                        <!-- 왼쪽: 차트 영역 (장기 Down 설비 카드는 JS에서 맨 앞에 추가) -->
                         <div class="maint-left-charts">
+                            <!-- [추가] Trouble 이슈 공유: Trouble 상세 정보에서 '이슈 내부 공유'한 이력 -->
+                            <div class="status-group card-like" id="home-trouble-share-card">
+                                <div class="home-trouble-share-head">
+                                    <h3 class="status-group-title" title="Trouble 상세 정보에서 '이슈 내부 공유'한 이력">Trouble 이슈 공유 <span id="home-trouble-share-count" class="home-trouble-share-count"></span></h3>
+                                    <a href="/trouble" class="btn-move home-trouble-share-move">Trouble 이동</a>
+                                </div>
+                                <div class="status-list-container home-trouble-share-body">
+                                    <ul id="home-trouble-share-list" class="upcoming-list"></ul>
+                                </div>
+                            </div>
                             <div class="status-group card-like">
                                 <h5 class="status-group-title">사업장 및 장비 현황</h5>
                                 <div class="chart-row" style="display: flex; flex-direction: row; gap: 15px; width: 100%;">
@@ -156,17 +167,6 @@
                                         </div>
                                         <ul class="site-status-list" id="equip-status-list"></ul>
                                     </div>
-                                </div>
-                            </div>
-                            <div class="status-group card-like">
-                                <div class="equip-info-header">
-                                    <h5 class="status-group-title mb-0">장비 정보</h5>
-                                    <div id="equip-detail-search-wrapper">
-                                        <input type="text" id="equip-detail-search-input" class="input-search-dark" placeholder="장비 검색...">
-                                    </div>
-                                </div>
-                                <div id="equip-detail-container" class="status-list-container status-list-flex">
-                                    <ul class="site-status-list" id="equip-detail-list"></ul>
                                 </div>
                             </div>
                         </div>
@@ -531,12 +531,14 @@
 
 <!-- Tracking 레포트 작성/수정 모달 (추가 작업 내역의 '레포트' 버튼용) -->
 {% include '_tracking_report_modal.html' %}
+{% include '_trouble_detail_modal.html' %}
 {% endblock %}
 
 {% block extra_js %}
 <script src="{{ url_for('SettingDAO', filename='JavaScript/gantt.js') }}?v=2.0.0-t4"></script>
 <script src="{{ url_for('SettingDAO', filename='JavaScript/calendar.js') }}?v=1.0.3-t4"></script>
-<script src="{{ url_for('SettingDAO', filename='JavaScript/index.js') }}?v=1.2.3-m12"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/index.js') }}?v=1.2.6-ts3"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/trouble.js') }}?v=1.2.1-home1"></script>
 <script src="{{ url_for('SettingDAO', filename='JavaScript/common_setup.js') }}?v=1.2.5-t4"></script>
 <script src="{{ url_for('SettingDAO', filename='JavaScript/integ.js') }}?v=1.1.0-t4"></script>
 <script src="{{ url_for('SettingDAO', filename='JavaScript/tracking.js') }}?v=1.7.4-c1"></script>
