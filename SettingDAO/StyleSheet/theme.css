@@ -129,3 +129,11 @@ html[data-theme="light"] .active-log > td {
 html[data-theme="light"] .sidebar-group {
     border: 1px solid var(--c-card-border);
 }
+
+/* [요청] 화이트 모드 웹: 페이지 바탕(#f6f8fa)과 카드 바탕(흰색) 차이가 PC 모니터에서는 거의 안 보임
+   → 웹(951px 이상)에서만 페이지 바탕을 한 단계 진하게 해서 카드와 구분 (모바일은 기존 그대로) */
+@media (min-width: 951px) {
+    html[data-theme="light"] body {
+        background-color: #dfe3e8;
+    }
+}
