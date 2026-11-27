@@ -20,6 +20,8 @@
             </div>
             <div class="ts-toolbar-group">
                 <button type="button" id="btn-share-trouble" class="ts-share-btn" title="Home 운영관리 'Trouble 이슈 공유' 카드에 공유">📢 이슈 내부 공유</button>
+                <button type="button" id="btn-trouble-pdf" class="btn-gray-sm" title="지금 화면의 시트(첨부 자료 포함)를 PDF로 출력">PDF</button>
+                <button type="button" id="btn-trouble-copy-image" class="btn-gray-sm" title="지금 화면의 시트(첨부 자료 포함)를 이미지로 클립보드에 복사">이미지 복사</button>
                 <span id="trouble-modal-updated" class="ts-updated">최종 수정 : -</span>
                 <button id="btn-save-trouble" class="btn-blue-sm">저장</button>
             </div>
@@ -123,8 +125,8 @@
                 </div>
 
                 <!-- 5. 작업 이력 (작업 상세 정보에서 자동 기록) -->
-                <div class="ts-section">5. 작업 이력 / 세부 메모</div>
-                <table class="ts-table ts-body-table">
+                <div class="ts-section ts-worklog">5. 작업 이력 / 세부 메모</div>
+                <table class="ts-table ts-body-table ts-worklog">
                     <tr>
                         <td><textarea id="trouble-modal-content" class="ts-input ts-area" rows="3"
                                 placeholder="세부 내용(메모)을 자유롭게 입력하세요..."></textarea></td>

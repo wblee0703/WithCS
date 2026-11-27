@@ -653,6 +653,7 @@ class TroubleLog(db.Model):
     is_shared = db.Column(db.Boolean, default=False)     # [추가] Home 'Trouble 이슈 공유' 카드에 공유 여부
     shared_by = db.Column(db.String(100), default='')   # [추가] 공유한 사람
     shared_at = db.Column(db.String(30), default='')    # [추가] 공유 일시 (KST, YYYY-MM-DD HH:MM)
+    category = db.Column(db.String(20), default='')     # [추가] 구분: '' = 위드온 등록 장비(비정기 작업 연동), 'etc' = 기타 이슈(장비 미연동)
 
 # [추가] Trouble 완료 여부(status): 발생 일시가 없으면 '미기록', 있으면 '조치중' / '조치완료'
 # - requested: Trouble 상세 정보에서 선택한 완료 여부, current: 저장되어 있던 값 (이전 '기록완료'는 그대로 유지)
@@ -5657,7 +5658,7 @@ def history_transaction():
         ).all()
 
         all_log_ids = {str(l.id) for l in LogItem.query.filter_by(equip_id=equip_id).all()}
-        trouble_logs_map = {str(t.id): t for t in TroubleLog.query.filter_by(equip_id=equip_id).all()}
+        trouble_logs_map = {str(t.id): t for t in TroubleLog.query.filter_by(equip_id=equip_id).all() if (t.category or '') != 'etc'}
         
         parent_logs = {}
         child_logs_map = {}
@@ -6019,7 +6020,7 @@ def sync_setup_equip():
 @app.route('/api/trouble/list', methods=['GET'])
 @login_required
 def get_trouble_list():
-    troubles = TroubleLog.query.all()
+    troubles = [t for t in TroubleLog.query.all() if (t.category or '') != 'etc']  # [수정] 기타 이슈는 /api/trouble/etc/list
     log_items = LogItem.query.filter(db.func.trim(LogItem.type) == '비정기').all()
 
     equips = {eq.id: eq for eq in Equipment.query.all()}
@@ -6287,7 +6288,7 @@ def get_trouble_images():
 
     sheet_images = {}
     image_data = ''
-    if source == 'trouble':
+    if source in ('trouble', 'etc'):
         t = TroubleLog.query.filter_by(id=t_id).first()
         if t:
             image_data = t.image_data or ''
@@ -6332,6 +6333,89 @@ def share_trouble():
         return jsonify({"status": "fail", "message": str(e)}), 500
 
 
+# [추가] 기타 이슈 목록 (위드온 등록 장비와 연결되지 않은 이슈, 이미지 제외)
+@app.route('/api/trouble/etc/list', methods=['GET'])
+@login_required
+def get_etc_issue_list():
+    rows = TroubleLog.query.filter(TroubleLog.category == 'etc').all()
+    result = []
+    for t in rows:
+        sheet_raw = t.sheet_data or ''
+        has_image = bool(t.image_data)
+        try:
+            sheet_obj = json.loads(sheet_raw) if sheet_raw else {}
+            sheet_obj = sheet_obj if isinstance(sheet_obj, dict) else {}
+        except Exception:
+            sheet_obj = {}
+        imgs = sheet_obj.pop('images', None)
+        if isinstance(imgs, dict) and any(imgs.values()):
+            has_image = True
+        result.append({
+            "id": t.id,
+            "source": "etc",
+            "type": t.type or '기타 이슈',
+            "occur_date": t.occur_date or '',
+            "action_date": t.action_date or '',
+            "situation": t.situation or '',
+            "symptom": t.symptom or '',
+            "cause": t.cause or '',
+            "measure": t.measure or '',
+            "prevent": t.prevent or '',
+            "trouble_details": t.trouble_details or '',
+            "status": resolve_trouble_status(t.occur_date, None, t.status),
+            "sheet_data": json.dumps(sheet_obj, ensure_ascii=False) if sheet_obj else '',
+            "has_image": has_image,
+            "updated_by": t.updated_by or '',
+            "updated_at": t.updated_at or '',
+            "is_shared": bool(t.is_shared),
+            "shared_by": t.shared_by or '',
+            "shared_at": t.shared_at or '',
+        })
+    result.sort(key=lambda x: (x['occur_date'] or x['action_date'] or x['updated_at'] or ''), reverse=True)
+    return jsonify({"status": "success", "data": result})
+
+
+@app.route('/api/trouble/etc', methods=['POST'])
+@login_required
+def save_etc_issue():
+    """[추가] 기타 이슈 등록(CREATE) / 수정(UPDATE) - 장비·작업 이력과 연결하지 않음"""
+    data = request.json or {}
+    action = data.get('action')
+    payload = data.get('payload', {}) or {}
+    user = User.query.filter_by(id=session.get('user_id')).first()
+    worker_name = user.name if user and user.name else session.get('user_id')
+    stamp_at = (datetime.now(timezone.utc) + timedelta(hours=9)).strftime('%Y-%m-%d %H:%M')
+    try:
+        if action == 'CREATE':
+            t = TroubleLog(id=f"etc_{int(datetime.now().timestamp() * 1000)}", equip_id='', category='etc', type='기타 이슈')
+            db.session.add(t)
+        elif action == 'UPDATE':
+            t = TroubleLog.query.filter_by(id=str(payload.get('id', '')), category='etc').first()
+            if not t:
+                return jsonify({"status": "fail", "message": "기타 이슈를 찾을 수 없습니다."}), 404
+        else:
+            return jsonify({"status": "fail", "message": "알 수 없는 요청입니다."}), 400
+
+        for key in ('occur_date', 'action_date', 'situation', 'symptom', 'cause', 'measure', 'prevent', 'trouble_details'):
+            if key in payload:
+                setattr(t, key, payload.get(key) or '')
+        if 'image_data' in payload:
+            t.image_data = payload.get('image_data') or ''
+        if 'sheet_data' in payload:
+            t.sheet_data = normalize_sheet_data(payload.get('sheet_data'))
+        t.status = resolve_trouble_status(t.occur_date, payload.get('status'), t.status)
+        t.updated_by = worker_name or ''
+        t.updated_at = stamp_at
+        db.session.add(SystemLog(action='ADD_ETC_ISSUE' if action == 'CREATE' else 'UPDATE_ETC_ISSUE',
+                                 target=str(t.id)[:100], details="기타 이슈 " + ('등록' if action == 'CREATE' else '수정'), worker=worker_name))
+        db.session.commit()
+        return jsonify({"status": "success", "id": t.id})
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Etc issue save error ({action}): {e}", exc_info=True)
+        return jsonify({"status": "fail", "message": str(e)}), 500
+
+
 # [추가] Home 'Trouble 이슈 공유' 카드 목록 (공유된 Trouble 이력만, 이미지 제외)
 @app.route('/api/trouble/shared', methods=['GET'])
 @login_required
@@ -6341,7 +6425,16 @@ def get_shared_troubles():
     result = []
     for t in rows:
         eq = equips.get(t.equip_id)
-        if eq:
+        if (t.category or '') == 'etc' or not t.equip_id:
+            # [추가] 기타 이슈: 시트에 직접 입력한 사업장·모델·설비명·Serial
+            try:
+                sh = json.loads(t.sheet_data) if t.sheet_data else {}
+                sh = sh if isinstance(sh, dict) else {}
+            except Exception:
+                sh = {}
+            site, model = sh.get('customer', '') or '', sh.get('model', '') or ''
+            serial, cust = sh.get('equip_serial', '') or '', sh.get('equip_name', '') or ''
+        elif eq:
             site, model, serial, cust = eq.site_name or '', eq.name or '', eq.serial or '', eq.cust_equip_name or ''
         else:
             parts = str(t.equip_id or '').split('::')
@@ -6351,6 +6444,7 @@ def get_shared_troubles():
             cust = parts[3] if len(parts) > 3 else ''
         result.append({
             "id": t.id,
+            "source": 'etc' if (t.category or '') == 'etc' else 'trouble',
             "site": site,
             "model": model,
             "serial": serial,
@@ -6857,7 +6951,7 @@ def sync_all_trouble_logs_migration():
             return
 
         all_log_ids = {str(l.id) for l in LogItem.query.all()}
-        trouble_logs_map = {str(t.id): t for t in TroubleLog.query.all()}
+        trouble_logs_map = {str(t.id): t for t in TroubleLog.query.all() if (t.category or '') != 'etc'}  # 기타 이슈 제외
 
         parent_logs = {}
         child_logs_map = {}
@@ -7277,7 +7371,8 @@ def init_db():
             ('updated_at', 'VARCHAR(30) DEFAULT ""'),   # [추가] 최종 수정일
             ('is_shared', 'BOOLEAN DEFAULT 0'),           # [추가] Home 이슈 공유 여부
             ('shared_by', 'VARCHAR(100) DEFAULT ""'),     # [추가] 공유한 사람
-            ('shared_at', 'VARCHAR(30) DEFAULT ""')       # [추가] 공유 일시
+            ('shared_at', 'VARCHAR(30) DEFAULT ""'),      # [추가] 공유 일시
+            ('category', 'VARCHAR(20) DEFAULT ""')        # [추가] 구분 ('etc' = 기타 이슈)
         ]
         for col, col_type in trouble_log_cols:
             try:

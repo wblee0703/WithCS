@@ -549,3 +549,135 @@
         padding: 5px 5px;
     }
 }
+
+/* [추가] 기타 이슈: 작업 이력과 연결되지 않으므로 '5. 작업 이력 / 세부 메모' 숨김 */
+#trouble-detail-modal[data-source="etc"] .ts-worklog {
+    display: none !important;
+}
+
+/* ==========================================================================
+   [추가] PDF 출력 / 이미지 복사 양식 (.ts-print)
+   ========================================================================== */
+.ts-print {
+    background: #fff;
+    color: #1f2328;
+}
+
+.ts-print .ts-pages {
+    display: block;
+}
+
+.ts-print .ts-sheet {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.ts-print .ts-page-attach {
+    margin-top: 16px;
+}
+
+/* 페이지 나눔 전용 요소: 화면(이미지 복사)에서는 크기 없음, PDF 인쇄에서만 다음 장으로 넘김 */
+.ts-print .ts-page-break {
+    height: 0;
+}
+
+@media print {
+    .ts-print .ts-page-break {
+        break-after: page;
+        page-break-after: always;
+    }
+
+    .ts-print .ts-page-break + .ts-page-attach {
+        margin-top: 0;
+    }
+}
+
+.ts-print .ts-static {
+    white-space: pre-wrap;
+    word-break: break-word;
+    padding: 6px 8px;
+    min-height: 20px;
+    line-height: 20px;
+    font-size: 13px;
+    color: #1f2328;
+}
+
+.ts-print .ts-info .ts-static,
+.ts-print .ts-static.ts-center {
+    text-align: center;
+}
+
+.ts-print .ts-title-attach {
+    position: static;
+}
+
+/* [추가] 출력: 내용 없는 첨부 자료는 제목 줄 + 낮은 빈 칸만 */
+.ts-print .ts-page-attach.ts-attach-compact .ts-static {
+    min-height: 28px;
+}
+
+/* ==========================================================================
+   [추가] 출력 양식은 화면 폭과 상관없이 PC 시트 양식 유지
+   - PDF 인쇄(A4 폭 약 720px)·모바일 이미지 복사 때 모바일 배치(한 줄에 1개 항목)가 적용되지 않게 되돌림
+   ========================================================================== */
+.ts-print .ts-info,
+.ts-print .ts-consult {
+    display: table;
+}
+
+.ts-print .ts-info tbody,
+.ts-print .ts-consult tbody {
+    display: table-row-group;
+}
+
+.ts-print .ts-consult thead {
+    display: table-header-group;
+}
+
+.ts-print .ts-info colgroup,
+.ts-print .ts-consult colgroup {
+    display: table-column-group;
+}
+
+.ts-print .ts-info tr,
+.ts-print .ts-consult tr {
+    display: table-row;
+    border-bottom: 0;
+}
+
+.ts-print .ts-info th,
+.ts-print .ts-info td,
+.ts-print .ts-consult td {
+    display: table-cell;
+    flex: none;
+    min-height: 0;
+}
+
+.ts-print .ts-info td {
+    height: 36px;
+}
+
+.ts-print .ts-consult td {
+    height: 40px;
+}
+
+.ts-print .ts-table .ts-col-label {
+    width: 150px;
+}
+
+.ts-print .ts-consult .ts-col-date {
+    width: 150px;
+}
+
+.ts-print .ts-consult .ts-col-target {
+    width: 240px;
+}
+
+.ts-print .ts-table th {
+    font-size: 13px;
+    padding: 8px 6px;
+}
+
+.ts-print .ts-title {
+    font-size: 19px;
+}

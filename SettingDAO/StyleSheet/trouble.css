@@ -460,3 +460,115 @@ select.input-dark option {
     background-color: var(--c-surface);
     color: var(--c-heading);
 }
+
+/* ==========================================================================
+   [추가] 메뉴: 위드온 등록 장비 / 기타 이슈
+   ========================================================================== */
+.trouble-content-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.trouble-content-header h2 {
+    margin: 0;
+}
+
+.trouble-tabs {
+    display: inline-flex;
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.trouble-tab {
+    padding: 6px 16px;
+    font-size: 13px;
+    font-weight: bold;
+    border: none;
+    background: var(--c-surface);
+    color: var(--c-text-muted);
+    cursor: pointer;
+}
+
+.trouble-tab + .trouble-tab {
+    border-left: 1px solid var(--c-border);
+}
+
+.trouble-tab:hover {
+    color: var(--c-text);
+}
+
+.trouble-tab.active {
+    background: var(--c-blue);
+    color: #fff;
+}
+
+/* 메뉴별 표시 요소 */
+.trouble-container[data-tab="withon"] .tab-etc-only,
+.trouble-container[data-tab="etc"] .tab-withon-only {
+    display: none !important;
+}
+
+/* 사업장·모델·장비 필터 묶음 (줄바꿈·모바일 배치는 기존처럼 필터 줄 안에서) */
+.trouble-equip-filters {
+    display: contents;
+}
+
+#btn-add-etc-issue {
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    font-weight: bold;
+}
+
+/* 기타 이슈 테이블 */
+#trouble-etc-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    min-width: 1100px;
+}
+
+#trouble-etc-table th {
+    position: sticky;
+    top: 0;
+    background-color: var(--c-surface-2);
+    z-index: 1;
+    padding: 10px;
+    color: var(--c-text-muted);
+    font-size: 13px;
+}
+
+#trouble-etc-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--c-border);
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#trouble-etc-table td.etc-ellipsis {
+    text-align: left;
+}
+
+#trouble-etc-table tbody tr:hover {
+    background: var(--c-surface-2);
+}
+
+@media (max-width: 950px) {
+    .trouble-tabs {
+        width: 100%;
+    }
+
+    .trouble-tab {
+        flex: 1;
+    }
+
+    #btn-add-etc-issue {
+        flex: 1 1 100%;
+        justify-content: center;
+    }
+}

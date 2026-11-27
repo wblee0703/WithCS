@@ -2,8 +2,8 @@
 {% set active_page = 'trouble' %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/trouble.css') }}?v=5-split1">
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/trouble_sheet.css') }}?v=1-split1">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/trouble.css') }}?v=6-etc1">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/trouble_sheet.css') }}?v=6-export4">
 {% endblock %}
 
 {% block content %}
@@ -11,25 +11,33 @@
 
     <!-- 메인 컨텐츠 영역 -->
     <div class="dashboard-main trouble-main">
-        <div class="content-header" style="margin-bottom: 15px;">
+        <div class="content-header trouble-content-header" style="margin-bottom: 15px;">
             <h2>Trouble 이력 관리</h2>
+            <!-- [추가] 메뉴: 위드온 등록 장비(비정기 작업) / 기타 이슈 -->
+            <div class="trouble-tabs" role="tablist">
+                <button type="button" class="trouble-tab active" data-tab="withon" role="tab">위드온 등록 장비</button>
+                <button type="button" class="trouble-tab" data-tab="etc" role="tab">기타 이슈</button>
+            </div>
         </div>
 
         <div id="trouble-workspace">
             <!-- 리스트 및 본문 영역 -->
-            <div class="trouble-container">
+            <div class="trouble-container" data-tab="withon">
                 <!-- Trouble 필터 및 액션 버튼 영역 -->
                 <div class="trouble-header-actions">
                     <div class="trouble-filters">
-                        <select id="trouble-site-filter" class="input-dark">
-                            <option value="ALL">전체 사업장</option>
-                        </select>
-                        <select id="trouble-model-filter" class="input-dark">
-                            <option value="ALL">전체 모델</option>
-                        </select>
-                        <select id="trouble-equip-filter" class="input-dark">
-                            <option value="ALL">전체 장비</option>
-                        </select>
+                        <!-- 위드온 등록 장비: 사업장 · 모델 · 장비 필터 -->
+                        <div class="trouble-equip-filters tab-withon-only">
+                            <select id="trouble-site-filter" class="input-dark">
+                                <option value="ALL">전체 사업장</option>
+                            </select>
+                            <select id="trouble-model-filter" class="input-dark">
+                                <option value="ALL">전체 모델</option>
+                            </select>
+                            <select id="trouble-equip-filter" class="input-dark">
+                                <option value="ALL">전체 장비</option>
+                            </select>
+                        </div>
 
                         <!-- 날짜 필터 그룹 -->
                         <div class="date-filter-group">
@@ -45,12 +53,13 @@
                         <input type="text" id="trouble-search-input" class="input-dark"
                             placeholder="장비명, Trouble 내용 검색..." autocomplete="off">
                         <button id="btn-trouble-search" class="btn-blue-sm">검색</button>
-                        <button id="btn-toggle-completed-trouble" class="btn-gray-sm">작성완료</button>
+                        <button id="btn-toggle-completed-trouble" class="btn-gray-sm tab-withon-only">작성완료</button>
+                        <button type="button" id="btn-add-etc-issue" class="btn-green-sm tab-etc-only">+ 이슈 추가</button>
                     </div>
                 </div>
 
-                <!-- Trouble 테이블 영역 -->
-                <div class="trouble-table-wrapper">
+                <!-- Trouble 테이블 영역 (위드온 등록 장비) -->
+                <div class="trouble-table-wrapper tab-withon-only">
                     <table class="table-dark" id="trouble-table">
                         <thead>
                             <tr>
@@ -74,6 +83,43 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- [추가] 기타 이슈 테이블 (Trouble 상세 정보 시트 항목 위주) -->
+                <div class="trouble-table-wrapper tab-etc-only">
+                    <table class="table-dark" id="trouble-etc-table">
+                        <colgroup>
+                            <col style="width: 70px;">
+                            <col style="width: 110px;">
+                            <col style="width: 120px;">
+                            <col style="width: 130px;">
+                            <col style="width: 130px;">
+                            <col>
+                            <col>
+                            <col style="width: 110px;">
+                            <col style="width: 60px;">
+                            <col style="width: 130px;">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>상태</th>
+                                <th>이슈 발생일</th>
+                                <th>사업장</th>
+                                <th>모델명</th>
+                                <th>설비명</th>
+                                <th>이슈 내용</th>
+                                <th>조치결과 / 예정사항</th>
+                                <th>점검자</th>
+                                <th>공유</th>
+                                <th>최종 수정</th>
+                            </tr>
+                        </thead>
+                        <tbody id="trouble-etc-tbody">
+                            <tr>
+                                <td colspan="10" class="list-empty-msg">데이터를 불러오는 중입니다...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -84,7 +130,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('SettingDAO', filename='JavaScript/trouble.js') }}?v=1.2.1-home1"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/trouble.js') }}?v=1.3.5-consult1"></script>
 <script>
     // 백엔드에서 원본 데이터를 유지하여 팝업 폼 데이터가 날아가는 현상을 방지하고,
     // 화면에 렌더링된 직후에만 테이블의 텍스트를 '증상'으로 변환해주는 스크립트입니다.

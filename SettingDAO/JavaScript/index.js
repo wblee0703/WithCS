@@ -1570,7 +1570,7 @@ function renderHomeTroubleShares(items) {
             </div>`;
         // [수정] Trouble 메뉴로 이동하지 않고 Home에서 Trouble 상세 정보 창만 열기
         li.onclick = () => {
-            if (typeof window.openTroubleDetailById === 'function') window.openTroubleDetailById(t.id);
+            if (typeof window.openTroubleDetailById === 'function') window.openTroubleDetailById(t.id, t.source || 'trouble');
             else window.location.href = `/trouble?open=${encodeURIComponent(t.id)}`;
         };
         listEl.appendChild(li);

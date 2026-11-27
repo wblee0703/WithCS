@@ -17,6 +17,8 @@ let currentTroubleFilter = {
     endDate: '' 
 };
 let showCompletedOnly = false; // [추가] 작성완료 필터 상태
+let allEtcIssues = []; // [추가] 기타 이슈 목록
+let currentTroubleTab = 'withon'; // [추가] 'withon' = 위드온 등록 장비, 'etc' = 기타 이슈
 let currentTroubleImageBase64 = ''; // 사진 Base64 저장 변수
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -37,14 +39,15 @@ function isTroubleListPage() {
 }
 
 // [추가] 다른 화면(Home)에서 Trouble 상세 정보 창 열기
-function openTroubleDetailById(id) {
-    return fetchTroubles().then(() => {
-        const t = allTroubles.find(x => String(x.id) === String(id) && x.source === 'trouble');
+function openTroubleDetailById(id, source = 'trouble') {
+    const loader = source === 'etc' ? fetchEtcIssues() : fetchTroubles();
+    return loader.then(() => {
+        const t = findTroubleItem(id, source);
         if (!t) {
             alert('Trouble 이력을 찾을 수 없습니다. (삭제되었거나 다른 작업으로 옮겨졌을 수 있습니다.)');
             return;
         }
-        openTroubleModal('edit', t.id, 'trouble');
+        openTroubleModal('edit', t.id, t.source);
     }).catch(err => {
         console.error(err);
         alert('Trouble 상세 정보를 불러오지 못했습니다.');
@@ -52,9 +55,110 @@ function openTroubleDetailById(id) {
 }
 window.openTroubleDetailById = openTroubleDetailById;
 
+// [추가] 위드온 등록 장비 / 기타 이슈 목록에서 1건 찾기
+function findTroubleItem(id, source) {
+    const pool = source === 'etc' ? allEtcIssues : allTroubles;
+    return pool.find(x => String(x.id) === String(id) && x.source === source);
+}
+
+// [추가] 기타 이슈 목록 불러오기
+function fetchEtcIssues() {
+    return fetch('/api/trouble/etc/list', { headers: { 'X-CSRFToken': getCookie('csrf_token') } })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status !== 'success') return;
+            allEtcIssues = data.data || [];
+            if (isTroubleListPage() && currentTroubleTab === 'etc') applyTroubleFilter();
+        })
+        .catch(err => {
+            console.error('Etc issue fetch error:', err);
+            if (isTroubleListPage() && currentTroubleTab === 'etc') renderEtcIssueList([]);
+        });
+}
+
+// [추가] 메뉴 전환: 위드온 등록 장비 / 기타 이슈
+function setTroubleTab(tab) {
+    currentTroubleTab = tab === 'etc' ? 'etc' : 'withon';
+    const container = document.querySelector('.trouble-container');
+    if (container) container.dataset.tab = currentTroubleTab;
+    document.querySelectorAll('.trouble-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === currentTroubleTab));
+    const searchInput = document.getElementById('trouble-search-input');
+    if (searchInput) {
+        searchInput.placeholder = currentTroubleTab === 'etc'
+            ? '사업장, 모델, 설비명, 이슈 내용 검색...'
+            : '장비명, Trouble 내용 검색...';
+    }
+    localStorage.setItem('lastTroubleTab', currentTroubleTab);
+    applyTroubleFilter();
+}
+
+function initTroubleTabs() {
+    document.querySelectorAll('.trouble-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (btn.dataset.tab !== currentTroubleTab) setTroubleTab(btn.dataset.tab);
+        });
+    });
+    // 작업 상세 정보·Home 에서 넘어온 경우(장비 지정/열기)는 위드온 등록 장비, 그 외에는 마지막 메뉴
+    const params = new URLSearchParams(window.location.search);
+    const fromLink = params.get('equip') || params.get('open');
+    const last = localStorage.getItem('lastTroubleTab');
+    currentTroubleTab = (!fromLink && last === 'etc') ? 'etc' : 'withon';
+    const container = document.querySelector('.trouble-container');
+    if (container) container.dataset.tab = currentTroubleTab;
+    document.querySelectorAll('.trouble-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === currentTroubleTab));
+    const searchInput = document.getElementById('trouble-search-input');
+    if (searchInput && currentTroubleTab === 'etc') searchInput.placeholder = '사업장, 모델, 설비명, 이슈 내용 검색...';
+
+    const addBtn = document.getElementById('btn-add-etc-issue');
+    if (addBtn) addBtn.addEventListener('click', () => openTroubleModal('add', null, 'etc'));
+}
+
+// [추가] 기타 이슈 목록 그리기 (Trouble 상세 정보 시트 항목 위주)
+function renderEtcIssueList(list) {
+    const tbody = document.getElementById('trouble-etc-tbody');
+    if (!tbody) return;
+    if (!list.length) {
+        tbody.innerHTML = '<tr><td colspan="10" class="list-empty-msg" style="padding:30px;">조건에 맞는 기타 이슈가 없습니다. [+ 이슈 추가]로 등록할 수 있습니다.</td></tr>';
+        return;
+    }
+    const firstLine = (v) => String(v || '').split('\n').map(s => s.trim()).filter(Boolean).join(' ');
+    tbody.innerHTML = list.map(t => {
+        const sh = parseSheetData(t.sheet_data);
+        const done = t.status === '조치완료' || t.status === '기록완료';
+        const hasOccur = !!(t.occur_date && String(t.occur_date).trim() !== '' && t.occur_date !== '-');
+        const icon = !hasOccur
+            ? '<span style="color: var(--c-text-muted); font-size: 16px;" title="미기록">○</span>'
+            : (done
+                ? '<span style="color: var(--c-green); font-size: 16px;" title="조치완료">●</span>'
+                : '<span style="color: var(--c-orange, #f0883e); font-size: 16px;" title="조치중">●</span>');
+        const occur = hasOccur ? String(t.occur_date).replace('T', ' ').slice(0, 10) : '-';
+        const issue = firstLine(t.situation) || '-';
+        const result = firstLine(sh.result) || '-';
+        const site = [sh.customer, sh.site].filter(Boolean).join(' ') || '-';
+        const share = t.is_shared ? '<span style="color: var(--c-orange, #f0883e); font-weight: bold;" title="Home 이슈 공유 중">공유</span>' : '-';
+        const updated = t.updated_at ? `${t.updated_at.slice(2)}${t.updated_by ? `<div style="font-size: 11px; color: var(--c-text-muted);">${escapeHtml(t.updated_by)}</div>` : ''}` : '-';
+        return `<tr data-id="${escapeHtml(t.id)}" style="cursor: pointer;">
+            <td style="text-align: center;">${icon}</td>
+            <td style="text-align: center;">${escapeHtml(occur)}</td>
+            <td style="text-align: center;" title="${escapeHtml(site)}">${escapeHtml(site)}</td>
+            <td style="text-align: center;" title="${escapeHtml(sh.model || '')}">${escapeHtml(sh.model || '-')}</td>
+            <td style="text-align: center;" title="${escapeHtml(sh.equip_name || '')}">${escapeHtml(sh.equip_name || '-')}</td>
+            <td class="etc-ellipsis" title="${escapeHtml(t.situation || '')}">${escapeHtml(issue)}</td>
+            <td class="etc-ellipsis" title="${escapeHtml(sh.result || '')}">${escapeHtml(result)}</td>
+            <td style="text-align: center;" title="${escapeHtml(sh.inspector || '')}">${escapeHtml(sh.inspector || '-')}</td>
+            <td style="text-align: center;">${share}</td>
+            <td style="text-align: center; font-size: 12px;">${updated}</td>
+        </tr>`;
+    }).join('');
+    tbody.querySelectorAll('tr[data-id]').forEach(tr => {
+        tr.addEventListener('click', () => openTroubleModal('edit', tr.dataset.id, 'etc'));
+    });
+}
+
 function initTroublePage() {
     setupTroubleEvents();
     initTroubleSearchableFilters(); // [추가] 사업장·모델·장비 드롭다운 검색 기능
+    initTroubleTabs(); // [추가] 위드온 등록 장비 / 기타 이슈 메뉴
     
     const cachedFilter = localStorage.getItem('lastTroubleFilter');
     const cachedKeyword = localStorage.getItem('lastTroubleKeyword');
@@ -96,6 +200,7 @@ function initTroublePage() {
     
     // [수정] 신규 등록된 비정기 항목이 즉시 반영되도록 항상 최신 목록 fetch
     fetchTroubles();
+    fetchEtcIssues(); // [추가] 기타 이슈 목록
 }
 
 function restoreTroubleFilterUI() {
@@ -476,7 +581,8 @@ function applyTroubleFilter() {
         localStorage.setItem('lastTroubleKeyword', searchInput.value);
     }
 
-    let filtered = allTroubles;
+    const isEtcTab = currentTroubleTab === 'etc'; // [추가] 기타 이슈 메뉴
+    let filtered = isEtcTab ? allEtcIssues : allTroubles;
 
     // 날짜 필터링 대조 적용
     const dateType = currentTroubleFilter.dateType || '1month';
@@ -528,6 +634,22 @@ function applyTroubleFilter() {
 
             return isStartOk && isEndOk;
         });
+    }
+
+    // [추가] 기타 이슈: 사업장·모델·설비명·이슈 내용 등 시트 항목으로 검색
+    if (isEtcTab) {
+        const kw = currentTroubleFilter.keyword;
+        if (kw) {
+            filtered = filtered.filter(t => {
+                const sh = parseSheetData(t.sheet_data);
+                const text = [sh.customer, sh.site, sh.line, sh.model, sh.equip_name, sh.equip_serial, sh.detector_serial,
+                    sh.inspector, sh.dept, sh.dept_manager, sh.inspection, sh.result,
+                    t.situation, t.symptom, t.cause, t.measure, t.trouble_details].join(' ').toLowerCase();
+                return text.includes(kw);
+            });
+        }
+        renderEtcIssueList(filtered);
+        return;
     }
 
     if (currentTroubleFilter.site !== 'ALL') {
@@ -621,6 +743,7 @@ function setupTroubleEvents() {
 
     setupTroubleSheetEvents();
     setupTroubleShareEvent(); // [추가] 이슈 내부 공유 버튼
+    setupTroubleExportEvents(); // [추가] PDF 출력 / 이미지 복사
 
     // 모달 내부 저장 버튼 클릭
     const btnSave = document.getElementById('btn-save-trouble');
@@ -775,7 +898,11 @@ function renderDateFilterInputs() {
 function openTroubleModal(mode, id = null, source = null) {
     const modal = document.getElementById('trouble-detail-modal');
     const title = document.getElementById('trouble-modal-title');
-    if (title) title.textContent = mode === 'add' ? 'Trouble 등록' : 'Trouble 상세 정보';
+    if (title) {
+        title.textContent = source === 'etc'
+            ? (mode === 'add' ? '기타 이슈 등록' : '기타 이슈 상세 정보')
+            : (mode === 'add' ? 'Trouble 등록' : 'Trouble 상세 정보');
+    }
 
     modal.dataset.mode = mode;
     modal.dataset.troubleId = id || '';
@@ -823,8 +950,11 @@ function openTroubleModal(mode, id = null, source = null) {
     if (preventionEl) preventionEl.value = '';
     fillTroubleSheet(null); // [추가] 시트 항목 초기화
 
+    // [추가] 기타 이슈는 작업 이력과 연결되지 않으므로 조치 일을 직접 입력
+    if (actionDateInput) actionDateInput.readOnly = source !== 'etc';
+
     if (mode === 'edit' && id) {
-        const troubleData = allTroubles.find(t => String(t.id) === String(id) && t.source === source);
+        const troubleData = findTroubleItem(id, source);
         if (troubleData) {
             modal.dataset.equipId = troubleData.equip_id || '';
             // 장비 리스트에서 가져온 데이터로 입력창 자동 세팅
@@ -852,7 +982,7 @@ function openTroubleModal(mode, id = null, source = null) {
 
             // [추가] 최종 수정일 · 수정자
             setTroubleUpdatedInfo(troubleData.updated_at, troubleData.updated_by);
-            setTroubleShareButton(source === 'trouble', !!troubleData.is_shared, troubleData.shared_by, troubleData.shared_at);
+            setTroubleShareButton(source === 'trouble' || source === 'etc', !!troubleData.is_shared, troubleData.shared_by, troubleData.shared_at);
 
 
 
@@ -860,6 +990,11 @@ function openTroubleModal(mode, id = null, source = null) {
     } else {
         // 등록(Add) 모드일 때 기본 담당자 이름 채우기
         if (workerInput) workerInput.value = sessionStorage.getItem('userName') || sessionStorage.getItem('userId') || '';
+        // [추가] 기타 이슈 등록: 점검자 칸에 로그인 사용자 이름 기본 입력
+        if (source === 'etc') {
+            const inspectorEl = document.querySelector('#trouble-sheet [data-sheet="inspector"]');
+            if (inspectorEl && !inspectorEl.value) inspectorEl.value = sessionStorage.getItem('userName') || '';
+        }
     }
     if (mode !== 'edit') {
         setTroubleUpdatedInfo('', '');
@@ -1280,8 +1415,11 @@ function saveTroubleDetail({ keepOpen = false } = {}) {
     if (dt3El && dt3El.value) payload.detail_type3 = dt3El.value;
 
     const action = mode === 'add' ? 'CREATE' : 'UPDATE';
+    const isEtc = source === 'etc'; // [추가] 기타 이슈: 장비·작업 이력과 연결하지 않는 전용 API
+    const url = isEtc ? '/api/trouble/etc' : '/api/trouble/crud';
+    if (isEtc && mode === 'add') delete payload.id;
 
-    return fetch('/api/trouble/crud', {
+    return fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
         body: JSON.stringify({ action: action, payload: payload })
@@ -1292,19 +1430,21 @@ function saveTroubleDetail({ keepOpen = false } = {}) {
                 alert('저장 실패: ' + data.message);
                 return false;
             }
+            const savedId = isEtc && data.id ? data.id : troubleId;
+            const reload = isEtc ? fetchEtcIssues : fetchTroubles;
             if (keepOpen) {
                 // 신규 등록이었다면 이후 수정으로 처리
                 modal.dataset.mode = 'edit';
-                modal.dataset.troubleId = String(troubleId);
-                return fetchTroubles().then(() => {
-                    const t = allTroubles.find(x => String(x.id) === String(troubleId) && x.source === source);
+                modal.dataset.troubleId = String(savedId);
+                return reload().then(() => {
+                    const t = findTroubleItem(savedId, source);
                     if (t) setTroubleUpdatedInfo(t.updated_at, t.updated_by);
                     return true;
                 });
             }
             alert('저장되었습니다.');
             closeTroubleModal();
-            fetchTroubles();
+            reload();
             if (typeof window.loadHomeTroubleShares === 'function') window.loadHomeTroubleShares(); // Home 공유 카드 갱신
             return true;
         })
@@ -1313,6 +1453,195 @@ function saveTroubleDetail({ keepOpen = false } = {}) {
             alert('통신 중 오류가 발생했습니다.');
             return false;
         });
+}
+
+/* --------------------------------------------------------------------------
+   [추가] PDF 출력 / 이미지 복사
+   - 지금 화면의 시트를 그대로 출력 양식으로 바꿔 사용 (저장하지 않은 내용도 포함)
+   - 1 페이지: 공유 시트, 2 페이지: 첨부 자료 (설명·이미지가 없으면 생략)
+   -------------------------------------------------------------------------- */
+function buildTroubleExportNode() {
+    const src = document.getElementById('trouble-sheet');
+    const modal = document.getElementById('trouble-detail-modal');
+    if (!src) return null;
+    const clone = src.cloneNode(true);
+    clone.removeAttribute('id');
+
+    // 입력 칸 -> 글자 (cloneNode 는 입력 중인 값을 복사하지 않으므로 원본 값으로 채움)
+    const srcFields = src.querySelectorAll('input, textarea');
+    const cloneFields = clone.querySelectorAll('input, textarea');
+    cloneFields.forEach((el, idx) => {
+        const s = srcFields[idx];
+        if (!s || s.type === 'file' || s.type === 'hidden') { el.remove(); return; }
+        let v = s.value || '';
+        if (s.type === 'datetime-local') v = v.replace('T', ' ');
+        const d = document.createElement('div');
+        d.className = 'ts-static' + (el.classList.contains('ts-center') ? ' ts-center' : '');
+        d.textContent = v;
+        el.replaceWith(d);
+    });
+    // 출력하지 않는 요소 (버튼·안내·삭제 칸)
+    clone.querySelectorAll('.ts-no-print, .ts-attach-empty, .ts-img-del, col.ts-col-del, button').forEach(e => e.remove());
+    // [수정] '5. 작업 이력 / 세부 메모'는 출력하지 않음 (위드온 등록 장비·기타 이슈 공통)
+    clone.querySelectorAll('.ts-worklog').forEach(e => e.remove());
+    // [수정] 첨부 자료는 항상 출력, 설명·이미지가 없으면 칸을 줄여 시트 바로 아래에 (새 페이지 안 씀)
+    const attach = clone.querySelector('.ts-page-attach');
+    if (attach) {
+        attach.removeAttribute('tabindex');
+        const hasImg = !!attach.querySelector('.ts-img-item');
+        const note = Array.from(attach.querySelectorAll('.ts-static')).map(e => e.textContent.trim()).join('');
+        if (!hasImg && !note) {
+            attach.classList.add('ts-attach-compact');
+        } else {
+            // [추가] 내용이 있으면 PDF 인쇄 시 다음 장에서 시작 (페이지 나눔 전용 요소)
+            const pageBreak = document.createElement('div');
+            pageBreak.className = 'ts-page-break';
+            attach.parentNode.insertBefore(pageBreak, attach);
+        }
+    }
+    const wrap = document.createElement('div');
+    wrap.className = 'ts-print';
+    wrap.appendChild(clone);
+    return wrap;
+}
+
+function getTroubleExportName() {
+    const val = (key) => {
+        const el = document.querySelector(`#trouble-sheet [data-sheet="${key}"]`);
+        return el ? el.value.trim() : '';
+    };
+    const occur = (document.getElementById('trouble-modal-occur-date') || {}).value || '';
+    const parts = ['Trouble', val('customer'), val('equip_name') || val('model'), occur.slice(0, 10)].filter(Boolean);
+    return parts.join('_').replace(/[\\/:*?"<>|\s]+/g, '_');
+}
+
+function exportTroublePdf() {
+    const node = buildTroubleExportNode();
+    if (!node) return;
+    const cssLink = document.querySelector('link[href*="trouble_sheet.css"]');
+    const cssHref = cssLink ? cssLink.href : '';
+    const win = window.open('', '_blank', 'width=960,height=1000');
+    if (!win) {
+        alert('팝업이 차단되었습니다. 브라우저에서 이 사이트의 팝업을 허용해주세요.');
+        return;
+    }
+    const title = getTroubleExportName();
+    win.document.open();
+    win.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title>
+${cssHref ? `<link rel="stylesheet" href="${escapeHtml(cssHref)}">` : ''}
+<style>
+    @page { size: A4; margin: 10mm; }
+    html, body { margin: 0; background: #fff; }
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: 'Malgun Gothic', sans-serif; }
+    .ts-print .ts-sheet { max-width: none; width: 100%; }
+    .ts-print .ts-pages { display: block !important; }
+    .ts-print .ts-page-attach { display: block; margin-top: 0; }
+    .ts-print .ts-page-attach.ts-attach-compact { margin-top: 16px; }
+    .ts-print .ts-page-break { display: block; height: 0; margin: 0; padding: 0; border: 0; break-after: page; page-break-after: always; }
+    .ts-print tr, .ts-print .ts-img-item { break-inside: avoid; page-break-inside: avoid; }
+</style></head><body>${node.outerHTML}</body></html>`);
+    win.document.close();
+    const doPrint = () => { win.focus(); win.print(); };
+    if (win.document.readyState === 'complete') setTimeout(doPrint, 400);
+    else win.addEventListener('load', () => setTimeout(doPrint, 400));
+}
+
+let troubleHtml2canvasLoading = null;
+function loadTroubleHtml2canvas() {
+    if (typeof window.html2canvas === 'function') return Promise.resolve();
+    if (!troubleHtml2canvasLoading) {
+        troubleHtml2canvasLoading = new Promise((resolve, reject) => {
+            const sc = document.createElement('script');
+            sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+            sc.onload = () => resolve();
+            sc.onerror = () => { troubleHtml2canvasLoading = null; reject(new Error('이미지 변환 모듈을 불러오지 못했습니다.')); };
+            document.head.appendChild(sc);
+        });
+    }
+    return troubleHtml2canvasLoading;
+}
+
+async function renderTroubleImage() {
+    await loadTroubleHtml2canvas();
+    const node = buildTroubleExportNode();
+    if (!node) throw new Error('시트를 찾을 수 없습니다.');
+    // 화면 밖에서 출력 폭(900px)으로 렌더링
+    const holder = document.createElement('div');
+    holder.style.cssText = 'position: fixed; left: -10000px; top: 0; width: 900px; background: #fff; padding: 12px; box-sizing: content-box;';
+    holder.appendChild(node);
+    document.body.appendChild(holder);
+    try {
+        if (document.fonts && document.fonts.ready) await document.fonts.ready;
+        await new Promise(r => setTimeout(r, 50));
+        const canvas = await window.html2canvas(holder, { scale: 2, backgroundColor: '#ffffff', logging: false, useCORS: true });
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+        if (!blob) throw new Error('이미지 데이터를 생성하지 못했습니다.');
+        return blob;
+    } finally {
+        holder.remove();
+    }
+}
+
+async function copyTroubleImage(btn) {
+    const original = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '이미지 생성 중...';
+    // 클립보드 권한 유지를 위해 클릭 시점에 바로 쓰기 요청
+    const blobPromise = renderTroubleImage();
+    try {
+        if (navigator.clipboard && window.ClipboardItem) {
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blobPromise })]);
+            showTroubleToast('시트 이미지가 복사되었습니다. (Ctrl+V로 붙여넣기)');
+        } else {
+            // 클립보드 이미지 쓰기 미지원 브라우저: 파일로 저장
+            const blob = await blobPromise;
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${getTroubleExportName()}.png`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+            showTroubleToast('클립보드 사용이 제한되어 이미지 파일로 저장했습니다.');
+        }
+    } catch (err) {
+        const failed = await blobPromise.then(() => null, e => e);
+        console.error('Trouble image copy failed:', err);
+        alert('이미지 복사 중 오류가 발생했습니다: ' + ((failed || err).message || err));
+    } finally {
+        btn.disabled = false;
+        btn.textContent = original;
+    }
+}
+
+function showTroubleToast(msg) {
+    let t = document.getElementById('trouble-toast');
+    if (!t) {
+        t = document.createElement('div');
+        t.id = 'trouble-toast';
+        t.style.cssText = 'position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%); z-index: 30000; background: rgba(30, 35, 45, 0.95); color: #fff; padding: 10px 18px; border-radius: 6px; font-size: 13px; box-shadow: 0 4px 16px rgba(0,0,0,0.4); pointer-events: none; transition: opacity 0.2s;';
+        document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.style.opacity = '1';
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2500);
+}
+
+function setupTroubleExportEvents() {
+    const pdfBtn = document.getElementById('btn-trouble-pdf');
+    if (pdfBtn) pdfBtn.addEventListener('click', () => {
+        const modal = document.getElementById('trouble-detail-modal');
+        if (modal && modal.dataset.imagesLoaded === 'loading') { alert('이미지를 불러오는 중입니다. 잠시 후 다시 시도해 주세요.'); return; }
+        exportTroublePdf();
+    });
+    const copyBtn = document.getElementById('btn-trouble-copy-image');
+    if (copyBtn) copyBtn.addEventListener('click', () => {
+        const modal = document.getElementById('trouble-detail-modal');
+        if (modal && modal.dataset.imagesLoaded === 'loading') { alert('이미지를 불러오는 중입니다. 잠시 후 다시 시도해 주세요.'); return; }
+        copyTroubleImage(copyBtn);
+    });
 }
 
 // [추가] 이슈 내부 공유 버튼 상태 (공유 중이면 강조 표시)
@@ -1333,7 +1662,8 @@ function setupTroubleShareEvent() {
     btn.addEventListener('click', () => {
         const modal = document.getElementById('trouble-detail-modal');
         const id = modal.dataset.troubleId;
-        if (!id || modal.dataset.source !== 'trouble') return;
+        const src = modal.dataset.source;
+        if (!id || (src !== 'trouble' && src !== 'etc')) return;
         const toShare = !btn.classList.contains('active');
         if (toShare && !checkTroubleImagesReady()) return;
         const msg = toShare
@@ -1356,7 +1686,7 @@ function setupTroubleShareEvent() {
             .then(json => {
                 if (json.status !== 'success') throw new Error(json.message || '공유 처리 실패');
                 const d = json.data || {};
-                const t = allTroubles.find(x => String(x.id) === String(id) && x.source === 'trouble');
+                const t = findTroubleItem(id, src);
                 if (t) { t.is_shared = d.is_shared; t.shared_by = d.shared_by; t.shared_at = d.shared_at; }
                 setTroubleShareButton(true, d.is_shared, d.shared_by, d.shared_at);
                 if (typeof window.loadHomeTroubleShares === 'function') window.loadHomeTroubleShares(); // Home 공유 카드 갱신
@@ -1377,7 +1707,7 @@ function openTroubleFromQueryOnce() {
     troubleOpenFromQueryDone = true;
     const openId = new URLSearchParams(window.location.search).get('open');
     if (!openId) return;
-    const t = allTroubles.find(x => String(x.id) === String(openId) && x.source === 'trouble');
+    const t = findTroubleItem(openId, 'trouble');
     if (t) openTroubleModal('edit', t.id, 'trouble');
     else alert('공유된 Trouble 이력을 찾을 수 없습니다. (삭제되었거나 다른 작업으로 옮겨졌을 수 있습니다.)');
 }
@@ -1633,7 +1963,7 @@ function renderConsultRows(rows) {
     const tbody = document.getElementById('trouble-consult-tbody');
     if (!tbody) return;
     tbody.innerHTML = '';
-    const list = rows.length ? rows : [{}, {}];  // 빈 시트는 입력용 빈 행 2개
+    const list = rows.length ? rows : [{}];  // [수정] 빈 시트는 입력용 빈 행 1개
     list.forEach(r => tbody.appendChild(buildConsultRow(r)));
 }
 
