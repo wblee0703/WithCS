@@ -698,7 +698,13 @@ class TrackingReport(db.Model):
     site_name = db.Column(db.String(100), default='')
     equip_key = db.Column(db.String(200), default='')
     symptom = db.Column(db.Text, default='')     # 증상
+    cause = db.Column(db.Text, default='')       # 추정 원인
     action = db.Column(db.Text, default='')      # 조치사항
+    final_symptom = db.Column(db.Text, default='')  # [정상화 완료] 최종 증상
+    final_cause = db.Column(db.Text, default='')    # [정상화 완료] 최종 원인
+    final_action = db.Column(db.Text, default='')   # [정상화 완료] 최종 조치사항
+    closed_by = db.Column(db.String(100), default='')  # 정상화 완료 처리자
+    closed_at = db.Column(db.DateTime, nullable=True)  # 정상화 완료 처리 시각
     parts = db.Column(db.Text, default='')       # 필요물품 비고 (발주/입고 현황 등)
     parts_items = db.Column(db.Text, default='[]')  # 필요물품 목록 JSON (물품 관리 항목 + 수량)
     discussion = db.Column(db.Text, default='')  # 협의 사항
@@ -729,7 +735,13 @@ class TrackingReport(db.Model):
             'siteName': self.site_name or '',
             'equipKey': self.equip_key or '',
             'symptom': self.symptom or '',
+            'cause': self.cause or '',
             'action': self.action or '',
+            'finalSymptom': self.final_symptom or '',
+            'finalCause': self.final_cause or '',
+            'finalAction': self.final_action or '',
+            'closedBy': self.closed_by or '',
+            'closedAt': to_kst(self.closed_at),
             'parts': self.parts or '',
             'partsItems': parts_items,
             'discussion': self.discussion or '',
@@ -952,7 +964,10 @@ def ensure_tracking_report_columns():
         db.create_all()
     except Exception as e:
         app.logger.error(f"Error ensuring tracking_report table: {e}")
-    for col, typ in [('parts_items', 'TEXT'), ('discussion_person', "VARCHAR(100) DEFAULT ''"), ('due_date', "VARCHAR(10) DEFAULT ''")]:
+    for col, typ in [('parts_items', 'TEXT'), ('discussion_person', "VARCHAR(100) DEFAULT ''"), ('due_date', "VARCHAR(10) DEFAULT ''"),
+                     ('cause', 'TEXT'),  # [추가] 추정 원인
+                     ('final_symptom', 'TEXT'), ('final_cause', 'TEXT'), ('final_action', 'TEXT'),  # [추가] 정상화 완료 최종 내용
+                     ('closed_by', "VARCHAR(100) DEFAULT ''"), ('closed_at', 'DATETIME')]:
         try:
             db.session.execute(text(f'ALTER TABLE tracking_report ADD COLUMN {col} {typ}'))
             db.session.commit()
@@ -3243,7 +3258,16 @@ def save_tracking_report():
         report.site_name = clip(payload.get('siteName'), 100)
         report.equip_key = clip(payload.get('equipKey'), 200)
         report.symptom = clip(payload.get('symptom'))
+        if 'cause' in payload:  # [추가] 추정 원인 (보내지 않으면 기존 값 유지)
+            report.cause = clip(payload.get('cause'))
         report.action = clip(payload.get('action'))
+        # [추가] 최종 확인 상황 (보내지 않으면 기존 값 유지)
+        if 'finalSymptom' in payload:
+            report.final_symptom = clip(payload.get('finalSymptom'))
+        if 'finalCause' in payload:
+            report.final_cause = clip(payload.get('finalCause'))
+        if 'finalAction' in payload:
+            report.final_action = clip(payload.get('finalAction'))
         if 'parts' in payload:  # 필요물품 텍스트 입력란 삭제 → 기존 값 보존
             report.parts = clip(payload.get('parts'))
         items = []
@@ -3273,6 +3297,44 @@ def save_tracking_report():
         db.session.rollback()
         app.logger.error(f"Failed to save tracking report: {e}")
         return jsonify({"status": "fail", "message": "Tracking 레포트 저장 중 오류가 발생했습니다."}), 500
+
+@app.route('/api/tracking/report/final', methods=['POST'])
+@login_required
+def save_tracking_report_final():
+    """[Tracking 정상화 완료] 최종 증상/원인/조치사항 저장 (레포트가 없으면 생성, 다른 레포트 내용은 유지)"""
+    payload = request.json or {}
+    equip_id = str(payload.get('equipId') or '').strip()
+    family_id = str(payload.get('familyId') or '').strip()
+    if not equip_id or not family_id:
+        return jsonify({"status": "fail", "message": "장비 또는 작업 정보가 올바르지 않습니다."}), 400
+
+    def clip(v, n=5000):
+        return str(v or '')[:n]
+
+    try:
+        user = db.session.get(User, session.get('user_id'))
+        writer = (user.name if user and user.name else session.get('user_id')) or ''
+
+        report = TrackingReport.query.filter_by(equip_id=equip_id, family_id=family_id).first()
+        if not report:
+            report = TrackingReport(equip_id=equip_id, family_id=family_id, created_by=writer,
+                                    site_name=clip(payload.get('siteName'), 100), equip_key=clip(payload.get('equipKey'), 200),
+                                    parts_items='[]', basic_json='{}')
+            db.session.add(report)
+
+        report.final_symptom = clip(payload.get('finalSymptom'))
+        report.final_cause = clip(payload.get('finalCause'))
+        report.final_action = clip(payload.get('finalAction'))
+        report.closed_by = writer
+        report.closed_at = get_utc_now()
+        report.updated_by = writer
+        report.updated_at = get_utc_now()
+        db.session.commit()
+        return jsonify({"status": "success", "report": report.to_dict()})
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Failed to save tracking final report: {e}")
+        return jsonify({"status": "fail", "message": "정상화 완료 내용 저장 중 오류가 발생했습니다."}), 500
 
 @app.route('/api/tracking/report', methods=['DELETE'])
 @admin_required

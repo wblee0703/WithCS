@@ -4563,7 +4563,8 @@ function openNextScheduleModal(options) {
 /* ==========================================================================
    9. 추가 작업 내역 확인 모달 (Extra Work History Modal)
    ========================================================================== */
-window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
+// opts.hideMove: '이동' 버튼 숨김 (Tracking 페이지 / HOME 장기 Down 설비 리스트에서 열 때)
+window.openExtraWorkHistoryModal = function (site, equip, originalLogId, opts = {}) {
     if (typeof window.checkSessionValid === 'function' && !window.checkSessionValid()) return;
     const modal = document.getElementById('extra-work-history-modal');
     const tbody = document.getElementById('extra-work-history-body');
@@ -4842,6 +4843,7 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
 
     // 3. 해당 장비 점검 이력으로 이동하는 버튼 이벤트
     if (moveBtn) {
+        moveBtn.style.display = opts && opts.hideMove ? 'none' : '';
         moveBtn.onclick = () => {
             checkUnsavedChangesAndProceed(() => {
                 let targetUrl = `/maintenance?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}&logId=${originalLogId}`;
@@ -5157,9 +5159,12 @@ window.renderTrackingActions = async function (boxId, site, equip, familyId, opt
                 location.href = '/tracking';
             }
         });
-        mkBtn('btn-tracking-close', '정상화 완료', 'Tracking 체크 해제 (최초 작업 + 추가작업 전체)', (b) => {
-            if (!confirm('이 작업을 정상화 완료 처리하시겠습니까?')) return;
-            setFlag(b, false, { closed: true });
+        mkBtn('btn-tracking-close', '정상화 완료', '최종 증상/원인/조치사항 입력 후 Tracking 체크 해제 (최초 작업 + 추가작업 전체)', async (b) => {
+            b.disabled = true;
+            const done = await window.openTrackingCloseModal(site, equip, familyId);
+            if (!done) { b.disabled = false; return; }
+            if (typeof opts.onFlagChange === 'function') opts.onFlagChange(false);
+            refresh({ closed: true });
         });
         return;
     }
@@ -5189,6 +5194,138 @@ window.renderTrackingActions = async function (boxId, site, equip, familyId, opt
     } else {
         mkBtn('btn-tracking-open', 'Tracking 등록', '정상화 미완료 작업으로 Tracking 시작', (b) => setFlag(b, true));
     }
+};
+
+// [Tracking] 정상화 완료 팝업: 최종 증상/원인/조치사항 입력 → 레포트에 저장 후 Tracking 체크 해제
+// - 초기값: 작업 패밀리(최초 작업 + 추가작업) 중 가장 마지막에 등록된 증상/원인/조치사항 (항목별 최신 값)
+// - 반환: Promise<boolean> (정상화 완료 처리 성공 시 true, 취소/실패 시 false)
+window.openTrackingCloseModal = function (site, equip, familyId, opts = {}) {
+    return new Promise((resolve) => {
+        const fid = String(familyId);
+        const data = JSON.parse(localStorage.getItem(`details_${site}_${equip}`)) || {};
+        const logs = Array.isArray(data.logs) ? data.logs : [];
+        const famLogs = logs
+            .filter(l => String(l.id) === fid || String(l.originalLogId || '') === fid)
+            .sort((a, b) => (a.date || '').localeCompare(b.date || '') || (Number(a.id) || 0) - (Number(b.id) || 0));
+        const latest = (key) => {
+            for (let i = famLogs.length - 1; i >= 0; i--) {
+                const v = String(famLogs[i][key] || '').trim();
+                if (v) return v;
+            }
+            return '';
+        };
+
+        let modal = document.getElementById('tracking-close-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'tracking-close-modal';
+            modal.className = 'modal-overlay';
+            modal.style.cssText = 'display: none; z-index: 20020;';
+            const taStyle = 'flex: none; width: 100%; box-sizing: border-box; resize: vertical; overflow-y: hidden; font-size: 13px; font-family: inherit; line-height: 1.5; padding: 8px 10px; background: var(--c-bg); border: 1px solid var(--c-border); border-radius: 4px; color: var(--c-text);';
+            const field = (id, label, ph) => `
+                <label style="display: flex; flex-direction: column; gap: 4px;">
+                    <span style="font-size: 12px; font-weight: 700; color: var(--c-text);">${label}</span>
+                    <textarea id="${id}" rows="3" placeholder="${ph}" style="${taStyle}"></textarea>
+                </label>`;
+            modal.innerHTML = `
+                <div class="modal-window" style="width: 560px; max-width: 94vw; height: auto; max-height: 90vh; max-height: 90dvh; display: flex; flex-direction: column; overflow: hidden;">
+                    <div class="modal-header" style="flex: none;">
+                        <h3>정상화 완료</h3>
+                        <button type="button" class="btn-del-sm" data-act="cancel">✕</button>
+                    </div>
+                    <div class="modal-body" style="flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 10px; overflow-y: auto;">
+                        <div id="tracking-close-target" style="font-size: 12px; color: var(--c-text-muted);"></div>
+                        ${field('tracking-close-symptom', '최종 증상', '최종 확인된 증상')}
+                        ${field('tracking-close-cause', '최종 원인', '최종 확인된 원인')}
+                        ${field('tracking-close-action', '최종 조치사항', '정상화를 위해 최종 진행한 조치')}
+                        <div id="tracking-close-notice" style="font-size: 11px; color: var(--c-orange);"></div>
+                    </div>
+                    <div class="modal-footer" style="flex: none; display: flex; justify-content: flex-end; gap: 6px;">
+                        <button type="button" class="btn-gray-sm" data-act="cancel">취소</button>
+                        <button type="button" class="btn-green-sm" data-act="ok" style="background: #238636 !important; background-color: #238636 !important; color: #fff; border: 1px solid rgba(240, 246, 252, 0.1);">정상화 완료</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(modal);
+            // 글자에 맞춰 높이 자동 확장
+            modal.addEventListener('input', (e) => {
+                if (e.target.tagName === 'TEXTAREA') window._trackingCloseAutoGrow(e.target);
+            });
+        }
+
+        const $ = (id) => document.getElementById(id);
+        $('tracking-close-target').textContent = opts.targetText || '';
+        $('tracking-close-notice').textContent = opts.notice || '';
+        $('tracking-close-symptom').value = latest('symptom');
+        $('tracking-close-cause').value = latest('cause');
+        $('tracking-close-action').value = latest('action');
+        modal.style.display = 'flex';
+        const grow = () => ['tracking-close-symptom', 'tracking-close-cause', 'tracking-close-action']
+            .forEach(id => window._trackingCloseAutoGrow($(id)));
+        grow();
+        requestAnimationFrame(grow);
+        $('tracking-close-symptom').focus();
+
+        const okBtn = modal.querySelector('[data-act="ok"]');
+        okBtn.disabled = false;
+        const finish = (result) => {
+            modal.style.display = 'none';
+            modal.onclick = null;
+            resolve(result);
+        };
+        modal.onclick = async (e) => {
+            const act = e.target && e.target.dataset ? e.target.dataset.act : '';
+            if (act === 'cancel') { finish(false); return; }
+            if (act !== 'ok') return;
+
+            const body = {
+                equipId: typeof window.getEquipmentDbId === 'function' ? window.getEquipmentDbId(site, equip) : `${site}::${equip}`,
+                familyId: fid, siteName: site, equipKey: equip,
+                finalSymptom: $('tracking-close-symptom').value.trim(),
+                finalCause: $('tracking-close-cause').value.trim(),
+                finalAction: $('tracking-close-action').value.trim()
+            };
+            if (!body.finalSymptom || !body.finalCause || !body.finalAction) {
+                const empty = !body.finalSymptom ? 'symptom' : (!body.finalCause ? 'cause' : 'action');
+                alert('최종 증상, 원인, 조치사항을 모두 입력해주세요.');
+                $(`tracking-close-${empty}`).focus();
+                return;
+            }
+            okBtn.disabled = true;
+            try {
+                const res = await fetch('/api/tracking/report/final', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
+                    body: JSON.stringify(body)
+                });
+                const d = await res.json().catch(() => ({}));
+                if (!res.ok || d.status !== 'success') {
+                    alert(d.message || `정상화 완료 내용 저장에 실패했습니다. (HTTP ${res.status})`);
+                    okBtn.disabled = false;
+                    return;
+                }
+                if (window.trackingReportBridge && typeof window.trackingReportBridge.setReport === 'function') {
+                    window.trackingReportBridge.setReport(d.report);
+                }
+                const ok = await window.setTrackingFlag(site, equip, familyId, false);
+                if (!ok) {
+                    alert('최종 내용은 저장되었지만 정상화 완료 처리에 실패했습니다. 다시 시도해주세요.');
+                    okBtn.disabled = false;
+                    return;
+                }
+                finish(true);
+            } catch (err) {
+                console.error('Tracking close failed:', err);
+                alert('정상화 완료 처리 중 오류가 발생했습니다.');
+                okBtn.disabled = false;
+            }
+        };
+    });
+};
+
+window._trackingCloseAutoGrow = function (el) {
+    if (!el || el.getClientRects().length === 0) return;
+    el.style.height = 'auto';
+    el.style.height = (el.scrollHeight + (el.offsetHeight - el.clientHeight)) + 'px';
 };
 
 /* ==========================================================================

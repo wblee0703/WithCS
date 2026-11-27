@@ -1802,15 +1802,22 @@ input[type="date"]::-webkit-datetime-edit-year {
     background: rgba(240, 136, 62, 0.12);
 }
 
+/* [변경] 레포트 버튼: 잘 보이도록 파란색 채움 */
 :is(#extra-work-tracking-actions, #detail-tracking-actions) .btn-tracking-sub {
-    background: var(--c-surface-2);
-    border: 1px solid var(--c-border);
-    color: var(--c-text-2);
+    background: #1f6feb;
+    border: 1px solid #388bfd;
+    color: #ffffff;
 }
 
 :is(#extra-work-tracking-actions, #detail-tracking-actions) .btn-tracking-sub:hover:not(:disabled) {
-    border-color: var(--c-blue);
-    color: var(--c-blue);
+    background: #388bfd;
+}
+
+/* 레포트 · 정상화 완료 버튼 같은 크기 */
+:is(#extra-work-tracking-actions, #detail-tracking-actions) :is(.btn-tracking-sub, .btn-tracking-close) {
+    min-width: 72px;
+    text-align: center;
+    box-sizing: border-box;
 }
 
 :is(#extra-work-tracking-actions, #detail-tracking-actions) .btn-tracking-close {

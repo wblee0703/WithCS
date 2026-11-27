@@ -11,14 +11,39 @@
 
             <div class="tracking-report-section-title">레포트 내용</div>
             <div class="tracking-report-fields">
-                <label class="tracking-report-field">
-                    <span>증상</span>
-                    <textarea id="tracking-report-symptom" class="input-dark" rows="3" placeholder="현재 장비 증상, 발생 상황"></textarea>
-                </label>
-                <label class="tracking-report-field">
-                    <span>조치사항</span>
-                    <textarea id="tracking-report-action" class="input-dark" rows="3" placeholder="지금까지 진행한 조치 및 향후 조치 계획"></textarea>
-                </label>
+                <!-- 레포트 내용: 왼쪽 초기 이슈 상황 / 오른쪽 최종 확인 상황 (모바일은 위아래) -->
+                <div class="tracking-report-split" id="tracking-report-split">
+                    <div class="tracking-report-col">
+                        <div class="tracking-report-col-title">초기 이슈 상황</div>
+                        <label class="tracking-report-field">
+                            <span>증상</span>
+                            <textarea id="tracking-report-symptom" class="input-dark" rows="3" placeholder="현재 장비 증상, 발생 상황"></textarea>
+                        </label>
+                        <label class="tracking-report-field">
+                            <span>추정 원인</span>
+                            <textarea id="tracking-report-cause" class="input-dark" rows="3" placeholder="현재까지 추정되는 원인"></textarea>
+                        </label>
+                        <label class="tracking-report-field">
+                            <span>조치사항</span>
+                            <textarea id="tracking-report-action" class="input-dark" rows="3" placeholder="지금까지 진행한 조치 및 향후 조치 계획"></textarea>
+                        </label>
+                    </div>
+                    <div class="tracking-report-col tracking-report-col-final">
+                        <div class="tracking-report-col-title">최종 확인 상황 <span class="tracking-report-hint" id="tracking-report-final-meta"></span></div>
+                        <label class="tracking-report-field">
+                            <span>증상</span>
+                            <textarea id="tracking-report-final-symptom" class="input-dark" rows="3" placeholder="최종 확인된 증상"></textarea>
+                        </label>
+                        <label class="tracking-report-field">
+                            <span>최종 원인</span>
+                            <textarea id="tracking-report-final-cause" class="input-dark" rows="3" placeholder="최종 확인된 원인"></textarea>
+                        </label>
+                        <label class="tracking-report-field">
+                            <span>최종 조치사항</span>
+                            <textarea id="tracking-report-final-action" class="input-dark" rows="3" placeholder="정상화를 위해 최종 진행한 조치"></textarea>
+                        </label>
+                    </div>
+                </div>
                 <div class="tracking-report-field">
                     <span>필요물품 <span class="tracking-report-hint">물품 관리에 등록된 항목에서 선택</span></span>
                     <div class="tracking-parts-picker">
@@ -51,9 +76,11 @@
         </div>
         <div class="modal-footer tracking-report-footer">
             <button type="button" class="btn-blue-sm" id="btn-tracking-report-pdf" title="입력 내용을 저장한 뒤 PDF로 출력">PDF 출력</button>
+            <button type="button" class="btn-blue-sm" id="btn-tracking-report-copy" title="입력 내용을 저장한 뒤 PDF와 같은 형식의 이미지로 클립보드에 복사">이미지 복사</button>
             <div style="flex: 1;"></div>
             <button type="button" class="btn-gray-sm" id="btn-tracking-report-cancel">취소</button>
             <button type="button" class="btn-green-sm" id="btn-tracking-report-save">저장</button>
+            <button type="button" class="btn-tracking-close" id="btn-tracking-report-close-work" style="display: none;" title="레포트를 저장한 뒤 최종 증상/원인/조치사항을 입력하고 정상화 완료 처리">정상화 완료</button>
         </div>
     </div>
 </div>

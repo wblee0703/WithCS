@@ -346,26 +346,39 @@
     justify-content: flex-start;
 }
 
+/* [변경] 레포트 버튼: 잘 보이도록 파란색 채움, 정상화 완료 버튼과 같은 크기 */
 .btn-tracking-sub {
     padding: 4px 8px;
     font-size: 11px;
     font-weight: 600;
     white-space: nowrap;
-    background: var(--c-surface-2);
-    border: 1px solid var(--c-border);
-    color: var(--c-text-2);
+    background: #1f6feb;
+    border: 1px solid #388bfd;
+    color: #ffffff;
     border-radius: 4px;
     cursor: pointer;
 }
 
 .btn-tracking-sub:hover:not(:disabled) {
-    border-color: var(--c-blue);
-    color: var(--c-blue);
+    background: #388bfd;
 }
 
 .btn-tracking-sub.warn {
+    background: transparent;
     border-color: var(--c-yellow);
     color: var(--c-yellow);
+}
+
+.btn-tracking-sub.warn:hover:not(:disabled) {
+    background: rgba(210, 153, 34, 0.12);
+}
+
+/* 관리 버튼 크기 통일 (레포트 = 정상화 완료) */
+.tracking-actions .btn-tracking-sub,
+.tracking-actions .btn-tracking-close {
+    min-width: 72px;
+    text-align: center;
+    box-sizing: border-box;
 }
 
 .btn-tracking-reset {
@@ -474,6 +487,9 @@
 }
 
 .tracking-report-field textarea.input-dark {
+    /* 공통 textarea 의 flex: 1 이 JS 자동 높이를 무시하므로 해제 (글자에 맞춰 자동 확장) */
+    flex: none;
+    overflow-y: hidden;
     width: 100%;
     box-sizing: border-box;
     resize: vertical;
@@ -496,6 +512,49 @@
     color: var(--c-text-faint);
 }
 
+/* 레포트 내용: 왼쪽 초기 이슈 상황 / 오른쪽 최종 확인 상황 */
+.tracking-report-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+}
+
+.tracking-report-col {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+}
+
+.tracking-report-col-title {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--c-heading);
+}
+
+/* 최종 확인 상황: 정상화 완료 전 비활성화 */
+.tracking-report-field textarea.input-dark:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: var(--c-surface-2, var(--c-bg));
+}
+
+/* 모바일(세로·가로): 위아래 배치 */
+@media (max-width: 950px), (orientation: landscape) and (max-height: 500px) {
+    .tracking-report-split {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    /* 정상화 완료 전에는 최종 확인 상황 숨김 */
+    .tracking-report-split.final-pending .tracking-report-col-final {
+        display: none;
+    }
+}
+
 .tracking-report-meta {
     font-size: 11px;
     color: var(--c-text-muted);
@@ -512,6 +571,23 @@
     height: 32px;
     border-radius: 4px;
     cursor: pointer;
+}
+
+/* 레포트 창 [저장] 버튼: HOME(index.css)의 밝은 초록 덮어쓰기 방지 → 어느 화면이든 같은 진한 초록 */
+.tracking-report-footer #btn-tracking-report-save {
+    background: #238636 !important;
+    border: 1px solid rgba(240, 246, 252, 0.1);
+    color: #ffffff;
+}
+
+.tracking-report-footer #btn-tracking-report-save:hover:not(:disabled) {
+    background: #2ea043 !important;
+}
+
+/* 레포트 창 [정상화 완료] 버튼: 다른 하단 버튼과 같은 크기 */
+.tracking-report-footer #btn-tracking-report-close-work {
+    padding: 5px 15px;
+    font-size: 12px;
 }
 
 .tracking-report-footer button:disabled {

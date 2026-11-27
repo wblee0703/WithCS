@@ -241,14 +241,14 @@
                 }
                 if (w.isFlagged) {
                     mkBtn('btn-tracking-close', '정상화 완료',
-                        isLoggedIn ? 'Tracking 체크 해제 (최초 작업 + 추가작업 전체)' : loginTitle,
+                        isLoggedIn ? '최종 증상/원인/조치사항 입력 후 Tracking 체크 해제 (최초 작업 + 추가작업 전체)' : loginTitle,
                         async (b) => {
-                            const msg = `[${w.site}] ${disp.name}\n${w.startDate} 작업을 정상화 완료 처리하시겠습니까?` +
-                                (w.nextPlanDate ? '\n\n※ 예정된 추가작업이 남아 있어 해당 작업이 완료될 때까지 진행중으로 표시됩니다.' : '');
-                            if (!confirm(msg)) return;
                             b.disabled = true;
-                            const ok = await window.setTrackingFlag(w.site, w.equipKey, w.familyId, false);
-                            if (!ok) b.disabled = false;
+                            const done = await window.openTrackingCloseModal(w.site, w.equipKey, w.familyId, {
+                                targetText: `[${w.site}] ${disp.name} · 최초 작업일 ${w.startDate}`,
+                                notice: w.nextPlanDate ? '※ 예정된 추가작업이 남아 있어 해당 작업이 완료될 때까지 진행중으로 표시됩니다.' : ''
+                            });
+                            if (!done) { b.disabled = false; return; }
                             render();
                         }, !isLoggedIn);
                 }
@@ -271,7 +271,7 @@
             tr.onclick = () => {
                 if (w.kind === 'log') {
                     if (typeof window.openExtraWorkHistoryModal === 'function') {
-                        window.openExtraWorkHistoryModal(w.site, w.equipKey, w.familyId);
+                        window.openExtraWorkHistoryModal(w.site, w.equipKey, w.familyId, { hideMove: true });
                     }
                 } else if (typeof window.openEventDetailModal === 'function') {
                     window.openEventDetailModal(w.site, w.equipKey, w.openId, false);
@@ -562,6 +562,21 @@
         if (input) input.focus();
     }
 
+    // 같은 작업 패밀리(최초 작업 + 추가작업) 로그를 날짜순으로 반환
+    function getFamilyLogs(w) {
+        const fid = String(w.familyId || (w.parentLog && w.parentLog.id) || '');
+        let logs = [];
+        try {
+            const details = JSON.parse(localStorage.getItem(`details_${w.site}_${w.equipKey}`)) || {};
+            logs = Array.isArray(details.logs) ? details.logs : [];
+        } catch (e) { logs = []; }
+        const fam = fid ? logs.filter(l => String(l.id) === fid || String(l.originalLogId || '') === fid) : [];
+        if (fam.length === 0 && w.parentLog) fam.push(w.parentLog);
+        return fam.sort((a, b) => (a.date || '').localeCompare(b.date || '') || (Number(a.id) || 0) - (Number(b.id) || 0));
+    }
+
+    const FINAL_IDS = ['tracking-report-final-symptom', 'tracking-report-final-cause', 'tracking-report-final-action'];
+
     function openReportModal(w, disp, mode) {
         const modal = document.getElementById('tracking-report-modal');
         if (!modal) return;
@@ -578,23 +593,45 @@
                     <span class="k">${label}</span><span class="v">${esc(basic[k] === '' || basic[k] == null ? '-' : basic[k])}</span>
                 </div>`).join('');
 
-        // 신규 레포트: 증상 기본값으로 완료된 작업 내용(+작업 메모) 기록
-        const workLog = w.parentLog || {};
-        let defaultSymptom = [workLog.content, workLog.memo].map(t => String(t || '').trim()).filter(Boolean).join('\n');
-        let defaultAction = '';
-        // [추가] 작업 이력에 증상/원인/조치사항을 기록했으면 레포트 칸에 나눠 넣음 (레포트에 원인 칸이 없어 증상 아래에)
-        const wSym = String(workLog.symptom || '').trim(), wCause = String(workLog.cause || '').trim(), wAct = String(workLog.action || '').trim();
-        if (wSym || wCause || wAct) {
-            defaultSymptom = [
-                String(workLog.content || '').trim(),
-                wSym,
-                wCause ? `원인: ${wCause}` : '',
-                String(workLog.memo || '').trim(),
-            ].filter(Boolean).join('\n');
-            defaultAction = wAct;
-        }
-        document.getElementById('tracking-report-symptom').value = report ? report.symptom : defaultSymptom;
-        document.getElementById('tracking-report-action').value = report ? report.action : defaultAction;
+        // 작업 이력(최초 작업 + 추가작업)의 증상/원인/조치사항을 레포트 칸에 맞춰 넣음
+        //  - 증상 → 증상, 원인 → 추정 원인, 조치사항 → 조치사항
+        //  - 여러 작업에 기록이 있으면 [작업일] 을 붙여 날짜순으로 이어 씀
+        //  - 증상 기록이 하나도 없으면(내용으로만 입력) 작업 메모를 증상 기본값으로 사용
+        //  - 이미 저장된 레포트는 비어 있는 칸만 작업 이력으로 채움
+        const famLogs = getFamilyLogs(w);
+        const joinField = (key) => {
+            const entries = famLogs
+                .map(l => ({ date: l.date || '', text: String(l[key] || '').trim() }))
+                .filter(e => e.text);
+            if (entries.length <= 1) return entries.length ? entries[0].text : '';
+            return entries.map(e => `[${e.date || '-'}]\n${e.text}`).join('\n\n');
+        };
+        const histSymptom = joinField('symptom');
+        const defaultSymptom = histSymptom || joinField('memo');
+        const defaultCause = joinField('cause');
+        const defaultAction = joinField('action');
+        const pick = (saved, fallback) => (String(saved || '').trim() ? saved : fallback);
+        document.getElementById('tracking-report-symptom').value = report ? pick(report.symptom, histSymptom) : defaultSymptom;
+        document.getElementById('tracking-report-cause').value = report ? pick(report.cause, defaultCause) : defaultCause;
+        document.getElementById('tracking-report-action').value = report ? pick(report.action, defaultAction) : defaultAction;
+        // 최종 확인 상황 (정상화 완료 시 입력한 최종 증상/원인/조치사항, 레포트에서도 수정 가능)
+        document.getElementById('tracking-report-final-symptom').value = report ? (report.finalSymptom || '') : '';
+        document.getElementById('tracking-report-final-cause').value = report ? (report.finalCause || '') : '';
+        document.getElementById('tracking-report-final-action').value = report ? (report.finalAction || '') : '';
+        // 정상화 완료로 최종 내용이 입력되기 전까지는 비활성화
+        const finalReady = !!(report && (report.closedAt || report.finalSymptom || report.finalCause || report.finalAction));
+        FINAL_IDS.forEach(id => {
+            const el = document.getElementById(id);
+            if (!el.dataset.ph) el.dataset.ph = el.placeholder; // 원래 안내 문구 보관
+            el.disabled = !finalReady;
+            el.placeholder = finalReady ? (el.dataset.ph || el.placeholder) : '정상화 완료 시 입력됩니다.';
+        });
+        // 모바일: 정상화 완료 전에는 최종 확인 상황 숨김 (CSS 에서 처리)
+        const splitEl = document.getElementById('tracking-report-split');
+        if (splitEl) splitEl.classList.toggle('final-pending', !finalReady);
+        document.getElementById('tracking-report-final-meta').textContent = finalReady
+            ? (report.closedAt ? `정상화 완료 ${report.closedAt} · ${report.closedBy || '-'}` : '')
+            : '정상화 완료 후 입력 가능';
         document.getElementById('tracking-report-discussion-person').value = report ? (report.discussionPerson || '') : '';
         document.getElementById('tracking-report-due-date').value = report ? (report.dueDate || '') : '';
         partsItems = report && Array.isArray(report.partsItems) ? report.partsItems.map(p => Object.assign({}, p)) : [];
@@ -610,10 +647,34 @@
         saveBtn.textContent = mode === 'register' ? '저장 후 Tracking 시작' : '저장';
         saveBtn.disabled = false;
         document.getElementById('btn-tracking-report-pdf').disabled = false;
+        // [정상화 완료] 버튼: Tracking 진행중(체크됨)인 작업에서만 표시
+        const closeWorkBtn = document.getElementById('btn-tracking-report-close-work');
+        if (closeWorkBtn) {
+            closeWorkBtn.style.display = (mode !== 'register' && w.isFlagged) ? '' : 'none';
+            closeWorkBtn.disabled = false;
+        }
 
         modal.style.display = 'flex';
+        autoGrowReportTextareas();
+        requestAnimationFrame(autoGrowReportTextareas); // 모달 레이아웃 반영 후 한 번 더
         document.getElementById('tracking-report-symptom').focus();
     }
+
+    // [추가] 증상·조치 사항 입력칸: 내용이 많아지면 글자에 맞춰 높이 자동 확장 (최소 높이는 rows=3 유지)
+    const AUTO_GROW_IDS = ['tracking-report-symptom', 'tracking-report-cause', 'tracking-report-action',
+        'tracking-report-final-symptom', 'tracking-report-final-cause', 'tracking-report-final-action', 'tracking-report-discussion'];
+    function autoGrowTextarea(el) {
+        if (!el || el.getClientRects().length === 0) return;
+        el.style.height = 'auto';
+        const border = el.offsetHeight - el.clientHeight;
+        el.style.height = (el.scrollHeight + border) + 'px';
+    }
+    function autoGrowReportTextareas() {
+        AUTO_GROW_IDS.forEach(id => autoGrowTextarea(document.getElementById(id)));
+    }
+    document.addEventListener('input', (e) => {
+        if (e.target && AUTO_GROW_IDS.includes(e.target.id)) autoGrowTextarea(e.target);
+    });
 
     function closeReportModal() {
         const modal = document.getElementById('tracking-report-modal');
@@ -634,6 +695,7 @@
             siteName: w.site,
             equipKey: w.equipKey,
             symptom: val('tracking-report-symptom'),
+            cause: val('tracking-report-cause'),
             action: val('tracking-report-action'),
             partsItems: partsItems,
             discussion: val('tracking-report-discussion'),
@@ -641,6 +703,12 @@
             dueDate: val('tracking-report-due-date'),
             basic: buildBasic(w, disp)
         };
+        // 최종 확인 상황: 활성화(정상화 완료 이후)된 경우에만 저장
+        if (!document.getElementById('tracking-report-final-symptom').disabled) {
+            body.finalSymptom = val('tracking-report-final-symptom');
+            body.finalCause = val('tracking-report-final-cause');
+            body.finalAction = val('tracking-report-final-action');
+        }
         if (!body.symptom) {
             alert('증상을 입력해주세요.');
             document.getElementById('tracking-report-symptom').focus();
@@ -760,8 +828,8 @@
     }
 
     // targetWin: 클릭 시점에 미리 열어둔 창 (비동기 저장 후 팝업 차단 방지)
-    function printReport(w, disp, report, targetWin) {
-        if (!report) { if (targetWin) targetWin.close(); return; }
+    // PDF 출력 / 이미지 복사 공용: 레포트 출력용 HTML 생성
+    function buildReportHtml(w, disp, report) {
         const basic = buildBasic(w, disp);
         const logs = familyLogsOf(w);
         const nl2br = s => esc(s || '-').replace(/\n/g, '<br>');
@@ -806,6 +874,8 @@
     .foot { margin-top: 14px; font-size: 10px; color: #666; text-align: right; }
     tr { page-break-inside: avoid; }
     .parts { table-layout: fixed; }
+    .split { table-layout: fixed; }
+    .split td { height: 60px; }
     /* 화면 미리보기: 인쇄와 같은 A4 여백(상하 14mm, 좌우 22mm)을 가진 용지 형태로 표시 */
     @media screen {
         html { background: #e5e7eb; }
@@ -824,10 +894,14 @@
         <tr><th>작업 구분</th><td>${v(basic.type)}</td><th>세부 구분</th><td>${v(basic.detailType)}</td><th>작업자</th><td>${v(basic.workers)}</td></tr>
     </table>
 
-    <h2>증상</h2>
-    <table class="box"><tr><td>${nl2br(report.symptom)}</td></tr></table>
-    <h2>조치사항</h2>
-    <table class="box"><tr><td>${nl2br(report.action)}</td></tr></table>
+    <h2>레포트 내용${report.closedAt ? ` <span style="font-weight:400;font-size:11px;color:#666">(정상화 완료 ${esc(report.closedAt)} · ${esc(report.closedBy || '-')})</span>` : ''}</h2>
+    <table class="split">
+        <colgroup><col style="width:13%"><col style="width:43.5%"><col style="width:43.5%"></colgroup>
+        <tr><th></th><th class="c">초기 이슈 상황</th><th class="c">최종 확인 상황</th></tr>
+        <tr><th>증상</th><td>${nl2br(report.symptom)}</td><td>${nl2br(report.finalSymptom || '')}</td></tr>
+        <tr><th>원인</th><td>${nl2br(report.cause || '')}</td><td>${nl2br(report.finalCause || '')}</td></tr>
+        <tr><th>조치사항</th><td>${nl2br(report.action)}</td><td>${nl2br(report.finalAction || '')}</td></tr>
+    </table>
     <h2>필요물품</h2>
     <table class="parts">
         <colgroup><col style="width:36px"><col style="width:24%"><col><col style="width:18%"><col style="width:52px"></colgroup>
@@ -846,7 +920,12 @@
 
     <div class="foot">최종 수정: ${v(report.updatedBy)} (${v(report.updatedAt)})</div>
 </body></html>`;
+        return html;
+    }
 
+    function printReport(w, disp, report, targetWin) {
+        if (!report) { if (targetWin) targetWin.close(); return; }
+        const html = buildReportHtml(w, disp, report);
         const win = targetWin || window.open('', '_blank', 'width=900,height=1000');
         if (!win) {
             alert('팝업이 차단되었습니다. 브라우저에서 이 사이트의 팝업을 허용해주세요.');
@@ -858,6 +937,103 @@
         const doPrint = () => { win.focus(); win.print(); };
         if (win.document.readyState === 'complete') setTimeout(doPrint, 300);
         else win.addEventListener('load', () => setTimeout(doPrint, 300));
+    }
+
+    // [이미지 복사] html2canvas 필요 시 1회 로드
+    let html2canvasLoading = null;
+    function loadHtml2canvas() {
+        if (typeof window.html2canvas === 'function') return Promise.resolve();
+        if (!html2canvasLoading) {
+            html2canvasLoading = new Promise((resolve, reject) => {
+                const sc = document.createElement('script');
+                sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+                sc.onload = () => resolve();
+                sc.onerror = () => { html2canvasLoading = null; reject(new Error('이미지 변환 모듈을 불러오지 못했습니다.')); };
+                document.head.appendChild(sc);
+            });
+        }
+        return html2canvasLoading;
+    }
+
+    // [이미지 복사] PDF 출력과 같은 형식(A4 용지, 같은 여백)으로 렌더링해 PNG Blob 생성
+    async function renderReportImage(w, disp, report) {
+        await loadHtml2canvas();
+        const iframe = document.createElement('iframe');
+        // A4 폭(210mm ≈ 794px) 기준, 화면 밖에서 렌더링
+        iframe.style.cssText = 'position: fixed; left: -10000px; top: 0; width: 794px; height: 1123px; border: 0;';
+        document.body.appendChild(iframe);
+        try {
+            const doc = iframe.contentDocument;
+            doc.open();
+            doc.write(buildReportHtml(w, disp, report));
+            doc.close();
+            // 화면 미리보기용 회색 배경/그림자 제거 (용지만 캡처)
+            const st = doc.createElement('style');
+            st.textContent = 'html{background:#fff !important;} body{margin:0 !important; box-shadow:none !important; min-height:0 !important;}';
+            doc.head.appendChild(st);
+            if (doc.fonts && doc.fonts.ready) await doc.fonts.ready;
+            await new Promise(r => setTimeout(r, 50));
+            const body = doc.body;
+            iframe.style.height = body.scrollHeight + 'px';
+            const canvas = await window.html2canvas(body, {
+                scale: 2,
+                backgroundColor: '#ffffff',
+                logging: false,
+                windowWidth: 794,
+                windowHeight: body.scrollHeight
+            });
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+            if (!blob) throw new Error('이미지 데이터를 생성하지 못했습니다.');
+            return blob;
+        } finally {
+            iframe.remove();
+        }
+    }
+
+    async function copyReportImage(btn) {
+        if (!reportCtx) return;
+        if (!document.getElementById('tracking-report-symptom').value.trim()) {
+            alert('증상을 입력해주세요.');
+            document.getElementById('tracking-report-symptom').focus();
+            return;
+        }
+        const { w, disp } = reportCtx;
+        const original = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '이미지 생성 중...';
+        // 저장 → 이미지 생성 (클립보드 권한 유지를 위해 클릭 시점에 Promise 로 바로 기록 요청)
+        const blobPromise = (async () => {
+            const saved = await saveReport({ keepOpen: true }); // 자동 저장 (PDF 출력과 동일)
+            if (!saved) throw new Error('__save_failed__');
+            return renderReportImage(w, disp, saved);
+        })();
+        try {
+            if (navigator.clipboard && window.ClipboardItem) {
+                await navigator.clipboard.write([new ClipboardItem({ 'image/png': blobPromise })]);
+                showReportToast('레포트 이미지가 복사되었습니다. (Ctrl+V로 붙여넣기)');
+            } else {
+                // 클립보드 이미지 쓰기 미지원 브라우저: 파일로 다운로드
+                const blob = await blobPromise;
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Tracking_Report_${w.site}_${disp.name}_${w.startDate}.png`.replace(/[\\/:*?"<>|\s]+/g, '_');
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+                showReportToast('클립보드 사용이 제한되어 이미지 파일로 저장했습니다.');
+            }
+        } catch (err) {
+            const failed = await blobPromise.then(() => null, e => e);
+            if (!(failed && failed.message === '__save_failed__')) { // 저장 실패는 saveReport 에서 이미 안내
+                console.error('Failed to copy tracking report image:', err);
+                alert('이미지 복사 중 오류가 발생했습니다: ' + ((failed || err).message || err));
+            }
+        } finally {
+            btn.disabled = false;
+            btn.textContent = original;
+        }
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -932,6 +1108,31 @@
             if (!saved) { win.close(); return; }
             printReport(w, disp, saved, win);
         });
+        // 레포트 창 [정상화 완료]: 레포트 저장 → 정상화 완료 팝업 → 완료 시 레포트 창 새로 고침
+        const closeWorkBtn = document.getElementById('btn-tracking-report-close-work');
+        if (closeWorkBtn) closeWorkBtn.addEventListener('click', async () => {
+            if (!reportCtx) return;
+            const { w, disp } = reportCtx;
+            closeWorkBtn.disabled = true;
+            const saved = await saveReport({ keepOpen: true });
+            if (!saved) { closeWorkBtn.disabled = false; return; }
+            const done = await window.openTrackingCloseModal(w.site, w.equipKey, w.familyId, {
+                targetText: `[${w.site}] ${disp.name} · 최초 작업일 ${w.startDate}`,
+                notice: w.nextPlanDate ? '※ 예정된 추가작업이 남아 있어 해당 작업이 완료될 때까지 진행중으로 표시됩니다.' : ''
+            });
+            if (!done) { closeWorkBtn.disabled = false; return; }
+            render();
+            if (typeof window.populateEquipmentIssues === 'function') window.populateEquipmentIssues();
+            // 최신 상태(체크 해제, 최종 확인 상황)로 레포트 창 다시 표시
+            const fresh = typeof window.collectTrackingWorks === 'function'
+                ? window.collectTrackingWorks().find(x => x.kind === 'log' && x.site === w.site &&
+                    x.equipKey === w.equipKey && String(x.familyId) === String(w.familyId))
+                : null;
+            openReportModal(fresh || Object.assign({}, w, { isFlagged: false }), disp, 'edit');
+            showReportToast('정상화 완료 처리되었습니다.');
+        });
+        const copyBtn = document.getElementById('btn-tracking-report-copy');
+        if (copyBtn) copyBtn.addEventListener('click', () => copyReportImage(copyBtn));
         document.addEventListener('keydown', (e) => {
             const modal = document.getElementById('tracking-report-modal');
             if (e.key === 'Escape' && modal && modal.style.display === 'flex') closeReportModal();
@@ -943,6 +1144,12 @@
 
     // 추가 작업 내역 모달 연동: 레포트 존재 여부 / 레포트 창 열기
     window.trackingReportBridge = {
+        // 정상화 완료 팝업 등 다른 곳에서 저장한 레포트를 캐시에 반영
+        setReport(report) {
+            if (!report || !report.equipId) return;
+            reports.set(`${report.equipId}|${report.familyId}`, report);
+            saveReportCache();
+        },
         has(site, equipKey, familyId) {
             const eid = equipIdOf({ site, equipKey });
             return reports.has(`${eid}|${familyId}`);

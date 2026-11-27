@@ -1416,6 +1416,22 @@ function renderSetupIdleList(activeEquips) {
 /* ==========================================================================
    7. 장기 Down 설비 (Tracking 진행중 전체)
    ========================================================================== */
+// 장기 Down 설비 사업장(그룹) 필터 ('' = 전체), 초기값은 계정 사업장
+var homeIssueSiteFilter = '';
+var homeIssueSiteFilterInit = false;
+
+function getHomeIssueAccountSite() {
+    const deptSite = window.getSiteByDepartment ? window.getSiteByDepartment(sessionStorage.getItem('userDepartment')) : '';
+    if (deptSite) return deptSite;
+    const raw = sessionStorage.getItem('user_site') || sessionStorage.getItem('userSite') || (window.currentUser && window.currentUser.site) || '';
+    if (!raw || ['전체', '구분없음', 'None', 'null'].includes(raw)) return '';
+    return window.getSiteGroupName ? window.getSiteGroupName(raw) : raw;
+}
+
+function getHomeIssueSiteGroup(site) {
+    return typeof window.getSiteGroupName === 'function' ? window.getSiteGroupName(site) : site;
+}
+
 function restructureHomeMaintenance() {
     const allLeftCharts = document.querySelectorAll('.maint-left-charts');
     let maintLeftCharts = null;
@@ -1457,9 +1473,18 @@ function restructureHomeMaintenance() {
     issueCard.id = 'home-issue-card';
     issueCard.className = 'status-group card-like';
     issueCard.innerHTML = `
-        <div style="position: relative; display: flex; justify-content: center; align-items: center; min-height: 26px;">
+        <div style="position: relative; display: flex; justify-content: center; align-items: center; min-height: 26px; width: 100%; align-self: stretch; box-sizing: border-box;">
             <h3 class="status-group-title" style="color: #eb371f; margin: 0; width: 100%; text-align: center; padding: 0 90px; box-sizing: border-box;" title="Tracking 진행중(정상화 미완료) 전체 작업">장기 Down 설비 <span id="home-issue-count" style="font-size: 12px; color: var(--c-text-muted);"></span></h3>
             <a href="/tracking" class="btn-move" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); font-size: 11px; padding: 2px 8px; text-decoration: none;">Tracking 이동</a>
+        </div>
+        <div id="home-issue-filters" style="margin: -9px 0; display: flex; align-items: center; gap: 6px; width: 100%; align-self: stretch; box-sizing: border-box;">
+            <select id="home-issue-sort" title="장기 Down 설비 정렬" style="font-size: 13px; padding: 4px 8px; min-height: 28px; border: 1px solid var(--c-border, #ccc); border-radius: 4px; background: var(--c-bg, #fff); color: var(--c-text); cursor: pointer;">
+                <option value="down">장기 Down</option>
+                <option value="due">조치 예정일</option>
+            </select>
+            <select id="home-issue-site" title="사업장 필터" style="font-size: 13px; padding: 4px 8px; min-height: 28px; max-width: 50%; border: 1px solid var(--c-border, #ccc); border-radius: 4px; background: var(--c-bg, #fff); color: var(--c-text); cursor: pointer;">
+                <option value="">전체 사업장</option>
+            </select>
         </div>
         <div class="status-list-container" style="flex: 1; min-height: 0; width: 100%; border: none; overflow: hidden; display: flex; flex-direction: column;">
             <ul id="home-issue-list" class="upcoming-list" style="padding: 0; margin: 0; list-style: none; flex: 1; min-height: 0; overflow-y: auto;"></ul>
@@ -1467,6 +1492,17 @@ function restructureHomeMaintenance() {
     `;
 
     maintLeftCharts.insertBefore(issueCard, maintLeftCharts.firstChild);
+    const sortSel = issueCard.querySelector('#home-issue-sort');
+    sortSel.value = localStorage.getItem('home_issue_sort') === 'due' ? 'due' : 'down';
+    sortSel.addEventListener('change', () => {
+        localStorage.setItem('home_issue_sort', sortSel.value);
+        populateEquipmentIssues();
+    });
+    const siteSel = issueCard.querySelector('#home-issue-site');
+    siteSel.addEventListener('change', () => {
+        homeIssueSiteFilter = siteSel.value;
+        populateEquipmentIssues();
+    });
     populateEquipmentIssues();
 }
 window.restructureHomeMaintenance = restructureHomeMaintenance; // UI 렌더링 후 호출용 유지
@@ -1517,10 +1553,31 @@ function populateEquipmentIssues() {
 
     issueList.innerHTML = '';
     // Tracking 진행중(정상화 미완료) 작업 전체 표시 (경과일 제한 없음)
-    const items = typeof window.collectTrackingItems === 'function' ? window.collectTrackingItems() : [];
+    const allItems = typeof window.collectTrackingItems === 'function' ? window.collectTrackingItems() : [];
+
+    // 사업장(그룹) 필터 옵션 갱신 (현재 Tracking 항목에 있는 사업장 + 계정 사업장)
+    const accountSite = getHomeIssueAccountSite();
+    if (!homeIssueSiteFilterInit && sessionStorage.getItem('isLoggedIn') === 'true') {
+        homeIssueSiteFilter = accountSite;
+        homeIssueSiteFilterInit = true;
+    }
+    const siteSet = new Set(allItems.map(it => getHomeIssueSiteGroup(it.site)).filter(Boolean));
+    if (accountSite) siteSet.add(accountSite);
+    const sites = [...siteSet].sort((a, b) => String(a).localeCompare(String(b), 'ko'));
+    if (homeIssueSiteFilter && !sites.includes(homeIssueSiteFilter)) homeIssueSiteFilter = '';
+    const siteSel = document.getElementById('home-issue-site');
+    if (siteSel) {
+        siteSel.innerHTML = '<option value="">전체 사업장</option>' +
+            sites.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+        siteSel.value = homeIssueSiteFilter;
+    }
+    const sortSel = document.getElementById('home-issue-sort');
+    if (sortSel) sortSel.value = localStorage.getItem('home_issue_sort') === 'due' ? 'due' : 'down';
+
+    const items = homeIssueSiteFilter ? allItems.filter(it => getHomeIssueSiteGroup(it.site) === homeIssueSiteFilter) : allItems;
 
     const countEl = document.getElementById('home-issue-count');
-    if (countEl) countEl.textContent = `(${items.length})`;
+    if (countEl) countEl.textContent = homeIssueSiteFilter ? `(${items.length}/${allItems.length})` : `(${items.length})`;
 
     if (items.length === 0) {
         issueList.innerHTML = `<li class="list-empty-msg">Tracking 중인 정상화 미완료 작업이 없습니다.</li>`;
@@ -1529,12 +1586,28 @@ function populateEquipmentIssues() {
 
     const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
 
+    // 정렬: 장기 Down순(경과일 많은 순) / 조치 예정일순(빠른 날짜 순, 미입력은 뒤로)
+    const sortMode = localStorage.getItem('home_issue_sort') === 'due' ? 'due' : 'down';
+    const byDays = (a, b) => (Number(b.days) || 0) - (Number(a.days) || 0);
+    items.forEach(item => { item._dueDate = getHomeTrackingDueDate(item.site, item.equipKey, item.familyId); });
+    if (sortMode === 'due') {
+        const isDate = d => /^\d{4}-\d{2}-\d{2}$/.test(String(d || ''));
+        items.sort((a, b) => {
+            const da = isDate(a._dueDate), db = isDate(b._dueDate);
+            if (da && db && a._dueDate !== b._dueDate) return a._dueDate < b._dueDate ? -1 : 1;
+            if (da !== db) return da ? -1 : 1;
+            return byDays(a, b);
+        });
+    } else {
+        items.sort(byDays);
+    }
+
     items.forEach(item => {
         const { site, equipKey, parentLog, level } = item;
         const info = formatEquipDisplayInfo(site, equipKey, equipmentModels);
         // 조치 예정일 (Tracking 레포트 협의 사항)
         // - 입력: 주황색 날짜 / 경과: 빨간색 날짜 (D+N) / 미입력: 주황색 '미입력'
-        const dueDate = getHomeTrackingDueDate(site, equipKey, item.familyId);
+        const dueDate = item._dueDate;
         let dueText = '-';
         let dueHtml = '-';
         let isDueOver = false;
@@ -1566,7 +1639,7 @@ function populateEquipmentIssues() {
 
         li.onclick = () => {
             if (typeof window.openExtraWorkHistoryModal === 'function') {
-                window.openExtraWorkHistoryModal(site, equipKey, parentLog.id);
+                window.openExtraWorkHistoryModal(site, equipKey, parentLog.id, { hideMove: true });
             } else {
                 window.location.href = '/tracking';
             }
